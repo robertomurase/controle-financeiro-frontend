@@ -1,0 +1,305 @@
+<!-- Menu Superior Executivo (Dark Theme) -->
+<header class="top-navbar">
+  <div class="brand-section">
+    <div class="logo-container">
+      <span class="logo-icon">🔷</span>
+      <div>
+        <span class="brand-title">Finanças Pro</span>
+        <span class="brand-subtitle">Bootstrap 5.3 Executivo</span>
+      </div>
+    </div>
+    <div class="status-badge">
+      <span class="status-dot"></span>
+      Sincronizado
+    </div>
+  </div>
+
+  <nav class="nav-links">
+    <button class="nav-item" [class.active]="activeTab === 'dashboard'" (click)="setTab('dashboard')">
+      📊 Dashboard
+    </button>
+    <button class="nav-item" [class.active]="activeTab === 'transacoes'" (click)="setTab('transacoes')">
+      📋 Transações
+    </button>
+    <button class="nav-item" [class.active]="activeTab === 'nfce'" (click)="setTab('nfce')">
+      📱 Leitor NFC-e
+    </button>
+    <button class="nav-item" [class.active]="activeTab === 'produtos'" (click)="setTab('produtos')">
+      🛒 Lista de Produtos
+    </button>
+    <button class="nav-item btn-sync" (click)="carregarTransacoes()">
+      🔄 Sincronizar
+    </button>
+  </nav>
+</header>
+
+<!-- Conteúdo Principal -->
+<main class="main-container">
+  
+  <!-- Cabeçalho da Página -->
+  <div class="page-header">
+    <h1 class="page-title">Visão Geral do Fluxo de Caixa</h1>
+    <p class="page-subtitle">Acompanhamento consolidado de saldos, entradas e saídas</p>
+  </div>
+
+  <!-- Cartões KPIs Superiores (4 Colunas) -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-header">SALDO TOTAL ACUMULADO</div>
+      <div class="kpi-value">R$ {{ saldoTotal | number:'1.2-2' }}</div>
+      <div class="kpi-subtext">Conta Principal + Reservas</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-header">RECEITAS DO MÊS</div>
+      <div class="kpi-value receita">R$ {{ receitasMes | number:'1.2-2' }}</div>
+      <div class="kpi-subtext verde">↗ Entradas confirmadas</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-header">DESPESAS DO MÊS</div>
+      <div class="kpi-value despesa">R$ {{ despesasMes | number:'1.2-2' }}</div>
+      <div class="kpi-subtext vermelho">↘ Saídas efetuadas</div>
+    </div>
+
+    <div class="kpi-card">
+      <div class="kpi-header">TAXA DE POUPANÇA</div>
+      <div class="kpi-value poupanca">{{ taxaPoupanca }}%</div>
+      <div class="kpi-subtext">Percentual economizado</div>
+    </div>
+  </div>
+
+  <!-- VISÃO: DASHBOARD -->
+  <div *ngIf="activeTab === 'dashboard'">
+    
+    <!-- Seção de Gráficos -->
+    <div class="charts-grid">
+      <!-- Gráfico de Barras: Fluxo de Caixa Recente -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">
+            📊 Fluxo de Caixa Recente
+          </div>
+          <div class="chart-controls">
+            <select class="select-sm">
+              <option>Ano: 2026</option>
+            </select>
+            <select class="select-sm">
+              <option>Mês: Todos os Meses</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="bar-chart-container">
+          <div class="bar-group" *ngFor="let m of ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']">
+            <div class="bars-wrapper">
+              <div class="bar receita" [style.height.%]="m === 'Set' ? 85 : 0" title="Receitas"></div>
+              <div class="bar despesa" [style.height.%]="m === 'Set' ? 20 : 0" title="Despesas"></div>
+            </div>
+            <span class="bar-label">{{ m }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráfico Donut: Despesas por Categoria -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">
+            🍩 Despesas por Categoria
+          </div>
+        </div>
+
+        <div class="donut-chart-container">
+          <div class="donut-visual"></div>
+          <div class="donut-legend">
+            <div class="legend-item">
+              <span><span class="legend-color" style="background: #2563eb;"></span> Alimentação / Mercado</span>
+              <strong>65%</strong>
+            </div>
+            <div class="legend-item">
+              <span><span class="legend-color" style="background: #10b981;"></span> Compras</span>
+              <strong>20%</strong>
+            </div>
+            <div class="legend-item">
+              <span><span class="legend-color" style="background: #f97316;"></span> Transporte</span>
+              <strong>10%</strong>
+            </div>
+            <div class="legend-item">
+              <span><span class="legend-color" style="background: #8b5cf6;"></span> Saúde</span>
+              <strong>5%</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela de Últimos Lançamentos -->
+    <div class="table-card">
+      <div class="chart-header">
+        <div class="chart-title">
+          ⏰ Últimos Lançamentos
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>DATA</th>
+            <th>ESTABELECIMENTO</th>
+            <th>DESCRIÇÃO</th>
+            <th>CATEGORIA</th>
+            <th>CONTA</th>
+            <th>TIPO</th>
+            <th>VALOR</th>
+            <th>AÇÕES</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of transacoes">
+            <td>{{ t.data }}</td>
+            <td>
+              {{ t.estabelecimento || t.descricao }}
+              <span *ngIf="t.isNfce" class="badge-nfce">NFC-e</span>
+            </td>
+            <td>{{ t.descricao }}</td>
+            <td>{{ t.categoria }}</td>
+            <td>{{ t.conta || 'Conta Corrente' }}</td>
+            <td>
+              <span class="badge-tipo" [ngClass]="t.tipo">{{ t.tipo | titlecase }}</span>
+            </td>
+            <td [style.color]="t.tipo === 'despesa' ? '#dc2626' : '#16a34a'" style="font-weight: 700;">
+              {{ t.tipo === 'despesa' ? '-' : '+' }} R$ {{ t.valor | number:'1.2-2' }}
+            </td>
+            <td>
+              <button class="action-btn" title="Opções">⚙️</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- VISÃO: TRANSAÇÕES (Cadastrar / Gerenciar) -->
+  <div *ngIf="activeTab === 'transacoes'">
+    <div class="form-box">
+      <h2>➕ Nova Transação Manual</h2>
+      <div class="form-row">
+        <input type="text" [(ngModel)]="novaDescricao" placeholder="Descrição (ex: Supermercado)" />
+        <input type="number" [(ngModel)]="novoValor" placeholder="Valor (R$)" />
+        <select [(ngModel)]="novaCategoria">
+          <option value="Alimentação / Mercado">Alimentação / Mercado</option>
+          <option value="Moradia">Moradia</option>
+          <option value="Transporte">Transporte</option>
+          <option value="Lazer">Lazer</option>
+          <option value="Salário">Salário</option>
+        </select>
+        <select [(ngModel)]="novoTipo">
+          <option value="despesa">Despesa</option>
+          <option value="receita">Receita</option>
+        </select>
+        <input type="date" [(ngModel)]="novaData" />
+        <button class="btn-primary" (click)="salvarTransacao()">Cadastrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISÃO: LEITOR NFC-e (QR CODE) -->
+  <div *ngIf="activeTab === 'nfce'">
+    <div class="form-box">
+      <div class="scanner-header">
+        <h2>📱 Leitor de NFC-e via QR Code (SEFAZ)</h2>
+        <p style="color: #64748b; font-size: 0.875rem; margin-top: 4px;">
+          Escaneie o QR Code do seu cupom fiscal com a câmera do celular/computador ou envie uma foto do cupom.
+        </p>
+      </div>
+
+      <!-- Modos do Leitor -->
+      <div class="scanner-toggle-buttons">
+        <button class="toggle-btn" [class.active]="scannerModo === 'camera'" (click)="setModoScanner('camera')">
+          📷 Escanear com Câmera / Webcam
+        </button>
+        <button class="toggle-btn" [class.active]="scannerModo === 'arquivo'" (click)="setModoScanner('arquivo')">
+          📸 Enviar Foto do QR Code
+        </button>
+        <button class="toggle-btn" [class.active]="scannerModo === 'manual'" (click)="setModoScanner('manual')">
+          🔗 Colar Link Manualmente
+        </button>
+      </div>
+
+      <!-- Modo Câmera -->
+      <div *ngIf="scannerModo === 'camera'" class="camera-scanner-container">
+        <div id="qr-reader" class="qr-viewport"></div>
+        <div class="scanner-controls">
+          <button *ngIf="!scannerAtivo" class="btn-primary btn-lg" (click)="iniciarScanner()">
+            ▶️ Ligar Câmera e Escanear
+          </button>
+          <button *ngIf="scannerAtivo" class="btn-danger btn-lg" (click)="pararScanner()">
+            ⏹️ Desligar Câmera
+          </button>
+        </div>
+      </div>
+
+      <!-- Modo Enviar Foto -->
+      <div *ngIf="scannerModo === 'arquivo'" class="file-upload-container">
+        <div class="upload-dropzone">
+          <span style="font-size: 2.5rem;">📷</span>
+          <p><strong>Selecione ou tire uma foto contendo o QR Code da NFC-e</strong></p>
+
+          <input type="file" accept="image/*" (change)="processarFotoQrCode($event)" id="qr-file-input" class="file-input" />
+          <label for="qr-file-input" class="btn-primary" style="cursor: pointer;">Escolher Arquivo de Imagem</label>
+        </div>
+      </div>
+
+      <!-- Modo Manual -->
+      <div *ngIf="scannerModo === 'manual'" class="manual-container">
+        <div class="form-row">
+          <input type="text" [(ngModel)]="urlNfce" placeholder="Cole aqui o link do QR Code (ex: https://www.fazenda.sp.gov.br/...)" />
+          <button class="btn-primary" (click)="consultarNfce()" [disabled]="carregandoNfce">
+            {{ carregandoNfce ? 'Consultando...' : 'Importar Nota' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Alerta de Mensagens -->
+      <div *ngIf="mensagemNfce" class="status-alert" [class.sucesso]="statusNfceSucesso" [class.erro]="!statusNfceSucesso">
+        {{ mensagemNfce }}
+      </div>
+
+    </div>
+  </div>
+
+  <!-- VISÃO: LISTA DE PRODUTOS -->
+  <div *ngIf="activeTab === 'produtos'">
+    <div class="table-card">
+      <div class="chart-header">
+        <div class="chart-title">🛒 Produtos Cadastrados via NFC-e</div>
+      </div>
+      <table *ngIf="produtos.length > 0; else semProdutos">
+        <thead>
+          <tr>
+            <th>PRODUTO</th>
+            <th>CÓDIGO</th>
+            <th>QTD</th>
+            <th>UN</th>
+            <th>VALOR UNIT.</th>
+            <th>TOTAL</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let p of produtos">
+            <td>{{ p.nome_produto }}</td>
+            <td>{{ p.codigo || '-' }}</td>
+            <td>{{ p.quantidade }}</td>
+            <td>{{ p.unidade }}</td>
+            <td>R$ {{ p.valor_unitario | number:'1.2-2' }}</td>
+            <td>R$ {{ p.valor_total | number:'1.2-2' }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <ng-template #semProdutos>
+        <p style="color: #64748b; padding: 12px 0;">Nenhum produto cadastrado via nota fiscal ainda.</p>
+      </ng-template>
+    </div>
+  </div>
+
+</main>
