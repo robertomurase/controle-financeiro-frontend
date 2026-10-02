@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FinanceService, Transacao } from './services/finance.service';
 
-declare var Html5QrcodeScanner: any;
 declare var Html5Qrcode: any;
 
 @Component({
@@ -32,7 +31,7 @@ export class AppComponent implements OnInit, OnDestroy {
   statusNfceSucesso: boolean = true;
   scannerModo: 'camera' | 'arquivo' | 'manual' = 'camera';
   scannerAtivo: boolean = false;
-  qrScanner: any = null;
+  html5QrCode: any = null;
 
   constructor(private financeService: FinanceService) {}
 
@@ -65,22 +64,23 @@ export class AppComponent implements OnInit, OnDestroy {
   iniciarScanner(): void {
     this.pararScanner();
     this.scannerAtivo = true;
+    this.mensagemNfce = '📷 Solicitando acesso à câmera traseira... Aguarde.';
+    this.statusNfceSucesso = true;
 
     setTimeout(() => {
-      if (typeof Html5QrcodeScanner !== 'undefined') {
+      if (typeof Html5Qrcode !== 'undefined') {
         try {
-          this.qrScanner = new Html5QrcodeScanner(
-            "qr-reader",
-            {
-              fps: 10,
-              qrbox: { width: 250, height: 250 },
-              aspectRatio: 1.0,
-              showTorchButtonIfSupported: true
-            },
-            /* verbose= */ false
-          );
+          this.html5QrCode = new Html5Qrcode("qr-reader");
+          const config = {
+            fps: 10,
+            qrbox: { width: 220, height: 220 },
+            aspectRatio: 1.0
+          };
 
-          this.qrScanner.render(
+          // Inicia direto com a câmera traseira (environment)
+          this.html5QrCode.start(
+            { facingMode: "environment" },
+            config,
             (decodedText: string) => {
               this.urlNfce = decodedText;
               this.mensagemNfce = `✅ QR Code lido com sucesso! Consultando nota fiscal...`;
@@ -88,28 +88,65 @@ export class AppComponent implements OnInit, OnDestroy {
               this.pararScanner();
               this.consultarNfce();
             },
-            (error: any) => {
-              // escaneando quadros continuamente
+            (errorMessage: any) => {
+              // buscando QR code no quadro atual
             }
-          );
+          ).then(() => {
+            this.mensagemNfce = '📷 Câmera traseira ativa! Aponte para o QR Code da nota fiscal.';
+            this.statusNfceSucesso = true;
+          }).catch((err: any) => {
+            console.warn('Câmera traseira indisponível, tentando câmera padrão:', err);
+            // Fallback para câmera genérica se exact environment falhar
+            this.html5QrCode.start(
+              { facingMode: "user" },
+              config,
+              (decodedText: string) => {
+                this.urlNfce = decodedText;
+                this.mensagemNfce = `✅ QR Code lido com sucesso! Consultando nota fiscal...`;
+                this.statusNfceSucesso = true;
+                this.pararScanner();
+                this.consultarNfce();
+              },
+              () => {}
+            ).then(() => {
+              this.mensagemNfce = '📷 Câmera ativa! Aponte para o QR Code da nota fiscal.';
+              this.statusNfceSucesso = true;
+            }).catch((err2: any) => {
+              console.error('Erro ao abrir câmera:', err2);
+              this.mensagemNfce = '❌ Não foi possível acessar a câmera. Garanta que deu permissão no navegador ou tente o modo "Enviar Foto".';
+              this.statusNfceSucesso = false;
+              this.scannerAtivo = false;
+            });
+          });
         } catch (e) {
-          console.error('Erro ao iniciar o leitor de QR Code:', e);
+          console.error('Erro ao instanciar Html5Qrcode:', e);
+          this.mensagemNfce = '❌ Erro ao inicializar o leitor de QR Code.';
+          this.statusNfceSucesso = false;
         }
       } else {
-        this.mensagemNfce = '⚠️ Carregando o leitor de QR Code. Caso não inicie, clique em Ligar Câmera novamente.';
+        this.mensagemNfce = '⚠️ Leitor de QR Code carregando... Clique em Ligar Câmera novamente se necessário.';
         this.statusNfceSucesso = false;
       }
-    }, 150);
+    }, 200);
   }
 
   pararScanner(): void {
-    if (this.qrScanner) {
+    if (this.html5QrCode) {
       try {
-        this.qrScanner.clear();
+        if (this.html5QrCode.isScanning) {
+          this.html5QrCode.stop().then(() => {
+            try { this.html5QrCode.clear(); } catch (e) {}
+            this.html5QrCode = null;
+          }).catch(() => {
+            this.html5QrCode = null;
+          });
+        } else {
+          try { this.html5QrCode.clear(); } catch (e) {}
+          this.html5QrCode = null;
+        }
       } catch (e) {
-        // ignorar erro de limpeza se contêiner não existir mais
+        this.html5QrCode = null;
       }
-      this.qrScanner = null;
     }
     this.scannerAtivo = false;
   }
@@ -122,16 +159,16 @@ export class AppComponent implements OnInit, OnDestroy {
     this.statusNfceSucesso = true;
 
     if (typeof Html5Qrcode !== 'undefined') {
-      const html5QrCode = new Html5Qrcode("qr-reader");
-      html5QrCode.scanFile(file, true)
+      const html5QrCodeTemp = new Html5Qrcode("qr-reader");
+      html5QrCodeTemp.scanFile(file, true)
         .then((decodedText: string) => {
           this.urlNfce = decodedText;
-          this.mensagemNfce = `✅ QR Code identificado na imagem! Importando nota...`;
+          this.mensagemNfce = `✅ QR Code identificado na foto! Importando nota fiscal...`;
           this.statusNfceSucesso = true;
           this.consultarNfce();
         })
         .catch(() => {
-          this.mensagemNfce = '❌ Não foi possível encontrar um QR Code válido na imagem. Tente uma foto com iluminação melhor.';
+          this.mensagemNfce = '❌ Não foi possível encontrar um QR Code válido na imagem. Tente uma foto mais nítida com boa iluminação.';
           this.statusNfceSucesso = false;
         });
     } else {
