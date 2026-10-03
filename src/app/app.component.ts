@@ -39,6 +39,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.carregarTransacoes();
+        this.carregarProdutos();
     this.carregarProdutos();
   }
 
