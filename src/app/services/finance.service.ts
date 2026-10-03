@@ -18,7 +18,7 @@ export interface Transacao {
   providedIn: 'root'
 })
 export class FinanceService {
-  private apiUrl = 'https://controle-financeiro-backend-b3wz.onrender.com/api';
+  private apiUrl = 'http://localhost:3000/api';
 
   constructor(private http: HttpClient) {}
 

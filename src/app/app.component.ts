@@ -13,8 +13,10 @@ declare var Html5Qrcode: any;
 })
 export class AppComponent implements OnInit, OnDestroy {
   activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'produtos' = 'dashboard';
+  menuAberto: boolean = false;
   transacoes: Transacao[] = [];
   produtos: any[] = [];
+  dadosUltimaNota: any = null;
 
   // Formulário Manual
   novaDescricao: string = '';
@@ -44,9 +46,18 @@ export class AppComponent implements OnInit, OnDestroy {
     this.pararScanner();
   }
 
+  toggleMenu(): void {
+    this.menuAberto = !this.menuAberto;
+  }
+
+  fecharMenu(): void {
+    this.menuAberto = false;
+  }
+
   setTab(tab: 'dashboard' | 'transacoes' | 'nfce' | 'produtos'): void {
     this.pararScanner();
     this.activeTab = tab;
+    this.fecharMenu();
     if (tab === 'nfce' && this.scannerModo === 'camera') {
       setTimeout(() => this.iniciarScanner(), 200);
     }
@@ -77,7 +88,6 @@ export class AppComponent implements OnInit, OnDestroy {
             aspectRatio: 1.0
           };
 
-          // Inicia direto com a câmera traseira (environment)
           this.html5QrCode.start(
             { facingMode: "environment" },
             config,
@@ -88,15 +98,12 @@ export class AppComponent implements OnInit, OnDestroy {
               this.pararScanner();
               this.consultarNfce();
             },
-            (errorMessage: any) => {
-              // buscando QR code no quadro atual
-            }
+            (errorMessage: any) => {}
           ).then(() => {
             this.mensagemNfce = '📷 Câmera traseira ativa! Aponte para o QR Code da nota fiscal.';
             this.statusNfceSucesso = true;
           }).catch((err: any) => {
             console.warn('Câmera traseira indisponível, tentando câmera padrão:', err);
-            // Fallback para câmera genérica se exact environment falhar
             this.html5QrCode.start(
               { facingMode: "user" },
               config,
@@ -113,7 +120,7 @@ export class AppComponent implements OnInit, OnDestroy {
               this.statusNfceSucesso = true;
             }).catch((err2: any) => {
               console.error('Erro ao abrir câmera:', err2);
-              this.mensagemNfce = '❌ Não foi possível acessar a câmera. Garanta que deu permissão no navegador ou tente o modo "Enviar Foto".';
+              this.mensagemNfce = '❌ Não foi possível acessar a câmera. Garanta permissão no navegador ou envie uma foto.';
               this.statusNfceSucesso = false;
               this.scannerAtivo = false;
             });
@@ -168,7 +175,7 @@ export class AppComponent implements OnInit, OnDestroy {
           this.consultarNfce();
         })
         .catch(() => {
-          this.mensagemNfce = '❌ Não foi possível encontrar um QR Code válido na imagem. Tente uma foto mais nítida com boa iluminação.';
+          this.mensagemNfce = '❌ Não foi possível encontrar um QR Code válido na imagem. Tente uma foto mais nítida.';
           this.statusNfceSucesso = false;
         });
     } else {
@@ -253,6 +260,7 @@ export class AppComponent implements OnInit, OnDestroy {
         this.carregandoNfce = false;
         this.mensagemNfce = '✅ Nota fiscal importada e produtos cadastrados com sucesso!';
         this.statusNfceSucesso = true;
+        this.dadosUltimaNota = res?.dadosNota || null;
         this.carregarTransacoes();
         this.carregarProdutos();
         this.urlNfce = '';
