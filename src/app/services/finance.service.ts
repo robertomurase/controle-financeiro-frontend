@@ -18,6 +18,7 @@ export interface Transacao {
   providedIn: 'root'
 })
 export class FinanceService {
+  // URL de produção padrão no Render (utilizada automaticamente na Vercel/Web)
   private readonly PROD_API_URL = 'https://controle-financeiro-backend-b3wz.onrender.com/api';
   private readonly DEV_API_URL = 'http://localhost:3000/api';
 
@@ -59,5 +60,19 @@ export class FinanceService {
 
   getProdutos(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/produtos`);
+  }
+
+  deleteProdutoItem(id: number, origem?: string, nome?: string): Observable<any> {
+    if (id && origem) {
+      return this.http.delete(`${this.apiUrl}/produtos/item/${id}?origem=${origem}`);
+    }
+    if (nome) {
+      return this.http.delete(`${this.apiUrl}/produtos/${encodeURIComponent(nome)}`);
+    }
+    return this.http.delete(`${this.apiUrl}/produtos/${id}`);
+  }
+
+  deleteProdutoPorNome(nome: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/produtos/${encodeURIComponent(nome)}`);
   }
 }
