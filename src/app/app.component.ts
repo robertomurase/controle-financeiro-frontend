@@ -39,8 +39,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.carregarTransacoes();
-        this.carregarProdutos();
-    this.carregarProdutos();
   }
 
   ngOnDestroy(): void {
@@ -94,7 +92,7 @@ export class AppComponent implements OnInit, OnDestroy {
             config,
             (decodedText: string) => {
               this.urlNfce = decodedText;
-              this.mensagemNfce = `✅ QR Code lido com sucesso! Consultando nota fiscal...`;
+              this.mensagemNfce = ;
               this.statusNfceSucesso = true;
               this.pararScanner();
               this.consultarNfce();
@@ -110,7 +108,7 @@ export class AppComponent implements OnInit, OnDestroy {
               config,
               (decodedText: string) => {
                 this.urlNfce = decodedText;
-                this.mensagemNfce = `✅ QR Code lido com sucesso! Consultando nota fiscal...`;
+                this.mensagemNfce = ;
                 this.statusNfceSucesso = true;
                 this.pararScanner();
                 this.consultarNfce();
@@ -171,7 +169,7 @@ export class AppComponent implements OnInit, OnDestroy {
       html5QrCodeTemp.scanFile(file, true)
         .then((decodedText: string) => {
           this.urlNfce = decodedText;
-          this.mensagemNfce = `✅ QR Code identificado na foto! Importando nota fiscal...`;
+          this.mensagemNfce = ;
           this.statusNfceSucesso = true;
           this.consultarNfce();
         })
@@ -192,31 +190,80 @@ export class AppComponent implements OnInit, OnDestroy {
           this.transacoes = dados;
         } else {
           this.transacoes = [
-            { id: 1, data: '2026-09-29', estabelecimento: 'TRIGO KIBE YOKI 500G', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 12.99, isNfce: true },
-            { id: 2, data: '2026-09-28', estabelecimento: 'TRIGO KIBE YOKI 500G', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 11.19, isNfce: true },
-            { id: 3, data: '2026-09-27', estabelecimento: 'Restaurante', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 200.00, isNfce: true },
-            { id: 4, data: '2026-09-26', estabelecimento: 'Compra - AUTO POSTO MUFFATO LTDA', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 220.95, isNfce: true },
-            { id: 5, data: '2026-09-26', estabelecimento: 'Compra - CARREFOUR COMERCIO E INDUSTRIA LTDA', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 8.99, isNfce: true }
+            { id: 1, data: '2026-09-29', estabelecimento: 'TRIGO KIBE YOKI 500G', descricao: 'TRIGO KIBE YOKI 500G', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 12.99, isNfce: true },
+            { id: 2, data: '2026-09-28', estabelecimento: 'TRIGO KIBE YOKI 500G', descricao: 'TRIGO KIBE YOKI 500G', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 11.19, isNfce: true },
+            { id: 3, data: '2026-09-27', estabelecimento: 'Restaurante', descricao: 'Restaurante', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 200.00, isNfce: true },
+            { id: 4, data: '2026-09-26', estabelecimento: 'AUTO POSTO MUFFATO LTDA', descricao: 'Combustível - AUTO POSTO MUFFATO', categoria: 'Transporte', conta: 'Conta Corrente', tipo: 'despesa', valor: 220.95, isNfce: true },
+            { id: 5, data: '2026-09-26', estabelecimento: 'CARREFOUR COMERCIO E INDUSTRIA', descricao: 'Mercado - CARREFOUR', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 8.99, isNfce: true }
           ];
         }
+        this.carregarProdutos();
       },
       error: () => {
         this.transacoes = [
-          { id: 1, data: '2026-09-29', estabelecimento: 'TRIGO KIBE YOKI 500G', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 12.99, isNfce: true },
-          { id: 2, data: '2026-09-28', estabelecimento: 'TRIGO KIBE YOKI 500G', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 11.19, isNfce: true },
-          { id: 3, data: '2026-09-27', estabelecimento: 'Restaurante', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 200.00, isNfce: true },
-          { id: 4, data: '2026-09-26', estabelecimento: 'Compra - AUTO POSTO MUFFATO LTDA', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 220.95, isNfce: true },
-          { id: 5, data: '2026-09-26', estabelecimento: 'Compra - CARREFOUR COMERCIO E INDUSTRIA LTDA', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 8.99, isNfce: true }
+          { id: 1, data: '2026-09-29', estabelecimento: 'TRIGO KIBE YOKI 500G', descricao: 'TRIGO KIBE YOKI 500G', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 12.99, isNfce: true },
+          { id: 2, data: '2026-09-28', estabelecimento: 'TRIGO KIBE YOKI 500G', descricao: 'TRIGO KIBE YOKI 500G', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 11.19, isNfce: true },
+          { id: 3, data: '2026-09-27', estabelecimento: 'Restaurante', descricao: 'Restaurante', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 200.00, isNfce: true },
+          { id: 4, data: '2026-09-26', estabelecimento: 'AUTO POSTO MUFFATO LTDA', descricao: 'Combustível - AUTO POSTO MUFFATO', categoria: 'Transporte', conta: 'Conta Corrente', tipo: 'despesa', valor: 220.95, isNfce: true },
+          { id: 5, data: '2026-09-26', estabelecimento: 'CARREFOUR COMERCIO E INDUSTRIA', descricao: 'Mercado - CARREFOUR', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 8.99, isNfce: true }
         ];
+        this.carregarProdutos();
       }
     });
   }
 
   carregarProdutos(): void {
     this.financeService.getProdutos().subscribe({
-      next: (dados) => this.produtos = dados || [],
-      error: () => this.produtos = []
+      next: (dados) => {
+        this.produtos = this.mesclarProdutosComTransacoes(dados || []);
+      },
+      error: () => {
+        this.produtos = this.mesclarProdutosComTransacoes([]);
+      }
     });
+  }
+
+  mesclarProdutosComTransacoes(produtosApi: any[]): any[] {
+    const mapa = new Map<string, any>();
+
+    // 1. Produtos vindos da API
+    for (const p of produtosApi) {
+      const nome = p.nome_produto || p.descricao;
+      if (nome) {
+        mapa.set(nome.toLowerCase().trim(), {
+          nome_produto: nome,
+          codigo: p.codigo || '-',
+          quantidade_total: p.quantidade_total || p.quantidade || 1,
+          unidade: p.unidade || 'UN',
+          preco_medio: p.preco_medio || p.valor_unitario || p.valor_total || 0,
+          gasto_total: p.gasto_total || p.valor_total || 0
+        });
+      }
+    }
+
+    // 2. Unificar com os lançamentos de despesa do Dashboard / Transações Manuais
+    for (const t of this.transacoes) {
+      if (t.tipo === 'despesa') {
+        const nome = t.estabelecimento || t.descricao;
+        if (!nome) continue;
+        const chave = nome.toLowerCase().trim();
+
+        if (mapa.has(chave)) {
+          // Se já existe, garante formato limpo
+        } else {
+          mapa.set(chave, {
+            nome_produto: nome,
+            codigo: t.isNfce ? 'NFC-e' : 'MANUAL',
+            quantidade_total: 1,
+            unidade: 'UN',
+            preco_medio: t.valor,
+            gasto_total: t.valor
+          });
+        }
+      }
+    }
+
+    return Array.from(mapa.values()).sort((a, b) => b.gasto_total - a.gasto_total);
   }
 
   salvarTransacao(): void {
@@ -237,9 +284,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.financeService.addTransacao(nova).subscribe({
       next: () => {
-        this.carregarTransacoes();
         this.novaDescricao = '';
         this.novoValor = null;
+        this.carregarTransacoes();
         this.activeTab = 'dashboard';
       },
       error: (err) => console.error('Erro ao salvar:', err)
@@ -263,7 +310,6 @@ export class AppComponent implements OnInit, OnDestroy {
         this.statusNfceSucesso = true;
         this.dadosUltimaNota = res?.dadosNota || null;
         this.carregarTransacoes();
-        this.carregarProdutos();
         this.urlNfce = '';
       },
       error: () => {
