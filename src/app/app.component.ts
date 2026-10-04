@@ -92,7 +92,7 @@ export class AppComponent implements OnInit, OnDestroy {
             config,
             (decodedText: string) => {
               this.urlNfce = decodedText;
-              this.mensagemNfce = ;
+              this.mensagemNfce = '✅ QR Code lido com sucesso! Consultando nota fiscal...';
               this.statusNfceSucesso = true;
               this.pararScanner();
               this.consultarNfce();
@@ -108,7 +108,7 @@ export class AppComponent implements OnInit, OnDestroy {
               config,
               (decodedText: string) => {
                 this.urlNfce = decodedText;
-                this.mensagemNfce = ;
+                this.mensagemNfce = '✅ QR Code lido com sucesso! Consultando nota fiscal...';
                 this.statusNfceSucesso = true;
                 this.pararScanner();
                 this.consultarNfce();
@@ -169,7 +169,7 @@ export class AppComponent implements OnInit, OnDestroy {
       html5QrCodeTemp.scanFile(file, true)
         .then((decodedText: string) => {
           this.urlNfce = decodedText;
-          this.mensagemNfce = ;
+          this.mensagemNfce = '✅ QR Code lido com sucesso! Consultando nota fiscal...';
           this.statusNfceSucesso = true;
           this.consultarNfce();
         })
