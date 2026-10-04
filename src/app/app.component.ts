@@ -18,6 +18,22 @@ export class AppComponent implements OnInit, OnDestroy {
   produtos: any[] = [];
   dadosUltimaNota: any = null;
 
+  // Busca e Filtro de Produtos
+  buscaProduto: string = '';
+
+  // Modal de Evolução de Preços
+  modalPrecoAberto: boolean = false;
+  produtoSelecionado: any = null;
+  historicoPrecosProduto: any[] = [];
+  precoMenor: number = 0;
+  precoMaior: number = 0;
+  precoAtual: number = 0;
+  variacaoPercentual: number = 0;
+  pontosGrafico: any[] = [];
+  svgLinePoints: string = '';
+  svgAreaPoints: string = '';
+
+  // Form Transação
   novaDescricao: string = '';
   novoValor: number | null = null;
   novaCategoria: string = 'Alimentação / Mercado';
@@ -25,6 +41,7 @@ export class AppComponent implements OnInit, OnDestroy {
   novoTipo: 'receita' | 'despesa' = 'despesa';
   novaData: string = new Date().toISOString().split('T')[0];
 
+  // Leitor QR Code
   urlNfce: string = '';
   carregandoNfce: boolean = false;
   mensagemNfce: string = '';
@@ -67,6 +84,15 @@ export class AppComponent implements OnInit, OnDestroy {
     this.mensagemNfce = '';
     if (modo === 'camera') {
       setTimeout(() => this.iniciarScanner(), 200);
+    } else if (modo === 'arquivo') {
+      setTimeout(() => this.triggerFileInput(), 150);
+    }
+  }
+
+  triggerFileInput(): void {
+    const fileInput = document.getElementById('qr-file-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
     }
   }
 
@@ -164,7 +190,7 @@ export class AppComponent implements OnInit, OnDestroy {
           this.consultarNfce();
         })
         .catch(() => {
-          this.mensagemNfce = '❌ Não foi possível encontrar um QR Code válido na imagem.';
+          this.mensagemNfce = '❌ Não foi possível encontrar um QR Code válido na imagem. Tente uma imagem mais nítida.';
           this.statusNfceSucesso = false;
         });
     } else {
@@ -193,6 +219,136 @@ export class AppComponent implements OnInit, OnDestroy {
         this.produtos = [];
       }
     });
+  }
+
+  // Lista Filtrada de Produtos (Busca + Ordem Alfabética por Nome)
+  get produtosFiltrados(): any[] {
+    if (!this.produtos) return [];
+    
+    let lista = [...this.produtos];
+    if (this.buscaProduto && this.buscaProduto.trim()) {
+      const termo = this.buscaProduto.toLowerCase().trim();
+      lista = lista.filter(p =>
+        (p.nome_produto && p.nome_produto.toLowerCase().includes(termo)) ||
+        (p.codigo && p.codigo.toLowerCase().includes(termo))
+      );
+    }
+
+    // Ordenação Alfabética por Nome do Produto
+    return lista.sort((a, b) => {
+      const nomeA = (a.nome_produto || '').toLowerCase();
+      const nomeB = (b.nome_produto || '').toLowerCase();
+      return nomeA.localeCompare(nomeB);
+    });
+  }
+
+  limparBusca(): void {
+    this.buscaProduto = '';
+  }
+
+  // Modal de Evolução de Preços
+  abrirModalEvolucaoPreco(p: any): void {
+    if (!p || !p.nome_produto) return;
+    this.produtoSelecionado = p;
+
+    // Filtra todo o histórico deste produto pelo nome
+    const nomeAlvo = p.nome_produto.toLowerCase().trim();
+    const historico = this.produtos.filter(item => 
+      item.nome_produto && item.nome_produto.toLowerCase().trim() === nomeAlvo
+    );
+
+    // Ordena por data (da mais antiga para a mais recente para o gráfico)
+    historico.sort((a, b) => {
+      const dataA = a.data_emissao || a.data_cadastro || a.data || '';
+      const dataB = b.data_emissao || b.data_cadastro || b.data || '';
+      return dataA.localeCompare(dataB);
+    });
+
+    this.historicoPrecosProduto = historico;
+
+    // Cálculos KPI do Preço
+    const valores = historico.map(h => Number(h.valor_unitario || h.preco_medio || 0)).filter(v => v > 0);
+    if (valores.length > 0) {
+      this.precoMenor = Math.min(...valores);
+      this.precoMaior = Math.max(...valores);
+      this.precoAtual = valores[valores.length - 1];
+
+      if (valores.length > 1) {
+        const primeiro = valores[0];
+        this.variacaoPercentual = ((this.precoAtual - primeiro) / primeiro) * 100;
+      } else {
+        this.variacaoPercentual = 0;
+      }
+    } else {
+      this.precoMenor = Number(p.valor_unitario || p.preco_medio || 0);
+      this.precoMaior = this.precoMenor;
+      this.precoAtual = this.precoMenor;
+      this.variacaoPercentual = 0;
+    }
+
+    // Gera as coordenadas do Gráfico SVG
+    this.gerarPontosGraficoSVG(historico);
+    this.modalPrecoAberto = true;
+  }
+
+  fecharModalPreco(): void {
+    this.modalPrecoAberto = false;
+    this.produtoSelecionado = null;
+  }
+
+  gerarPontosGraficoSVG(historico: any[]): void {
+    if (!historico || historico.length === 0) {
+      this.pontosGrafico = [];
+      this.svgLinePoints = '';
+      this.svgAreaPoints = '';
+      return;
+    }
+
+    const svgWidth = 500;
+    const svgHeight = 200;
+    const marginX = 50;
+    const marginYTop = 30;
+    const marginYBottom = 150;
+    const availableWidth = svgWidth - 2 * marginX;
+    const availableHeight = marginYBottom - marginYTop;
+
+    const valores = historico.map(h => Number(h.valor_unitario || h.preco_medio || 0));
+    const minVal = Math.min(...valores);
+    const maxVal = Math.max(...valores);
+    const valRange = maxVal - minVal === 0 ? 1 : maxVal - minVal;
+
+    const n = historico.length;
+
+    this.pontosGrafico = historico.map((item, index) => {
+      const val = Number(item.valor_unitario || item.preco_medio || 0);
+      const x = n === 1 ? svgWidth / 2 : marginX + (index / (n - 1)) * availableWidth;
+      
+      let y = marginYBottom - ((val - minVal) / valRange) * availableHeight;
+      if (maxVal === minVal) {
+        y = 90; // linha reta no centro
+      }
+
+      const rawData = item.data_emissao || item.data_cadastro || item.data || '';
+      const dataFormatted = rawData ? rawData.split('-').slice(1).join('/') : `P${index + 1}`;
+
+      return {
+        x,
+        y,
+        valor: val,
+        dataFormatted
+      };
+    });
+
+    const ptsStr = this.pontosGrafico.map(pt => `${pt.x},${pt.y}`).join(' ');
+    this.svgLinePoints = ptsStr;
+
+    if (this.pontosGrafico.length > 0) {
+      const firstX = this.pontosGrafico[0].x;
+      const lastX = this.pontosGrafico[this.pontosGrafico.length - 1].x;
+      this.svgAreaPoints = `${firstX},150 ${ptsStr} ${lastX},150`;
+    } else {
+      this.svgAreaPoints = '';
+    }
   }
 
   salvarTransacao(): void {
