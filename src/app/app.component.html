@@ -9,12 +9,11 @@
       </svg>
       <div>
         <span class="brand-title">Finanças Pro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v14 - back v8</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v16 - back v10</span>
       </div>
     </div>
 
     <div class="header-right-mobile">
-      
       <button class="hamburger-btn" (click)="toggleMenu()" [attr.aria-expanded]="menuAberto" aria-label="Alternar Menu">
         <svg *ngIf="!menuAberto" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -68,21 +67,16 @@
       </svg>
       <span>Lista de Produtos</span>
     </button>
-
-    
   </nav>
 </header>
 
-<!-- Conteúdo Principal -->
 <main class="main-container">
   
-  <!-- Cabeçalho da Página -->
   <div class="page-header">
     <h1 class="page-title">Visão Geral do Fluxo de Caixa</h1>
     <p class="page-subtitle">Acompanhamento consolidado de saldos, entradas e saídas</p>
   </div>
 
-  <!-- Cartões KPIs Superiores -->
   <div class="kpi-grid">
     <div class="kpi-card">
       <div class="kpi-top-row">
@@ -123,78 +117,6 @@
 
   <!-- VISÃO: DASHBOARD -->
   <div *ngIf="activeTab === 'dashboard'">
-    
-    <!-- Seção de Gráficos -->
-    <div class="charts-grid">
-      <!-- Gráfico de Barras: Fluxo de Caixa Recente -->
-      <div class="chart-card">
-        <div class="chart-header">
-          <div class="chart-title">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="18" y1="20" x2="18" y2="10"></line>
-              <line x1="12" y1="20" x2="12" y2="4"></line>
-              <line x1="6" y1="20" x2="6" y2="14"></line>
-            </svg>
-            <span>Fluxo de Caixa Recente</span>
-          </div>
-          <div class="chart-controls">
-            <select class="select-responsive">
-              <option>Ano: 2026</option>
-            </select>
-            <select class="select-responsive">
-              <option>Mês: Todos os Meses</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="bar-chart-container">
-          <div class="bar-group" *ngFor="let m of ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']">
-            <div class="bars-wrapper">
-              <div class="bar receita" [style.height.%]="m === 'Set' ? 85 : 0" title="Receitas"></div>
-              <div class="bar despesa" [style.height.%]="m === 'Set' ? 20 : 0" title="Despesas"></div>
-            </div>
-            <span class="bar-label">{{ m }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Gráfico Donut: Despesas por Categoria -->
-      <div class="chart-card">
-        <div class="chart-header">
-          <div class="chart-title">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
-              <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
-            </svg>
-            <span>Despesas por Categoria</span>
-          </div>
-        </div>
-
-        <div class="donut-chart-container">
-          <div class="donut-visual"></div>
-          <div class="donut-legend">
-            <div class="legend-item">
-              <span><span class="legend-color" style="background: #2563eb;"></span> Alimentação / Mercado</span>
-              <strong>65%</strong>
-            </div>
-            <div class="legend-item">
-              <span><span class="legend-color" style="background: #10b981;"></span> Compras</span>
-              <strong>20%</strong>
-            </div>
-            <div class="legend-item">
-              <span><span class="legend-color" style="background: #f97316;"></span> Transporte</span>
-              <strong>10%</strong>
-            </div>
-            <div class="legend-item">
-              <span><span class="legend-color" style="background: #8b5cf6;"></span> Saúde</span>
-              <strong>5%</strong>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tabela de Últimos Lançamentos -->
     <div class="table-card">
       <div class="chart-header">
         <div class="chart-title">
@@ -217,7 +139,6 @@
               <th>CONTA</th>
               <th>TIPO</th>
               <th>VALOR</th>
-              <th>AÇÕES</th>
             </tr>
           </thead>
           <tbody>
@@ -236,11 +157,6 @@
               <td [style.color]="t.tipo === 'despesa' ? '#dc2626' : '#16a34a'" style="font-weight: 700;">
                 {{ t.tipo === 'despesa' ? '-' : '+' }} R$ {{ t.valor | number:'1.2-2' }}
               </td>
-              <td>
-                <button class="action-btn" title="Opções">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                </button>
-              </td>
             </tr>
           </tbody>
         </table>
@@ -252,11 +168,6 @@
   <div *ngIf="activeTab === 'transacoes'">
     <div class="form-box">
       <div class="chart-title" style="margin-bottom: 16px;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="8" x2="12" y2="16"></line>
-          <line x1="8" y1="12" x2="16" y2="12"></line>
-        </svg>
         <h2 style="font-size: 1.2rem; font-weight: 700;">Nova Transação Manual</h2>
       </div>
       <div class="form-row">
@@ -283,103 +194,38 @@
   <div *ngIf="activeTab === 'nfce'">
     <div class="form-box">
       <div class="scanner-header">
-        <div class="chart-title">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7"></rect>
-            <rect x="14" y="3" width="7" height="7"></rect>
-            <rect x="14" y="14" width="7" height="7"></rect>
-            <rect x="3" y="14" width="7" height="7"></rect>
-          </svg>
-          <h2 style="font-size: 1.2rem; font-weight: 700;">Leitor de NFC-e via QR Code (SEFAZ)</h2>
-        </div>
+        <h2 style="font-size: 1.2rem; font-weight: 700;">Leitor de NFC-e via QR Code (SEFAZ)</h2>
         <p style="color: #64748b; font-size: 0.85rem; margin-top: 6px;">
           Escaneie o QR Code do seu cupom fiscal com a câmera do celular ou envie uma foto do cupom.
         </p>
       </div>
 
-      <!-- Modos do Leitor -->
       <div class="scanner-toggle-buttons">
-        <button class="toggle-btn" [class.active]="scannerModo === 'camera'" (click)="setModoScanner('camera')">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-            <circle cx="12" cy="13" r="4"></circle>
-          </svg>
-          <span>Escanear com Câmera</span>
-        </button>
-
-        <button class="toggle-btn" [class.active]="scannerModo === 'arquivo'" (click)="setModoScanner('arquivo')">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-            <polyline points="21 15 16 10 5 21"></polyline>
-          </svg>
-          <span>Enviar Foto do QR Code</span>
-        </button>
-
-        <button class="toggle-btn" [class.active]="scannerModo === 'manual'" (click)="setModoScanner('manual')">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
-            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
-          </svg>
-          <span>Colar Link Manualmente</span>
-        </button>
+        <button class="toggle-btn" [class.active]="scannerModo === 'camera'" (click)="setModoScanner('camera')">Escanear com Câmera</button>
+        <button class="toggle-btn" [class.active]="scannerModo === 'arquivo'" (click)="setModoScanner('arquivo')">Enviar Foto</button>
+        <button class="toggle-btn" [class.active]="scannerModo === 'manual'" (click)="setModoScanner('manual')">Colar Link</button>
       </div>
 
-      <!-- Modo Câmera -->
       <div *ngIf="scannerModo === 'camera'" class="camera-scanner-container">
         <div id="qr-reader" class="qr-viewport"></div>
-        <div class="scanner-controls">
-          <button *ngIf="!scannerAtivo" class="btn-primary btn-lg" (click)="iniciarScanner()">
-            Ligar Câmera e Escanear
-          </button>
-          <button *ngIf="scannerAtivo" class="btn-danger btn-lg" (click)="pararScanner()">
-            Desligar Câmera
-          </button>
+        <div class="scanner-controls" style="margin-top: 12px;">
+          <button *ngIf="!scannerAtivo" class="btn-primary" (click)="iniciarScanner()">Ligar Câmera</button>
+          <button *ngIf="scannerAtivo" class="btn-danger" (click)="pararScanner()">Desligar Câmera</button>
         </div>
       </div>
 
-      <!-- Modo Enviar Foto -->
-      <div *ngIf="scannerModo === 'arquivo'" class="file-upload-container">
-        <div class="upload-dropzone">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-            <polyline points="21 15 16 10 5 21"></polyline>
-          </svg>
-          <p><strong>Selecione ou tire uma foto contendo o QR Code da NFC-e</strong></p>
-
-          <input type="file" accept="image/*" (change)="processarFotoQrCode($event)" id="qr-file-input" class="file-input" />
-          <label for="qr-file-input" class="btn-primary" style="cursor: pointer; display: inline-block;">Escolher Arquivo de Imagem</label>
-        </div>
-      </div>
-
-      <!-- Modo Manual -->
       <div *ngIf="scannerModo === 'manual'" class="manual-container">
         <div class="form-row">
-          <input type="text" [(ngModel)]="urlNfce" placeholder="Cole aqui o link do QR Code (ex: https://www.fazenda.sp.gov.br/...)" />
+          <input type="text" [(ngModel)]="urlNfce" placeholder="Cole aqui o link do QR Code (ex: https://...)" />
           <button class="btn-primary" (click)="consultarNfce()" [disabled]="carregandoNfce">
             {{ carregandoNfce ? 'Consultando...' : 'Importar Nota' }}
           </button>
         </div>
       </div>
 
-      <!-- Alerta de Mensagens -->
       <div *ngIf="mensagemNfce" class="status-alert" [class.sucesso]="statusNfceSucesso" [class.erro]="!statusNfceSucesso">
         {{ mensagemNfce }}
       </div>
-
-      <!-- Resumo do Cupom Importado -->
-      <div *ngIf="dadosUltimaNota" class="nota-resumo-card" style="margin-top: 20px; padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
-        <h3 style="font-size: 1rem; color: #0f172a; font-weight: 700; margin-bottom: 8px;">
-          📄 Resumo da Nota Fiscal Importada
-        </h3>
-        <p><strong>Estabelecimento:</strong> {{ dadosUltimaNota.estabelecimento }}</p>
-        <p *ngIf="dadosUltimaNota.cnpj"><strong>CNPJ:</strong> {{ dadosUltimaNota.cnpj }}</p>
-        <p><strong>Valor Total:</strong> R$ {{ dadosUltimaNota.valorTotal | number:'1.2-2' }}</p>
-        <p *ngIf="dadosUltimaNota.desconto > 0" style="color: #16a34a;"><strong>Desconto Aplicado:</strong> R$ {{ dadosUltimaNota.desconto | number:'1.2-2' }}</p>
-        <p><strong>Total de Itens:</strong> {{ dadosUltimaNota.itens?.length || 0 }} produtos</p>
-      </div>
-
     </div>
   </div>
 
@@ -388,12 +234,7 @@
     <div class="table-card">
       <div class="chart-header">
         <div class="chart-title">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="9" cy="21" r="1"></circle>
-            <circle cx="20" cy="21" r="1"></circle>
-            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-          </svg>
-          <span>Produtos Cadastrados via NFC-e</span>
+          <span>Lista Consolidada de Produtos</span>
         </div>
       </div>
       <div class="table-responsive">
@@ -402,6 +243,8 @@
             <tr>
               <th>PRODUTO</th>
               <th>CÓDIGO</th>
+              <th>DATA NFC-E</th>
+              <th>DATA CADASTRO</th>
               <th>QTD</th>
               <th>UN</th>
               <th>VALOR UNIT.</th>
@@ -412,15 +255,17 @@
             <tr *ngFor="let p of produtos">
               <td><strong>{{ p.nome_produto }}</strong></td>
               <td>{{ p.codigo || '-' }}</td>
+              <td>{{ p.data_emissao || p.data_nfce || '-' }}</td>
+              <td>{{ p.data_cadastro || p.data || '-' }}</td>
               <td>{{ p.quantidade_total || p.quantidade }}</td>
               <td>{{ p.unidade || 'UN' }}</td>
               <td>R$ {{ (p.preco_medio || p.valor_unitario) | number:'1.2-2' }}</td>
-              <td><strong style="color: #0f172a;">R$ {{ (p.gasto_total || p.valor_total) | number:'1.2-2' }}</strong></td>
+              <td><strong style="color: #38bdf8;">R$ {{ (p.gasto_total || p.valor_total) | number:'1.2-2' }}</strong></td>
             </tr>
           </tbody>
         </table>
         <ng-template #semProdutos>
-          <p style="color: #64748b; padding: 16px 0; text-align: center;">Nenhum produto cadastrado via nota fiscal ainda.</p>
+          <p style="color: #64748b; padding: 16px 0; text-align: center;">Nenhum produto cadastrado ainda.</p>
         </ng-template>
       </div>
     </div>
