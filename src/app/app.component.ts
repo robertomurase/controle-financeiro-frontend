@@ -22,8 +22,9 @@ export class AppComponent implements OnInit, OnDestroy {
   produtos: any[] = [];
   dadosUltimaNota: any = null;
 
-  // Busca e Filtro de Produtos
+  // Busca e Filtro por Estabelecimento na Lista de Produtos
   buscaProduto: string = '';
+  filtroEstabelecimento: string = '';
 
   // Modal de Evolução de Preços
   modalPrecoAberto: boolean = false;
@@ -37,9 +38,11 @@ export class AppComponent implements OnInit, OnDestroy {
   svgLinePoints: string = '';
   svgAreaPoints: string = '';
 
-  // Form Transação
+  // Form Transação Manual + Pré-visualização
   novaDescricao: string = '';
   novoValor: number | null = null;
+  novaQuantidade: number = 1;
+  novoEstabelecimento: string = '';
   novaCategoria: string = 'Alimentação / Mercado';
   novaConta: string = 'Conta Corrente';
   novoTipo: 'receita' | 'despesa' = 'despesa';
@@ -282,11 +285,30 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Lista Filtrada de Produtos (Busca + Ordem Alfabética por Nome A-Z)
+  // Lista de Estabelecimentos Únicos para o Filtro Select
+  get estabelecimentosUnicos(): string[] {
+    if (!this.produtos) return [];
+    const setEst = new Set<string>();
+    this.produtos.forEach(p => {
+      const est = (p.estabelecimento || 'Cadastro Manual').trim();
+      if (est) setEst.add(est);
+    });
+    return Array.from(setEst).sort();
+  }
+
+  // Lista Filtrada de Produtos (Filtro Estabelecimento + Busca Textual + Ordem A-Z)
   get produtosFiltrados(): any[] {
     if (!this.produtos) return [];
     
     let lista = [...this.produtos];
+
+    // Filtro por Estabelecimento
+    if (this.filtroEstabelecimento && this.filtroEstabelecimento.trim()) {
+      const estAlvo = this.filtroEstabelecimento.trim();
+      lista = lista.filter(p => (p.estabelecimento || 'Cadastro Manual').trim() === estAlvo);
+    }
+
+    // Busca Textual
     if (this.buscaProduto && this.buscaProduto.trim()) {
       const termo = this.buscaProduto.toLowerCase().trim();
       lista = lista.filter(p =>
@@ -295,7 +317,7 @@ export class AppComponent implements OnInit, OnDestroy {
       );
     }
 
-    // Ordenação Alfabética por Nome do Produto
+    // Ordenação Alfabética por Nome do Produto (A-Z)
     return lista.sort((a, b) => {
       const nomeA = (a.nome_produto || '').toLowerCase();
       const nomeB = (b.nome_produto || '').toLowerCase();
@@ -436,16 +458,23 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Salvar Transação Manual com Quantidade e Estabelecimento
   salvarTransacao(): void {
     if (!this.novaDescricao || !this.novoValor) {
-      alert('Preencha a descrição e o valor!');
+      alert('Preencha a descrição/produto e o valor unitário!');
       return;
     }
 
-    const nova: Transacao = {
+    const qtd = this.novaQuantidade && this.novaQuantidade > 0 ? Number(this.novaQuantidade) : 1;
+    const valUnit = Number(this.novoValor) || 0;
+    const valTotal = valUnit * qtd;
+
+    const nova: any = {
       descricao: this.novaDescricao,
-      estabelecimento: this.novaDescricao,
-      valor: this.novoValor,
+      estabelecimento: this.novoEstabelecimento && this.novoEstabelecimento.trim() ? this.novoEstabelecimento.trim() : 'Cadastro Manual',
+      quantidade: qtd,
+      valorUnitario: valUnit,
+      valor: valTotal,
       categoria: this.novaCategoria,
       conta: this.novaConta,
       tipo: this.novoTipo,
@@ -458,6 +487,8 @@ export class AppComponent implements OnInit, OnDestroy {
         this.carregarProdutos();
         this.novaDescricao = '';
         this.novoValor = null;
+        this.novaQuantidade = 1;
+        this.novoEstabelecimento = '';
         this.activeTab = 'dashboard';
       },
       error: (err) => console.error('Erro ao salvar:', err)
