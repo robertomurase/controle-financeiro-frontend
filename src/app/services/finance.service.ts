@@ -6,8 +6,6 @@ export interface Transacao {
   id?: number;
   descricao: string;
   estabelecimento?: string;
-  quantidade?: number;
-  valorUnitario?: number;
   valor: number;
   categoria: string;
   conta?: string;
@@ -20,6 +18,7 @@ export interface Transacao {
   providedIn: 'root'
 })
 export class FinanceService {
+  // URL de produção padrão no Render (utilizada automaticamente na Vercel/Web)
   private readonly PROD_API_URL = 'https://controle-financeiro-backend-b3wz.onrender.com/api';
   private readonly DEV_API_URL = 'http://localhost:3000/api';
 
@@ -53,14 +52,6 @@ export class FinanceService {
 
   addTransacao(transacao: Transacao): Observable<any> {
     return this.http.post(`${this.apiUrl}/transacoes`, transacao);
-  }
-
-  extrairNfce(urlNfce: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/nfce/extrair`, { url: urlNfce });
-  }
-
-  salvarNfce(dadosNota: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/nfce/salvar`, { dadosNota });
   }
 
   consultarNfce(urlNfce: string): Observable<any> {

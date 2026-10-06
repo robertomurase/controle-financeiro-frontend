@@ -20,6 +20,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   transacoes: Transacao[] = [];
   produtos: any[] = [];
+  dadosUltimaNota: any = null;
 
   // Busca e Filtro por Estabelecimento na Lista de Produtos
   buscaProduto: string = '';
@@ -37,17 +38,17 @@ export class AppComponent implements OnInit, OnDestroy {
   svgLinePoints: string = '';
   svgAreaPoints: string = '';
 
-  // Form Transação Manual
-  novaCategoria: string = 'Alimentação / Mercado';
+  // Form Transação Manual + Pré-visualização
   novaDescricao: string = '';
-  novoTipo: 'receita' | 'despesa' = 'despesa';
   novoValor: number | null = null;
-  novoValorUnitario: number | null = null;
   novaQuantidade: number = 1;
   novoEstabelecimento: string = '';
+  novaCategoria: string = 'Alimentação / Mercado';
+  novaConta: string = 'Conta Corrente';
+  novoTipo: 'receita' | 'despesa' = 'despesa';
   novaData: string = new Date().toISOString().split('T')[0];
 
-  // Leitor QR Code + Pré-Visualização / Conferência NFC-e
+  // Leitor QR Code
   urlNfce: string = '';
   carregandoNfce: boolean = false;
   mensagemNfce: string = '';
@@ -55,7 +56,6 @@ export class AppComponent implements OnInit, OnDestroy {
   scannerModo: 'camera' | 'arquivo' | 'manual' = 'camera';
   scannerAtivo: boolean = false;
   html5QrCode: any = null;
-  dadosNotaPreview: any = null;
 
   constructor(private financeService: FinanceService) {}
 
@@ -163,18 +163,18 @@ export class AppComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       if (typeof Html5Qrcode !== 'undefined') {
         try {
-          this.html5QrCode = new Html5Qrcode('qr-reader');
+          this.html5QrCode = new Html5Qrcode("qr-reader");
           const config = { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 };
 
           this.html5QrCode.start(
-            { facingMode: 'environment' },
+            { facingMode: "environment" },
             config,
             (decodedText: string) => {
               this.urlNfce = decodedText;
-              this.mensagemNfce = '✅ QR Code lido com sucesso! Extraindo dados da nota...';
+              this.mensagemNfce = '✅ QR Code lido com sucesso! Consultando nota fiscal...';
               this.statusNfceSucesso = true;
               this.pararScanner();
-              this.extrairNfce();
+              this.consultarNfce();
             },
             () => {}
           ).then(() => {
@@ -182,14 +182,14 @@ export class AppComponent implements OnInit, OnDestroy {
             this.statusNfceSucesso = true;
           }).catch(() => {
             this.html5QrCode.start(
-              { facingMode: 'user' },
+              { facingMode: "user" },
               config,
               (decodedText: string) => {
                 this.urlNfce = decodedText;
-                this.mensagemNfce = '✅ QR Code lido com sucesso! Extraindo dados da nota...';
+                this.mensagemNfce = '✅ QR Code lido com sucesso! Consultando nota fiscal...';
                 this.statusNfceSucesso = true;
                 this.pararScanner();
-                this.extrairNfce();
+                this.consultarNfce();
               },
               () => {}
             ).then(() => {
@@ -232,20 +232,20 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   processarFotoQrCode(event: any): void {
-    const file = event?.target?.files?.[0];
+    const file = event.target.files[0];
     if (!file) return;
 
     this.mensagemNfce = '📸 Analisando imagem em busca do QR Code...';
     this.statusNfceSucesso = true;
 
     if (typeof Html5Qrcode !== 'undefined') {
-      const html5QrCodeTemp = new Html5Qrcode('qr-reader');
+      const html5QrCodeTemp = new Html5Qrcode("qr-reader");
       html5QrCodeTemp.scanFile(file, true)
         .then((decodedText: string) => {
           this.urlNfce = decodedText;
-          this.mensagemNfce = '✅ QR Code identificado! Extraindo dados da nota...';
+          this.mensagemNfce = '✅ QR Code identificado! Importando nota fiscal...';
           this.statusNfceSucesso = true;
-          this.extrairNfce();
+          this.consultarNfce();
         })
         .catch(() => {
           this.mensagemNfce = '❌ Não foi possível encontrar um QR Code válido na imagem. Tente uma imagem mais nítida.';
@@ -257,72 +257,19 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  extrairNfce(): void {
-    if (!this.urlNfce) {
-      alert('Cole ou escaneie o QR Code da NFC-e!');
-      return;
-    }
-
-    this.carregandoNfce = true;
-    this.mensagemNfce = '🔎 Consultando dados do cupom junto à SEFAZ... Aguarde.';
-    this.statusNfceSucesso = true;
-    this.dadosNotaPreview = null;
-
-    this.financeService.extrairNfce(this.urlNfce).subscribe({
-      next: (res) => {
-        this.carregandoNfce = false;
-        this.statusNfceSucesso = true;
-        this.dadosNotaPreview = res?.dadosNota || null;
-        if (this.dadosNotaPreview && this.dadosNotaPreview.itens) {
-          const totalItens = this.dadosNotaPreview.itens.length;
-          this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
-        } else {
-          this.mensagemNfce = '✅ Dados da nota extraídos. Confira abaixo e confirme para salvar.';
-        }
-      },
-      error: (err) => {
-        this.carregandoNfce = false;
-        const msgErro = err?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
-        this.mensagemNfce = `❌ ${msgErro}`;
-        this.statusNfceSucesso = false;
-        this.dadosNotaPreview = null;
-      }
-    });
-  }
-
-  confirmarSalvarNfce(): void {
-    if (!this.dadosNotaPreview) return;
-
-    this.carregandoNfce = true;
-    this.mensagemNfce = '💾 Salvando nota fiscal e produtos no banco de dados...';
-
-    this.financeService.salvarNfce(this.dadosNotaPreview).subscribe({
-      next: () => {
-        this.carregandoNfce = false;
-        const count = this.dadosNotaPreview?.itens?.length || 0;
-        this.mensagemNfce = `✅ Nota fiscal do estabelecimento ${this.dadosNotaPreview?.estabelecimento || "SEFAZ"} salva com sucesso!`;
-        this.statusNfceSucesso = true;
-        this.dadosNotaPreview = null;
-        this.urlNfce = '';
-        this.carregarTransacoes();
-        this.carregarProdutos();
-      },
-      error: (err) => {
-        this.carregandoNfce = false;
-        const msgErro = err?.error?.error || 'Erro ao salvar a nota fiscal no banco de dados.';
-        this.mensagemNfce = `❌ ${msgErro}`;
-        this.statusNfceSucesso = false;
-      }
-    });
-  }
-
   carregarTransacoes(): void {
     this.financeService.getTransacoes().subscribe({
       next: (dados) => {
         this.transacoes = dados || [];
       },
       error: () => {
-        this.transacoes = [];
+        this.transacoes = [
+          { id: 5, data: '2026-09-29', estabelecimento: 'TRIGO KIBE YOKI 500G', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 12.99, isNfce: true },
+          { id: 4, data: '2026-09-28', estabelecimento: 'TRIGO KIBE YOKI 500G', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 11.19, isNfce: true },
+          { id: 3, data: '2026-09-27', estabelecimento: 'Restaurante', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 200.00, isNfce: true },
+          { id: 2, data: '2026-09-26', estabelecimento: 'Compra - AUTO POSTO MUFFATO LTDA', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 220.95, isNfce: true },
+          { id: 1, data: '2026-09-26', estabelecimento: 'Compra - CARREFOUR COMERCIO E INDUSTRIA LTDA', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 8.99, isNfce: true }
+        ];
       }
     });
   }
@@ -338,30 +285,30 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  get ultimos10Transacoes(): Transacao[] {
-    return (this.transacoes || []).slice(0, 10);
-  }
-
+  // Lista de Estabelecimentos Únicos para o Filtro Select
   get estabelecimentosUnicos(): string[] {
     if (!this.produtos) return [];
     const setEst = new Set<string>();
     this.produtos.forEach(p => {
-      const est = (p.estabelecimento || 'SEFAZ').trim();
+      const est = (p.estabelecimento || 'Cadastro Manual').trim();
       if (est) setEst.add(est);
     });
     return Array.from(setEst).sort();
   }
 
+  // Lista Filtrada de Produtos (Filtro Estabelecimento + Busca Textual + Ordem A-Z)
   get produtosFiltrados(): any[] {
     if (!this.produtos) return [];
     
     let lista = [...this.produtos];
 
+    // Filtro por Estabelecimento
     if (this.filtroEstabelecimento && this.filtroEstabelecimento.trim()) {
       const estAlvo = this.filtroEstabelecimento.trim();
-      lista = lista.filter(p => (p.estabelecimento || 'SEFAZ').trim() === estAlvo);
+      lista = lista.filter(p => (p.estabelecimento || 'Cadastro Manual').trim() === estAlvo);
     }
 
+    // Busca Textual
     if (this.buscaProduto && this.buscaProduto.trim()) {
       const termo = this.buscaProduto.toLowerCase().trim();
       lista = lista.filter(p =>
@@ -370,6 +317,7 @@ export class AppComponent implements OnInit, OnDestroy {
       );
     }
 
+    // Ordenação Alfabética por Nome do Produto (A-Z)
     return lista.sort((a, b) => {
       const nomeA = (a.nome_produto || '').toLowerCase();
       const nomeB = (b.nome_produto || '').toLowerCase();
@@ -381,19 +329,22 @@ export class AppComponent implements OnInit, OnDestroy {
     this.buscaProduto = '';
   }
 
+  // Excluir Item individual de Produto
   excluirItemProduto(p: any): void {
     if (!p) return;
     const nomeItem = p.nome_produto || 'este produto';
-    if (confirm()) {
+    if (confirm(`Tem certeza que deseja excluir "${nomeItem}" da lista?`)) {
       this.financeService.deleteProdutoItem(p.id, p.origem, p.nome_produto).subscribe({
         next: () => {
           this.carregarProdutos();
+          this.carregarTransacoes();
         },
         error: () => {
           if (p.nome_produto) {
             this.financeService.deleteProdutoPorNome(p.nome_produto).subscribe({
               next: () => {
                 this.carregarProdutos();
+                this.carregarTransacoes();
               }
             });
           }
@@ -402,15 +353,18 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Modal de Evolução de Preços
   abrirModalEvolucaoPreco(p: any): void {
     if (!p || !p.nome_produto) return;
     this.produtoSelecionado = p;
 
+    // Filtra todo o histórico deste produto pelo nome
     const nomeAlvo = p.nome_produto.toLowerCase().trim();
     const historico = this.produtos.filter(item => 
       item.nome_produto && item.nome_produto.toLowerCase().trim() === nomeAlvo
     );
 
+    // Ordena por data (da mais antiga para a mais recente)
     historico.sort((a, b) => {
       const dataA = a.data_emissao || a.data_cadastro || a.data || '';
       const dataB = b.data_emissao || b.data_cadastro || b.data || '';
@@ -419,6 +373,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.historicoPrecosProduto = historico;
 
+    // Cálculos KPI do Preço
     const valores = historico.map(h => Number(h.valor_unitario || h.preco_medio || 0)).filter(v => v > 0);
     if (valores.length > 0) {
       this.precoMenor = Math.min(...valores);
@@ -438,6 +393,7 @@ export class AppComponent implements OnInit, OnDestroy {
       this.variacaoPercentual = 0;
     }
 
+    // Gera as coordenadas do Gráfico SVG
     this.gerarPontosGraficoSVG(historico);
     this.modalPrecoAberto = true;
   }
@@ -502,93 +458,70 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  onCategoriaChange(): void {
-    if (this.novaCategoria === 'Salário') {
-      this.novoTipo = 'receita';
-    } else {
-      if (this.novoTipo === 'receita') {
-        this.novoTipo = 'despesa';
-      }
+  // Salvar Transação Manual com Quantidade e Estabelecimento
+  salvarTransacao(): void {
+    if (!this.novaDescricao || !this.novoValor) {
+      alert('Preencha a descrição/produto e o valor unitário!');
+      return;
     }
+
+    const qtd = this.novaQuantidade && this.novaQuantidade > 0 ? Number(this.novaQuantidade) : 1;
+    const valUnit = Number(this.novoValor) || 0;
+    const valTotal = valUnit * qtd;
+
+    const nova: any = {
+      descricao: this.novaDescricao,
+      estabelecimento: this.novoEstabelecimento && this.novoEstabelecimento.trim() ? this.novoEstabelecimento.trim() : 'Cadastro Manual',
+      quantidade: qtd,
+      valorUnitario: valUnit,
+      valor: valTotal,
+      categoria: this.novaCategoria,
+      conta: this.novaConta,
+      tipo: this.novoTipo,
+      data: this.novaData
+    };
+
+    this.financeService.addTransacao(nova).subscribe({
+      next: () => {
+        this.carregarTransacoes();
+        this.carregarProdutos();
+        this.novaDescricao = '';
+        this.novoValor = null;
+        this.novaQuantidade = 1;
+        this.novoEstabelecimento = '';
+        this.activeTab = 'dashboard';
+      },
+      error: (err) => console.error('Erro ao salvar:', err)
+    });
   }
 
-  salvarTransacao(): void {
-    if (this.novaCategoria === 'Salário') {
-      if (!this.novaDescricao || !this.novoValor) {
-        alert('Preencha a descrição e o valor do salário!');
-        return;
-      }
-
-      const val = Number(this.novoValor) || 0;
-
-      const nova: Transacao = {
-        descricao: this.novaDescricao,
-        valor: val,
-        quantidade: 1,
-        valorUnitario: val,
-        categoria: 'Salário',
-        tipo: 'receita',
-        data: this.novaData,
-        estabelecimento: 'Cadastro Manual'
-      };
-
-      this.financeService.addTransacao(nova).subscribe({
-        next: () => {
-          this.carregarTransacoes();
-          this.novaDescricao = '';
-          this.novoValor = null;
-          this.activeTab = 'dashboard';
-        },
-        error: (err) => console.error('Erro ao salvar salário:', err)
-      });
-    } else {
-      if (!this.novaDescricao) {
-        alert('Preencha a descrição / nome do produto!');
-        return;
-      }
-
-      const qtd = (this.novaQuantidade && Number(this.novaQuantidade) > 0) ? Number(this.novaQuantidade) : 1;
-      let valUnit = Number(this.novoValorUnitario) || 0;
-      let valTotal = Number(this.novoValor) || 0;
-
-      if (valUnit === 0 && valTotal > 0) {
-        valUnit = valTotal / qtd;
-      } else if (valTotal === 0 && valUnit > 0) {
-        valTotal = valUnit * qtd;
-      }
-
-      if (valTotal <= 0 && valUnit <= 0) {
-        alert('Informe o valor (unitário ou total)!');
-        return;
-      }
-
-      const est = (this.novoEstabelecimento && this.novoEstabelecimento.trim()) ? this.novoEstabelecimento.trim() : 'Cadastro Manual';
-
-      const nova: Transacao = {
-        descricao: this.novaDescricao,
-        valor: valTotal,
-        quantidade: qtd,
-        valorUnitario: valUnit,
-        estabelecimento: est,
-        categoria: this.novaCategoria,
-        tipo: this.novoTipo,
-        data: this.novaData
-      };
-
-      this.financeService.addTransacao(nova).subscribe({
-        next: () => {
-          this.carregarTransacoes();
-          this.carregarProdutos();
-          this.novaDescricao = '';
-          this.novoValor = null;
-          this.novoValorUnitario = null;
-          this.novaQuantidade = 1;
-          this.novoEstabelecimento = '';
-          this.activeTab = 'dashboard';
-        },
-        error: (err) => console.error('Erro ao salvar transação:', err)
-      });
+  consultarNfce(): void {
+    if (!this.urlNfce) {
+      alert('Cole ou escaneie o QR Code da NFC-e!');
+      return;
     }
+
+    this.carregandoNfce = true;
+    this.mensagemNfce = 'Processando nota fiscal com a SEFAZ...';
+    this.statusNfceSucesso = true;
+
+    this.financeService.consultarNfce(this.urlNfce).subscribe({
+      next: (res) => {
+        this.carregandoNfce = false;
+        this.mensagemNfce = '✅ Nota fiscal importada e produtos cadastrados com sucesso!';
+        this.statusNfceSucesso = true;
+        this.dadosUltimaNota = res?.dadosNota || null;
+        this.carregarTransacoes();
+        this.carregarProdutos();
+        this.urlNfce = '';
+      },
+      error: (err) => {
+        this.carregandoNfce = false;
+        const msgErro = err?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
+        this.mensagemNfce = `❌ ${msgErro}`;
+        this.statusNfceSucesso = false;
+      }
+    });
   }
 
   get saldoTotal(): number {

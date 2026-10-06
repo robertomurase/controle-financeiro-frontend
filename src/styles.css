@@ -46,9 +46,10 @@ body.light-theme .kpi-card,
 body.light-theme .chart-card,
 body.light-theme .table-card,
 body.light-theme .form-box,
-body.light-theme .modal-content {
-  background: #ffffff;
-  border-color: #cbd5e1;
+body.light-theme .modal-content,
+body.light-theme .staging-preview-box {
+  background: #ffffff !important;
+  border-color: #cbd5e1 !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
@@ -98,7 +99,6 @@ body.light-theme .font-btn {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: 100%;
 }
 
 .logo-container {
@@ -124,30 +124,51 @@ body.light-theme .font-btn {
 .header-right-mobile {
   display: flex;
   align-items: center;
-  margin-left: auto;
+  gap: 12px;
 }
 
-.hamburger-btn {
-  display: none;
+/* Nav Links & Settings Dropdown */
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-item {
   background: transparent;
   border: none;
-  color: #f8fafc;
+  color: #94a3b8;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 500;
   cursor: pointer;
-  padding: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
 }
 
-/* Dropdown de Configurações no Nav */
+.nav-item:hover, .nav-item.active {
+  background: #1e293b;
+  color: #38bdf8;
+}
+
 .settings-dropdown-container {
   position: relative;
 }
 
 .settings-nav-btn {
-  width: 100%;
+  color: #94a3b8;
+}
+
+.settings-nav-btn:hover {
+  color: #38bdf8;
 }
 
 .settings-menu-dropdown {
   position: absolute;
-  top: 45px;
+  top: 42px;
   right: 0;
   background: #1e293b;
   border: 1px solid #334155;
@@ -229,33 +250,6 @@ body.light-theme .font-btn {
   color: #38bdf8;
 }
 
-/* Nav Links */
-.nav-links {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.nav-item {
-  background: transparent;
-  border: none;
-  color: #94a3b8;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 0.88rem;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s;
-}
-
-.nav-item:hover, .nav-item.active {
-  background: #1e293b;
-  color: #38bdf8;
-}
-
 /* Layout Main Container */
 .main-container {
   max-width: 1280px;
@@ -278,7 +272,7 @@ body.light-theme .font-btn {
   color: #64748b;
 }
 
-/* KPIs Grid (3 Cards) */
+/* KPIs Grid (3 Cards Balanced) */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -381,8 +375,13 @@ body.light-theme .font-btn {
   border: 1px solid #334155;
   color: #cbd5e1;
   padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+}
+
+.filter-select {
+  padding: 8px 12px;
   border-radius: 8px;
-  font-size: 0.85rem;
 }
 
 .bar-chart-container {
@@ -603,7 +602,7 @@ tr.product-row:hover {
   color: #ffffff;
 }
 
-/* Forms & Field Group */
+/* Forms & Inputs */
 .form-box {
   background: #111827;
   border: 1px solid #1e293b;
@@ -739,6 +738,14 @@ input:focus, select:focus {
   border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
+.hamburger-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  color: #f8fafc;
+  cursor: pointer;
+}
+
 /* Modal CSS */
 .modal-backdrop {
   position: fixed;
@@ -787,6 +794,11 @@ input:focus, select:focus {
   font-weight: 800;
   color: #f8fafc;
   margin-top: 2px;
+}
+
+.modal-subtitle {
+  font-size: 0.78rem;
+  color: #64748b;
 }
 
 .modal-close-btn {
@@ -874,7 +886,6 @@ input:focus, select:focus {
 @media (max-width: 768px) {
   .hamburger-btn {
     display: block;
-    margin-left: auto;
   }
   .nav-links {
     display: none;
