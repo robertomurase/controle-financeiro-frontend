@@ -9,7 +9,7 @@
       </svg>
       <div>
         <span class="brand-title">Finanças Pro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v36 - back v18</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v37 - back v19</span>
       </div>
     </div>
 
@@ -499,6 +499,16 @@
         </div>
 
         <div class="filter-group-header" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+          <select [(ngModel)]="filtroAnoEntrada" class="select-responsive filter-select" style="min-width: 130px;">
+            <option value="">📅 Todos os Anos</option>
+            <option *ngFor="let ano of anosDisponiveis" [value]="ano">Ano: {{ ano }}</option>
+          </select>
+
+          <select [(ngModel)]="filtroMesEntrada" class="select-responsive filter-select" style="min-width: 150px;">
+            <option value="">🗓️ Todos os Meses</option>
+            <option *ngFor="let m of mesesOpcoes" [value]="m.valor">{{ m.nome }}</option>
+          </select>
+
           <div class="search-box">
             <input 
               type="text" 
@@ -575,7 +585,17 @@
         </div>
 
         <div class="filter-group-header" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-          <select [(ngModel)]="filtroEstabelecimentoSaida" class="select-responsive filter-select" style="min-width: 200px;">
+          <select [(ngModel)]="filtroAnoSaida" class="select-responsive filter-select" style="min-width: 130px;">
+            <option value="">📅 Todos os Anos</option>
+            <option *ngFor="let ano of anosDisponiveis" [value]="ano">Ano: {{ ano }}</option>
+          </select>
+
+          <select [(ngModel)]="filtroMesSaida" class="select-responsive filter-select" style="min-width: 150px;">
+            <option value="">🗓️ Todos os Meses</option>
+            <option *ngFor="let m of mesesOpcoes" [value]="m.valor">{{ m.nome }}</option>
+          </select>
+
+          <select [(ngModel)]="filtroEstabelecimentoSaida" class="select-responsive filter-select" style="min-width: 180px;">
             <option value="">🏢 Todos os Estabelecimentos</option>
             <option *ngFor="let est of estabelecimentosSaidasUnicos" [value]="est">{{ est }}</option>
           </select>

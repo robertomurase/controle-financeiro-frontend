@@ -28,6 +28,26 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // Filtros de Entradas e Saídas
   buscaEntrada: string = '';
+  filtroAnoEntrada: string = new Date().getFullYear().toString();
+  filtroMesEntrada: string = String(new Date().getMonth() + 1).padStart(2, '0');
+
+  filtroAnoSaida: string = new Date().getFullYear().toString();
+  filtroMesSaida: string = String(new Date().getMonth() + 1).padStart(2, '0');
+
+  mesesOpcoes = [
+    { valor: '01', nome: '01 - Janeiro' },
+    { valor: '02', nome: '02 - Fevereiro' },
+    { valor: '03', nome: '03 - Março' },
+    { valor: '04', nome: '04 - Abril' },
+    { valor: '05', nome: '05 - Maio' },
+    { valor: '06', nome: '06 - Junho' },
+    { valor: '07', nome: '07 - Julho' },
+    { valor: '08', nome: '08 - Agosto' },
+    { valor: '09', nome: '09 - Setembro' },
+    { valor: '10', nome: '10 - Outubro' },
+    { valor: '11', nome: '11 - Novembro' },
+    { valor: '12', nome: '12 - Dezembro' }
+  ];
   buscaSaida: string = '';
   filtroEstabelecimentoSaida: string = '';
 
@@ -81,6 +101,15 @@ export class AppComponent implements OnInit, OnDestroy {
     this.carregarProdutos();
 
     // Carrega preferências salvas de tema e tamanho de fonte
+    const hoje = new Date();
+    const anoAtualStr = hoje.getFullYear().toString();
+    const mesAtualStr = String(hoje.getMonth() + 1).padStart(2, '0');
+
+    this.filtroAnoEntrada = anoAtualStr;
+    this.filtroMesEntrada = mesAtualStr;
+    this.filtroAnoSaida = anoAtualStr;
+    this.filtroMesSaida = mesAtualStr;
+
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('THEME_MODE');
       if (savedTheme === 'light') {
@@ -344,8 +373,38 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   // Getters para a Tela de Entradas (Receitas)
+    get anosDisponiveis(): string[] {
+    const setAnos = new Set<string>();
+    const anoAtual = new Date().getFullYear().toString();
+    setAnos.add(anoAtual);
+
+    (this.transacoes || []).forEach(t => {
+      if (t.data) {
+        const ano = t.data.split('-')[0];
+        if (ano && ano.length === 4) {
+          setAnos.add(ano);
+        }
+      }
+    });
+
+    return Array.from(setAnos).sort((a, b) => b.localeCompare(a));
+  }
+
   get entradasFiltradas(): Transacao[] {
     let lista = (this.transacoes || []).filter(t => t.tipo === 'receita');
+
+    if (this.filtroAnoEntrada && this.filtroAnoEntrada.trim()) {
+      lista = lista.filter(t => t.data && t.data.startsWith(this.filtroAnoEntrada));
+    }
+
+    if (this.filtroMesEntrada && this.filtroMesEntrada.trim()) {
+      lista = lista.filter(t => {
+        if (!t.data) return false;
+        const partes = t.data.split('-');
+        return partes.length >= 2 && partes[1] === this.filtroMesEntrada;
+      });
+    }
+
     if (this.buscaEntrada && this.buscaEntrada.trim()) {
       const termo = this.buscaEntrada.toLowerCase().trim();
       lista = lista.filter(t =>
@@ -368,6 +427,18 @@ export class AppComponent implements OnInit, OnDestroy {
   // Getters para a Tela de Saídas (Despesas por Estabelecimento)
   get saidasFiltradas(): Transacao[] {
     let lista = (this.transacoes || []).filter(t => t.tipo === 'despesa');
+
+    if (this.filtroAnoSaida && this.filtroAnoSaida.trim()) {
+      lista = lista.filter(t => t.data && t.data.startsWith(this.filtroAnoSaida));
+    }
+
+    if (this.filtroMesSaida && this.filtroMesSaida.trim()) {
+      lista = lista.filter(t => {
+        if (!t.data) return false;
+        const partes = t.data.split('-');
+        return partes.length >= 2 && partes[1] === this.filtroMesSaida;
+      });
+    }
 
     if (this.filtroEstabelecimentoSaida && this.filtroEstabelecimentoSaida.trim()) {
       const estAlvo = this.filtroEstabelecimentoSaida.trim();
