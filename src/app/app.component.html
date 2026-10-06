@@ -103,10 +103,7 @@
 
 <main class="main-container">
   
-  <div class="page-header">
-    <h1 class="page-title">Visão Geral do Fluxo de Caixa</h1>
-    <p class="page-subtitle">Acompanhamento consolidado de saldos, entradas e saídas</p>
-  </div>
+  
 
   <!-- Cartões KPIs (3 Cartões Principais) -->
   <div class="kpi-grid">
@@ -140,6 +137,10 @@
 
   <!-- VISÃO: DASHBOARD -->
   <div *ngIf="activeTab === 'dashboard'">
+    <div class="page-header">
+    <h1 class="page-title">Visão Geral do Fluxo de Caixa</h1>
+    <p class="page-subtitle">Acompanhamento consolidado de saldos, entradas e saídas</p>
+  </div>
     
     <!-- Seção de Gráficos do Dashboard -->
     <div class="charts-grid">
