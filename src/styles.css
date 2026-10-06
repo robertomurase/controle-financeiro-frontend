@@ -46,10 +46,9 @@ body.light-theme .kpi-card,
 body.light-theme .chart-card,
 body.light-theme .table-card,
 body.light-theme .form-box,
-body.light-theme .modal-content,
-body.light-theme .staging-preview-box {
-  background: #ffffff !important;
-  border-color: #cbd5e1 !important;
+body.light-theme .modal-content {
+  background: #ffffff;
+  border-color: #cbd5e1;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
@@ -99,6 +98,7 @@ body.light-theme .font-btn {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
 }
 
 .logo-container {
@@ -125,50 +125,21 @@ body.light-theme .font-btn {
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-left: auto;
 }
 
-/* Nav Links & Settings Dropdown */
-.nav-links {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.nav-item {
-  background: transparent;
-  border: none;
-  color: #94a3b8;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 0.88rem;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.2s;
-}
-
-.nav-item:hover, .nav-item.active {
-  background: #1e293b;
-  color: #38bdf8;
-}
-
+/* Dropdown de Configurações */
 .settings-dropdown-container {
   position: relative;
 }
 
 .settings-nav-btn {
-  color: #94a3b8;
-}
-
-.settings-nav-btn:hover {
-  color: #38bdf8;
+  cursor: pointer;
 }
 
 .settings-menu-dropdown {
   position: absolute;
-  top: 42px;
+  top: 46px;
   right: 0;
   background: #1e293b;
   border: 1px solid #334155;
@@ -247,6 +218,33 @@ body.light-theme .font-btn {
 .font-size-label {
   font-size: 0.78rem;
   font-weight: 600;
+  color: #38bdf8;
+}
+
+/* Nav Links */
+.nav-links {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.nav-item {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.nav-item:hover, .nav-item.active {
+  background: #1e293b;
   color: #38bdf8;
 }
 
@@ -374,14 +372,9 @@ body.light-theme .font-btn {
   background: #1e293b;
   border: 1px solid #334155;
   color: #cbd5e1;
-  padding: 6px 12px;
+  padding: 4px 10px;
   border-radius: 6px;
-  font-size: 0.82rem;
-}
-
-.filter-select {
-  padding: 8px 12px;
-  border-radius: 8px;
+  font-size: 0.8rem;
 }
 
 .bar-chart-container {
@@ -471,7 +464,7 @@ body.light-theme .font-btn {
 
 .search-box {
   position: relative;
-  min-width: 220px;
+  min-width: 240px;
 }
 
 .search-input {
@@ -740,9 +733,11 @@ input:focus, select:focus {
 
 .hamburger-btn {
   display: none;
-  background: transparent;
-  border: none;
+  background: #1e293b;
+  border: 1px solid #334155;
   color: #f8fafc;
+  padding: 8px 12px;
+  border-radius: 8px;
   cursor: pointer;
 }
 
@@ -794,11 +789,6 @@ input:focus, select:focus {
   font-weight: 800;
   color: #f8fafc;
   margin-top: 2px;
-}
-
-.modal-subtitle {
-  font-size: 0.78rem;
-  color: #64748b;
 }
 
 .modal-close-btn {
@@ -885,7 +875,7 @@ input:focus, select:focus {
 
 @media (max-width: 768px) {
   .hamburger-btn {
-    display: block;
+    display: flex;
   }
   .nav-links {
     display: none;
