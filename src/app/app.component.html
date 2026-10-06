@@ -9,7 +9,7 @@
       </svg>
       <div>
         <span class="brand-title">Finanças Pro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v23 - back v14</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v33 - back v14</span>
       </div>
     </div>
 
@@ -103,44 +103,45 @@
 
 <main class="main-container">
   
-  
 
-  <!-- Cartões KPIs (3 Cartões Principais) -->
-  <div class="kpi-grid">
-    <div class="kpi-card">
-      <div class="kpi-top-row">
-        <span class="kpi-header">SALDO TOTAL ACUMULADO</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
-      </div>
-      <div class="kpi-value">R$ {{ saldoTotal | number:'1.2-2' }}</div>
-      <div class="kpi-subtext">Conta Principal + Reservas</div>
-    </div>
-
-    <div class="kpi-card">
-      <div class="kpi-top-row">
-        <span class="kpi-header">RECEITAS DO MÊS</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
-      </div>
-      <div class="kpi-value receita">R$ {{ receitasMes | number:'1.2-2' }}</div>
-      <div class="kpi-subtext verde">Entradas confirmadas</div>
-    </div>
-
-    <div class="kpi-card">
-      <div class="kpi-top-row">
-        <span class="kpi-header">DESPESAS DO MÊS</span>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
-      </div>
-      <div class="kpi-value despesa">R$ {{ despesasMes | number:'1.2-2' }}</div>
-      <div class="kpi-subtext vermelho">Saídas efetuadas</div>
-    </div>
-  </div>
 
   <!-- VISÃO: DASHBOARD -->
   <div *ngIf="activeTab === 'dashboard'">
+    
     <div class="page-header">
-    <h1 class="page-title">Visão Geral do Fluxo de Caixa</h1>
-    <p class="page-subtitle">Acompanhamento consolidado de saldos, entradas e saídas</p>
-  </div>
+      <h1 class="page-title">Visão Geral do Fluxo de Caixa</h1>
+      <p class="page-subtitle">Acompanhamento consolidado de saldos, entradas e saídas</p>
+    </div>
+
+    <!-- Cartões KPIs (3 Cartões Principais) -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-top-row">
+          <span class="kpi-header">SALDO TOTAL ACUMULADO</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+        </div>
+        <div class="kpi-value">R$ {{ saldoTotal | number:'1.2-2' }}</div>
+        <div class="kpi-subtext">Conta Principal + Reservas</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-top-row">
+          <span class="kpi-header">RECEITAS DO MÊS</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+        </div>
+        <div class="kpi-value receita">R$ {{ receitasMes | number:'1.2-2' }}</div>
+        <div class="kpi-subtext verde">Entradas confirmadas</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-top-row">
+          <span class="kpi-header">DESPESAS DO MÊS</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></svg>
+        </div>
+        <div class="kpi-value despesa">R$ {{ despesasMes | number:'1.2-2' }}</div>
+        <div class="kpi-subtext vermelho">Saídas efetuadas</div>
+      </div>
+    </div>
     
     <!-- Seção de Gráficos do Dashboard -->
     <div class="charts-grid">

@@ -884,21 +884,68 @@ input:focus, select:focus {
 }
 
 @media (max-width: 768px) {
+  .top-navbar {
+    padding: 12px 16px;
+    position: relative;
+  }
+
+  .brand-section {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
   .hamburger-btn {
     display: block;
+    margin-left: auto;
   }
+
   .nav-links {
     display: none;
     flex-direction: column;
+    align-items: flex-start;
     position: absolute;
-    top: 60px;
+    top: 100%;
     left: 0;
     right: 0;
     background: #111827;
-    padding: 16px;
+    padding: 12px 16px;
     border-bottom: 1px solid #1e293b;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    gap: 8px;
   }
+
   .nav-links.menu-open {
     display: flex;
+  }
+
+  .nav-links .nav-item {
+    width: 100%;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    border-radius: 8px;
+  }
+
+  .nav-links .settings-dropdown-container {
+    width: 100%;
+  }
+
+  .nav-links .settings-nav-btn {
+    width: 100%;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+  }
+
+  .settings-menu-dropdown {
+    position: static;
+    width: 100%;
+    margin-top: 8px;
+    box-shadow: none;
   }
 }
