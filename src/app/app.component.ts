@@ -12,7 +12,7 @@ declare var Html5Qrcode: any;
   templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit, OnDestroy {
-  activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'produtos' = 'dashboard';
+  activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'entradas' | 'saidas' | 'produtos' = 'dashboard';
   menuAberto: boolean = false;
   settingsMenuAberto: boolean = false;
   modoClaro: boolean = false;
@@ -25,6 +25,11 @@ export class AppComponent implements OnInit, OnDestroy {
   // Busca e Filtro por Estabelecimento na Lista de Produtos
   buscaProduto: string = '';
   filtroEstabelecimento: string = '';
+
+  // Filtros de Entradas e Saídas
+  buscaEntrada: string = '';
+  buscaSaida: string = '';
+  filtroEstabelecimentoSaida: string = '';
 
   // Modal de Evolução de Preços
   modalPrecoAberto: boolean = false;
@@ -47,6 +52,18 @@ export class AppComponent implements OnInit, OnDestroy {
   novaConta: string = 'Conta Corrente';
   novoTipo: 'receita' | 'despesa' = 'despesa';
   novaData: string = new Date().toISOString().split('T')[0];
+
+  // Modal de Edição de Transação
+  modalEdicaoAberto: boolean = false;
+  transacaoEditando: Transacao | null = null;
+  editId: number | null = null;
+  editDescricao: string = '';
+  editEstabelecimento: string = '';
+  editValor: number | null = null;
+  editCategoria: string = 'Alimentação / Mercado';
+  editTipo: 'receita' | 'despesa' = 'despesa';
+  editData: string = '';
+  editConta: string = 'Conta Corrente';
 
   // Leitor QR Code
   urlNfce: string = '';
@@ -126,7 +143,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  setTab(tab: 'dashboard' | 'transacoes' | 'nfce' | 'produtos'): void {
+  setTab(tab: 'dashboard' | 'transacoes' | 'nfce' | 'entradas' | 'saidas' | 'produtos'): void {
     this.pararScanner();
     this.activeTab = tab;
     this.fecharMenu();
@@ -285,7 +302,7 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Lista de Estabelecimentos Únicos para o Filtro Select
+  // Lista de Estabelecimentos Únicos para o Filtro Select na Lista de Produtos
   get estabelecimentosUnicos(): string[] {
     if (!this.produtos) return [];
     const setEst = new Set<string>();
@@ -296,19 +313,17 @@ export class AppComponent implements OnInit, OnDestroy {
     return Array.from(setEst).sort();
   }
 
-  // Lista Filtrada de Produtos (Filtro Estabelecimento + Busca Textual + Ordem A-Z)
+  // Lista Filtrada de Produtos
   get produtosFiltrados(): any[] {
     if (!this.produtos) return [];
     
     let lista = [...this.produtos];
 
-    // Filtro por Estabelecimento
     if (this.filtroEstabelecimento && this.filtroEstabelecimento.trim()) {
       const estAlvo = this.filtroEstabelecimento.trim();
       lista = lista.filter(p => (p.estabelecimento || 'Cadastro Manual').trim() === estAlvo);
     }
 
-    // Busca Textual
     if (this.buscaProduto && this.buscaProduto.trim()) {
       const termo = this.buscaProduto.toLowerCase().trim();
       lista = lista.filter(p =>
@@ -317,7 +332,6 @@ export class AppComponent implements OnInit, OnDestroy {
       );
     }
 
-    // Ordenação Alfabética por Nome do Produto (A-Z)
     return lista.sort((a, b) => {
       const nomeA = (a.nome_produto || '').toLowerCase();
       const nomeB = (b.nome_produto || '').toLowerCase();
@@ -327,6 +341,132 @@ export class AppComponent implements OnInit, OnDestroy {
 
   limparBusca(): void {
     this.buscaProduto = '';
+  }
+
+  // Getters para a Tela de Entradas (Receitas)
+  get entradasFiltradas(): Transacao[] {
+    let lista = (this.transacoes || []).filter(t => t.tipo === 'receita');
+    if (this.buscaEntrada && this.buscaEntrada.trim()) {
+      const termo = this.buscaEntrada.toLowerCase().trim();
+      lista = lista.filter(t =>
+        (t.descricao && t.descricao.toLowerCase().includes(termo)) ||
+        (t.categoria && t.categoria.toLowerCase().includes(termo)) ||
+        (t.conta && t.conta.toLowerCase().includes(termo))
+      );
+    }
+    return lista;
+  }
+
+  get totalEntradas(): number {
+    return this.entradasFiltradas.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+  }
+
+  limparBuscaEntrada(): void {
+    this.buscaEntrada = '';
+  }
+
+  // Getters para a Tela de Saídas (Despesas por Estabelecimento)
+  get saidasFiltradas(): Transacao[] {
+    let lista = (this.transacoes || []).filter(t => t.tipo === 'despesa');
+
+    if (this.filtroEstabelecimentoSaida && this.filtroEstabelecimentoSaida.trim()) {
+      const estAlvo = this.filtroEstabelecimentoSaida.trim();
+      lista = lista.filter(t => (t.estabelecimento || t.descricao || 'Cadastro Manual').trim() === estAlvo);
+    }
+
+    if (this.buscaSaida && this.buscaSaida.trim()) {
+      const termo = this.buscaSaida.toLowerCase().trim();
+      lista = lista.filter(t =>
+        (t.descricao && t.descricao.toLowerCase().includes(termo)) ||
+        (t.estabelecimento && t.estabelecimento.toLowerCase().includes(termo)) ||
+        (t.categoria && t.categoria.toLowerCase().includes(termo))
+      );
+    }
+    return lista;
+  }
+
+  get estabelecimentosSaidasUnicos(): string[] {
+    const setEst = new Set<string>();
+    (this.transacoes || []).filter(t => t.tipo === 'despesa').forEach(t => {
+      const est = (t.estabelecimento || t.descricao || 'Cadastro Manual').trim();
+      if (est) setEst.add(est);
+    });
+    return Array.from(setEst).sort();
+  }
+
+  get totalSaidas(): number {
+    return this.saidasFiltradas.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+  }
+
+  limparBuscaSaida(): void {
+    this.buscaSaida = '';
+  }
+
+  // Modal de Edição de Transações
+  abrirModalEdicao(t: Transacao): void {
+    if (!t) return;
+    this.transacaoEditando = t;
+    this.editId = t.id || null;
+    this.editDescricao = t.descricao || '';
+    this.editEstabelecimento = t.estabelecimento || '';
+    this.editValor = t.valor || 0;
+    this.editCategoria = t.categoria || 'Alimentação / Mercado';
+    this.editTipo = t.tipo || 'despesa';
+    this.editData = t.data || new Date().toISOString().split('T')[0];
+    this.editConta = t.conta || 'Conta Corrente';
+    this.modalEdicaoAberto = true;
+  }
+
+  fecharModalEdicao(): void {
+    this.modalEdicaoAberto = false;
+    this.transacaoEditando = null;
+  }
+
+  salvarEdicaoTransacao(): void {
+    if (!this.editId) return;
+    if (!this.editDescricao || !this.editValor) {
+      alert('Preencha a descrição e o valor!');
+      return;
+    }
+
+    const payload: Partial<Transacao> = {
+      descricao: this.editDescricao,
+      estabelecimento: this.editEstabelecimento || 'Cadastro Manual',
+      valor: Number(this.editValor) || 0,
+      categoria: this.editCategoria,
+      tipo: this.editTipo,
+      data: this.editData,
+      conta: this.editConta
+    };
+
+    this.financeService.updateTransacao(this.editId, payload).subscribe({
+      next: () => {
+        this.carregarTransacoes();
+        this.carregarProdutos();
+        this.fecharModalEdicao();
+      },
+      error: () => {
+        if (this.transacaoEditando) {
+          Object.assign(this.transacaoEditando, payload);
+        }
+        this.fecharModalEdicao();
+      }
+    });
+  }
+
+  excluirTransacao(t: Transacao): void {
+    if (!t || !t.id) return;
+    if (confirm(`Tem certeza que deseja excluir "${t.descricao}"?`)) {
+      this.financeService.deleteTransacao(t.id).subscribe({
+        next: () => {
+          this.carregarTransacoes();
+          this.carregarProdutos();
+        },
+        error: () => {
+          this.transacoes = this.transacoes.filter(item => item.id !== t.id);
+        }
+      });
+    }
   }
 
   // Excluir Item individual de Produto
@@ -358,13 +498,11 @@ export class AppComponent implements OnInit, OnDestroy {
     if (!p || !p.nome_produto) return;
     this.produtoSelecionado = p;
 
-    // Filtra todo o histórico deste produto pelo nome
     const nomeAlvo = p.nome_produto.toLowerCase().trim();
     const historico = this.produtos.filter(item => 
       item.nome_produto && item.nome_produto.toLowerCase().trim() === nomeAlvo
     );
 
-    // Ordena por data (da mais antiga para a mais recente)
     historico.sort((a, b) => {
       const dataA = a.data_emissao || a.data_cadastro || a.data || '';
       const dataB = b.data_emissao || b.data_cadastro || b.data || '';
@@ -373,7 +511,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
     this.historicoPrecosProduto = historico;
 
-    // Cálculos KPI do Preço
     const valores = historico.map(h => Number(h.valor_unitario || h.preco_medio || 0)).filter(v => v > 0);
     if (valores.length > 0) {
       this.precoMenor = Math.min(...valores);
@@ -393,7 +530,6 @@ export class AppComponent implements OnInit, OnDestroy {
       this.variacaoPercentual = 0;
     }
 
-    // Gera as coordenadas do Gráfico SVG
     this.gerarPontosGraficoSVG(historico);
     this.modalPrecoAberto = true;
   }
@@ -412,7 +548,6 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     const svgWidth = 500;
-    const svgHeight = 200;
     const marginX = 50;
     const marginYTop = 30;
     const marginYBottom = 150;
@@ -458,7 +593,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Salvar Transação Manual com Quantidade e Estabelecimento
+  // Salvar Transação Manual
   salvarTransacao(): void {
     if (!this.novaDescricao || !this.novoValor) {
       alert('Preencha a descrição e o valor!');

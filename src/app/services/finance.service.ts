@@ -54,6 +54,14 @@ export class FinanceService {
     return this.http.post(`${this.apiUrl}/transacoes`, transacao);
   }
 
+  updateTransacao(id: number, transacao: Partial<Transacao>): Observable<any> {
+    return this.http.put(`${this.apiUrl}/transacoes/${id}`, transacao);
+  }
+
+  deleteTransacao(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/transacoes/${id}`);
+  }
+
   consultarNfce(urlNfce: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/nfce/consultar`, { url: urlNfce });
   }
