@@ -461,23 +461,24 @@ export class AppComponent implements OnInit, OnDestroy {
   // Salvar Transação Manual com Quantidade e Estabelecimento
   salvarTransacao(): void {
     if (!this.novaDescricao || !this.novoValor) {
-      alert('Preencha a descrição/produto e o valor unitário!');
+      alert('Preencha a descrição e o valor!');
       return;
     }
 
-    const qtd = this.novaQuantidade && this.novaQuantidade > 0 ? Number(this.novaQuantidade) : 1;
+    const isSalario = this.novaCategoria === 'Salário';
+    const qtd = isSalario ? 1 : (this.novaQuantidade && this.novaQuantidade > 0 ? Number(this.novaQuantidade) : 1);
     const valUnit = Number(this.novoValor) || 0;
-    const valTotal = valUnit * qtd;
+    const valTotal = isSalario ? valUnit : valUnit * qtd;
 
     const nova: any = {
       descricao: this.novaDescricao,
-      estabelecimento: this.novoEstabelecimento && this.novoEstabelecimento.trim() ? this.novoEstabelecimento.trim() : 'Cadastro Manual',
+      estabelecimento: isSalario ? 'Cadastro Manual' : (this.novoEstabelecimento && this.novoEstabelecimento.trim() ? this.novoEstabelecimento.trim() : 'Cadastro Manual'),
       quantidade: qtd,
       valorUnitario: valUnit,
       valor: valTotal,
       categoria: this.novaCategoria,
-      conta: this.novaConta,
-      tipo: this.novoTipo,
+      conta: this.novaConta || 'Conta Corrente',
+      tipo: isSalario ? 'receita' : this.novoTipo,
       data: this.novaData
     };
 
@@ -522,6 +523,16 @@ export class AppComponent implements OnInit, OnDestroy {
         this.statusNfceSucesso = false;
       }
     });
+  }
+
+  get ultimos10Transacoes(): Transacao[] {
+    return (this.transacoes || []).slice(0, 10);
+  }
+
+  onCategoriaChange(): void {
+    if (this.novaCategoria === 'Salário') {
+      this.novoTipo = 'receita';
+    }
   }
 
   get saldoTotal(): number {

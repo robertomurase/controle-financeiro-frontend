@@ -9,7 +9,7 @@
       </svg>
       <div>
         <span class="brand-title">Finanças Pro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v33 - back v14</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v34 - back v14</span>
       </div>
     </div>
 
@@ -69,7 +69,7 @@
       <span>Lista de Produtos</span>
     </button>
 
-    <!-- Botão de Configuração alinhado perfeitamente no nav com o mesmo espaçamento -->
+    <!-- Botão de Configuração -->
     <div class="settings-dropdown-container">
       <button class="nav-item settings-nav-btn" (click)="toggleSettingsMenu(); $event.stopPropagation()" title="Configurações">
         <svg class="nav-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -102,10 +102,8 @@
 </header>
 
 <main class="main-container">
-  
 
-
-  <!-- VISÃO: DASHBOARD -->
+  <!-- VISÃO: DASHBOARD (Título e KPIs exclusivos do Dashboard) -->
   <div *ngIf="activeTab === 'dashboard'">
     
     <div class="page-header">
@@ -142,7 +140,7 @@
         <div class="kpi-subtext vermelho">Saídas efetuadas</div>
       </div>
     </div>
-    
+
     <!-- Seção de Gráficos do Dashboard -->
     <div class="charts-grid">
       <!-- Gráfico de Barras: Fluxo de Caixa Recente -->
@@ -213,7 +211,7 @@
       </div>
     </div>
 
-    <!-- Tabela de Últimos Lançamentos (Ordem de Cadastro) -->
+    <!-- Tabela de Últimos Lançamentos (Apenas 10 Mais Recentes) -->
     <div class="table-card">
       <div class="chart-header">
         <div class="chart-title">
@@ -221,7 +219,7 @@
             <circle cx="12" cy="12" r="10"></circle>
             <polyline points="12 6 12 12 16 14"></polyline>
           </svg>
-          <span>Últimos Lançamentos</span>
+          <span>Últimos Lançamentos (Top 10)</span>
         </div>
       </div>
 
@@ -239,7 +237,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let t of transacoes">
+            <tr *ngFor="let t of ultimos10Transacoes">
               <td>{{ t.data }}</td>
               <td>
                 {{ t.estabelecimento || t.descricao }}
@@ -261,7 +259,7 @@
     </div>
   </div>
 
-  <!-- VISÃO: TRANSAÇÕES MANUAL COM CAMPO QUANTIDADE E PRÉ-VISUALIZAÇÃO AO VIVO -->
+  <!-- VISÃO: TRANSAÇÕES MANUAL (Nova Ordem: Categoria -> Descrição -> Tipo -> Valor -> Data) -->
   <div *ngIf="activeTab === 'transacoes'">
     <div class="form-box">
       <div class="chart-title" style="margin-bottom: 16px;">
@@ -269,54 +267,68 @@
       </div>
 
       <div class="form-row" style="align-items: flex-end;">
-        <div class="form-group-field" style="flex: 2; min-width: 180px;">
-          <label class="field-label">Descrição / Produto *</label>
-          <input type="text" [(ngModel)]="novaDescricao" placeholder="Ex: Café Especial / Arroz" />
-        </div>
-
-        <div class="form-group-field" style="flex: 1; min-width: 110px;">
-          <label class="field-label">Quantidade *</label>
-          <input type="number" [(ngModel)]="novaQuantidade" min="0.01" step="1" placeholder="Qtd (ex: 1)" />
-        </div>
-
-        <div class="form-group-field" style="flex: 1.2; min-width: 120px;">
-          <label class="field-label">Valor Unit. (R$) *</label>
-          <input type="number" [(ngModel)]="novoValor" min="0" step="0.01" placeholder="R$ Unitário" />
-        </div>
-
+        <!-- 1. Categoria (Primeiro) -->
         <div class="form-group-field" style="flex: 1.5; min-width: 160px;">
-          <label class="field-label">Estabelecimento / Loja</label>
-          <input type="text" [(ngModel)]="novoEstabelecimento" placeholder="Ex: Mercado Muffato" />
-        </div>
-
-        <div class="form-group-field" style="flex: 1.4; min-width: 150px;">
-          <label class="field-label">Categoria</label>
-          <select [(ngModel)]="novaCategoria">
+          <label class="field-label">Categoria *</label>
+          <select [(ngModel)]="novaCategoria" (change)="onCategoriaChange()">
             <option value="Alimentação / Mercado">Alimentação / Mercado</option>
             <option value="Moradia">Moradia</option>
             <option value="Transporte">Transporte</option>
             <option value="Lazer">Lazer</option>
             <option value="Salário">Salário</option>
             <option value="Saúde">Saúde</option>
+            <option value="Outros">Outros</option>
           </select>
         </div>
 
+        <!-- 2. Descrição -->
+        <div class="form-group-field" style="flex: 2; min-width: 180px;">
+          <label class="field-label">{{ novaCategoria === 'Salário' ? 'Descrição / Lançamento *' : 'Descrição / Produto *' }}</label>
+          <input type="text" [(ngModel)]="novaDescricao" [placeholder]="novaCategoria === 'Salário' ? 'Ex: Salário Mensal / Holerite' : 'Ex: Café Especial / Arroz'" />
+        </div>
+
+        <!-- 3. Tipo (Auto Receita se Salário) -->
         <div class="form-group-field" style="flex: 1; min-width: 110px;">
-          <label class="field-label">Tipo</label>
+          <label class="field-label">Tipo *</label>
           <select [(ngModel)]="novoTipo">
             <option value="despesa">Despesa</option>
             <option value="receita">Receita</option>
           </select>
         </div>
 
+        <!-- Se NÃO for Salário: Quantidade, Valor Unit. e Estabelecimento -->
+        <ng-container *ngIf="novaCategoria !== 'Salário'">
+          <div class="form-group-field" style="flex: 1; min-width: 100px;">
+            <label class="field-label">Quantidade *</label>
+            <input type="number" [(ngModel)]="novaQuantidade" min="0.01" step="1" placeholder="Qtd (ex: 1)" />
+          </div>
+
+          <div class="form-group-field" style="flex: 1.2; min-width: 120px;">
+            <label class="field-label">Valor Unit. (R$) *</label>
+            <input type="number" [(ngModel)]="novoValor" min="0" step="0.01" placeholder="R$ Unitário" />
+          </div>
+
+          <div class="form-group-field" style="flex: 1.5; min-width: 150px;">
+            <label class="field-label">Estabelecimento / Loja</label>
+            <input type="text" [(ngModel)]="novoEstabelecimento" placeholder="Ex: Mercado Muffato" />
+          </div>
+        </ng-container>
+
+        <!-- Se FOR Salário: Campo único de Valor (R$) antes da Data -->
+        <div *ngIf="novaCategoria === 'Salário'" class="form-group-field" style="flex: 1.2; min-width: 130px;">
+          <label class="field-label">Valor (R$) *</label>
+          <input type="number" [(ngModel)]="novoValor" min="0" step="0.01" placeholder="R$ Total" />
+        </div>
+
+        <!-- 5. Data -->
         <div class="form-group-field" style="flex: 1.2; min-width: 130px;">
-          <label class="field-label">Data</label>
+          <label class="field-label">Data *</label>
           <input type="date" [(ngModel)]="novaData" />
         </div>
       </div>
 
-      <!-- Pré-visualização ao Vivo do Item antes de Salvar -->
-      <div *ngIf="novaDescricao || (novoValor && novoValor > 0)" class="staging-preview-box" style="margin-top: 24px; padding: 20px; background: #0f172a; border: 1px solid #38bdf8; border-radius: 12px;">
+      <!-- Pré-visualização para Não-Salário se preenchido -->
+      <div *ngIf="novaCategoria !== 'Salário' && (novaDescricao || (novoValor && novoValor > 0))" class="staging-preview-box" style="margin-top: 24px; padding: 20px; background: #0f172a; border: 1px solid #38bdf8; border-radius: 12px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
           <h3 style="font-size: 1rem; color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 8px;">
             👁️ Pré-visualização do Lançamento
@@ -360,6 +372,13 @@
             ✅ Confirmar e Salvar na Lista de Produtos
           </button>
         </div>
+      </div>
+
+      <!-- Botão Único para Salário -->
+      <div *ngIf="novaCategoria === 'Salário'" style="margin-top: 20px; display: flex; justify-content: flex-end;">
+        <button class="btn-primary" style="padding: 12px 28px; font-weight: 700; font-size: 1rem;" (click)="salvarTransacao()">
+          Confirmar
+        </button>
       </div>
 
     </div>
@@ -423,7 +442,7 @@
     </div>
   </div>
 
-  <!-- VISÃO: LISTA DE PRODUTOS (Com Filtro por Estabelecimento, Nome do Estabelecimento, Datas e QTD) -->
+  <!-- VISÃO: LISTA DE PRODUTOS -->
   <div *ngIf="activeTab === 'produtos'">
     <div class="table-card">
       <div class="chart-header" style="flex-wrap: wrap; gap: 12px;">
