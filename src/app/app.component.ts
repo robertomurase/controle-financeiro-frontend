@@ -74,7 +74,7 @@ export class AppComponent implements OnInit, OnDestroy {
       const savedFontSize = localStorage.getItem('FONT_SIZE');
       if (savedFontSize) {
         this.tamanhoFonte = Number(savedFontSize);
-        document.documentElement.style.fontSize = `${this.tamanhoFonte}px`;
+        document.documentElement.style.fontSize = ;
       }
     }
   }
@@ -113,7 +113,7 @@ export class AppComponent implements OnInit, OnDestroy {
   aumentarFonte(): void {
     if (this.tamanhoFonte < 22) {
       this.tamanhoFonte += 1;
-      document.documentElement.style.fontSize = `${this.tamanhoFonte}px`;
+      document.documentElement.style.fontSize = ;
       localStorage.setItem('FONT_SIZE', String(this.tamanhoFonte));
     }
   }
@@ -121,7 +121,7 @@ export class AppComponent implements OnInit, OnDestroy {
   diminuirFonte(): void {
     if (this.tamanhoFonte > 12) {
       this.tamanhoFonte -= 1;
-      document.documentElement.style.fontSize = `${this.tamanhoFonte}px`;
+      document.documentElement.style.fontSize = ;
       localStorage.setItem('FONT_SIZE', String(this.tamanhoFonte));
     }
   }
@@ -163,11 +163,11 @@ export class AppComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       if (typeof Html5Qrcode !== 'undefined') {
         try {
-          this.html5QrCode = new Html5Qrcode("qr-reader");
+          this.html5QrCode = new Html5Qrcode(qr-reader);
           const config = { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 };
 
           this.html5QrCode.start(
-            { facingMode: "environment" },
+            { facingMode: environment },
             config,
             (decodedText: string) => {
               this.urlNfce = decodedText;
@@ -182,7 +182,7 @@ export class AppComponent implements OnInit, OnDestroy {
             this.statusNfceSucesso = true;
           }).catch(() => {
             this.html5QrCode.start(
-              { facingMode: "user" },
+              { facingMode: user },
               config,
               (decodedText: string) => {
                 this.urlNfce = decodedText;
@@ -239,7 +239,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.statusNfceSucesso = true;
 
     if (typeof Html5Qrcode !== 'undefined') {
-      const html5QrCodeTemp = new Html5Qrcode("qr-reader");
+      const html5QrCodeTemp = new Html5Qrcode(qr-reader);
       html5QrCodeTemp.scanFile(file, true)
         .then((decodedText: string) => {
           this.urlNfce = decodedText;
@@ -263,13 +263,7 @@ export class AppComponent implements OnInit, OnDestroy {
         this.transacoes = dados || [];
       },
       error: () => {
-        this.transacoes = [
-          { id: 5, data: '2026-09-29', estabelecimento: 'TRIGO KIBE YOKI 500G', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 12.99, isNfce: true },
-          { id: 4, data: '2026-09-28', estabelecimento: 'TRIGO KIBE YOKI 500G', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 11.19, isNfce: true },
-          { id: 3, data: '2026-09-27', estabelecimento: 'Restaurante', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 200.00, isNfce: true },
-          { id: 2, data: '2026-09-26', estabelecimento: 'Compra - AUTO POSTO MUFFATO LTDA', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 220.95, isNfce: true },
-          { id: 1, data: '2026-09-26', estabelecimento: 'Compra - CARREFOUR COMERCIO E INDUSTRIA LTDA', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 8.99, isNfce: true }
-        ];
+        this.transacoes = [];
       }
     });
   }
@@ -283,6 +277,12 @@ export class AppComponent implements OnInit, OnDestroy {
         this.produtos = [];
       }
     });
+  }
+
+  // Apenas os 10 últimos lançamentos no Dashboard
+  get ultimos10Transacoes(): Transacao[] {
+    if (!this.transacoes) return [];
+    return this.transacoes.slice(0, 10);
   }
 
   // Lista de Estabelecimentos Únicos para o Filtro Select
@@ -333,7 +333,7 @@ export class AppComponent implements OnInit, OnDestroy {
   excluirItemProduto(p: any): void {
     if (!p) return;
     const nomeItem = p.nome_produto || 'este produto';
-    if (confirm(`Tem certeza que deseja excluir "${nomeItem}" da lista?`)) {
+    if (confirm()) {
       this.financeService.deleteProdutoItem(p.id, p.origem, p.nome_produto).subscribe({
         next: () => {
           this.carregarProdutos();
@@ -436,7 +436,7 @@ export class AppComponent implements OnInit, OnDestroy {
       }
 
       const rawData = item.data_emissao || item.data_cadastro || item.data || '';
-      const dataFormatted = rawData ? rawData.split('-').slice(1).join('/') : `P${index + 1}`;
+      const dataFormatted = rawData ? rawData.split('-').slice(1).join('/') : ;
 
       return {
         x,
@@ -446,13 +446,13 @@ export class AppComponent implements OnInit, OnDestroy {
       };
     });
 
-    const ptsStr = this.pontosGrafico.map(pt => `${pt.x},${pt.y}`).join(' ');
+    const ptsStr = this.pontosGrafico.map(pt => ).join(' ');
     this.svgLinePoints = ptsStr;
 
     if (this.pontosGrafico.length > 0) {
       const firstX = this.pontosGrafico[0].x;
       const lastX = this.pontosGrafico[this.pontosGrafico.length - 1].x;
-      this.svgAreaPoints = `${firstX},150 ${ptsStr} ${lastX},150`;
+      this.svgAreaPoints = ;
     } else {
       this.svgAreaPoints = '';
     }
@@ -460,12 +460,12 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // Salvar Transação Manual com Quantidade e Estabelecimento
   salvarTransacao(): void {
-    if (!this.novaDescricao || !this.novoValor) {
+    if (!this.novaDescricao || this.novoValor === null || this.novoValor === undefined) {
       alert('Preencha a descrição/produto e o valor unitário!');
       return;
     }
 
-    const qtd = this.novaQuantidade && this.novaQuantidade > 0 ? Number(this.novaQuantidade) : 1;
+    const qtd = this.novaQuantidade && Number(this.novaQuantidade) > 0 ? Number(this.novaQuantidade) : 1;
     const valUnit = Number(this.novoValor) || 0;
     const valTotal = valUnit * qtd;
 
@@ -475,14 +475,15 @@ export class AppComponent implements OnInit, OnDestroy {
       quantidade: qtd,
       valorUnitario: valUnit,
       valor: valTotal,
-      categoria: this.novaCategoria,
-      conta: this.novaConta,
-      tipo: this.novoTipo,
-      data: this.novaData
+      categoria: this.novaCategoria || 'Alimentação / Mercado',
+      conta: this.novaConta || 'Conta Corrente',
+      tipo: this.novoTipo || 'despesa',
+      data: this.novaData || new Date().toISOString().split('T')[0]
     };
 
     this.financeService.addTransacao(nova).subscribe({
       next: () => {
+        alert('✅ Transação e Produto salvos com sucesso!');
         this.carregarTransacoes();
         this.carregarProdutos();
         this.novaDescricao = '';
@@ -491,7 +492,10 @@ export class AppComponent implements OnInit, OnDestroy {
         this.novoEstabelecimento = '';
         this.activeTab = 'dashboard';
       },
-      error: (err) => console.error('Erro ao salvar:', err)
+      error: (err) => {
+        console.error('Erro ao salvar:', err);
+        alert('❌ Erro ao salvar transação. Tente novamente.');
+      }
     });
   }
 
@@ -518,7 +522,7 @@ export class AppComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.carregandoNfce = false;
         const msgErro = err?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
-        this.mensagemNfce = `❌ ${msgErro}`;
+        this.mensagemNfce = ;
         this.statusNfceSucesso = false;
       }
     });

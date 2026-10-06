@@ -9,7 +9,7 @@
       </svg>
       <div>
         <span class="brand-title">Finanças Pro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v23 - back v14</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v30 - back v14</span>
       </div>
     </div>
 
@@ -69,9 +69,9 @@
       <span>Lista de Produtos</span>
     </button>
 
-    <!-- Botão de Configuração alinhado perfeitamente no nav com o mesmo espaçamento -->
+    <!-- Botão de Configuração alinhado perfeitamente no nav -->
     <div class="settings-dropdown-container">
-      <button class="nav-item settings-nav-btn" (click)="toggleSettingsMenu(); $event.stopPropagation()" title="Configurações">
+      <button class="nav-item settings-nav-btn" (click)="toggleSettingsMenu(); .stopPropagation()" title="Configurações">
         <svg class="nav-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"></circle>
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -80,7 +80,7 @@
       </button>
 
       <!-- Dropdown de Configurações -->
-      <div *ngIf="settingsMenuAberto" class="settings-menu-dropdown" (click)="$event.stopPropagation()">
+      <div *ngIf="settingsMenuAberto" class="settings-menu-dropdown" (click)=".stopPropagation()">
         <div class="settings-menu-header">
           <span>⚙️ Configurações</span>
         </div>
@@ -102,11 +102,6 @@
 </header>
 
 <main class="main-container">
-  
-  <div class="page-header">
-    <h1 class="page-title">Visão Geral do Fluxo de Caixa</h1>
-    <p class="page-subtitle">Acompanhamento consolidado de saldos, entradas e saídas</p>
-  </div>
 
   <!-- Cartões KPIs (3 Cartões Principais) -->
   <div class="kpi-grid">
@@ -141,6 +136,12 @@
   <!-- VISÃO: DASHBOARD -->
   <div *ngIf="activeTab === 'dashboard'">
     
+    <!-- Cabeçalho Exclusivo do Dashboard -->
+    <div class="page-header">
+      <h1 class="page-title">Visão Geral do Fluxo de Caixa</h1>
+      <p class="page-subtitle">Acompanhamento consolidado de saldos, entradas e saídas</p>
+    </div>
+
     <!-- Seção de Gráficos do Dashboard -->
     <div class="charts-grid">
       <!-- Gráfico de Barras: Fluxo de Caixa Recente -->
@@ -211,7 +212,7 @@
       </div>
     </div>
 
-    <!-- Tabela de Últimos Lançamentos (Ordem de Cadastro) -->
+    <!-- Tabela de Apenas 10 Últimos Lançamentos -->
     <div class="table-card">
       <div class="chart-header">
         <div class="chart-title">
@@ -219,7 +220,7 @@
             <circle cx="12" cy="12" r="10"></circle>
             <polyline points="12 6 12 12 16 14"></polyline>
           </svg>
-          <span>Últimos Lançamentos</span>
+          <span>Últimos Lançamentos (Top 10)</span>
         </div>
       </div>
 
@@ -237,7 +238,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let t of transacoes">
+            <tr *ngFor="let t of ultimos10Transacoes">
               <td>{{ t.data }}</td>
               <td>
                 {{ t.estabelecimento || t.descricao }}
@@ -259,7 +260,7 @@
     </div>
   </div>
 
-  <!-- VISÃO: TRANSAÇÕES MANUAL COM CAMPO QUANTIDADE E PRÉ-VISUALIZAÇÃO AO VIVO -->
+  <!-- VISÃO: TRANSAÇÕES MANUAL COM PRÉ-VISUALIZAÇÃO AO VIVO E BOTÃO EXPLICITO DE SALVAR -->
   <div *ngIf="activeTab === 'transacoes'">
     <div class="form-box">
       <div class="chart-title" style="margin-bottom: 16px;">
@@ -311,6 +312,12 @@
           <label class="field-label">Data</label>
           <input type="date" [(ngModel)]="novaData" />
         </div>
+
+        <div style="flex: 1; min-width: 150px;">
+          <button class="btn-primary" style="width: 100%; height: 42px; font-weight: 700;" (click)="salvarTransacao()">
+            Confirmar e Salvar
+          </button>
+        </div>
       </div>
 
       <!-- Pré-visualização ao Vivo do Item antes de Salvar -->
@@ -354,7 +361,7 @@
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #1e293b; padding-top: 16px;">
-          <button class="btn-primary" style="padding: 12px 24px; font-size: 1rem; width: 100%; max-width: 420px;" (click)="salvarTransacao()">
+          <button class="btn-primary" style="padding: 12px 24px; font-size: 1rem; width: 100%; max-width: 420px; font-weight: 700;" (click)="salvarTransacao()">
             ✅ Confirmar e Salvar na Lista de Produtos
           </button>
         </div>
@@ -400,7 +407,7 @@
             <strong>Selecione ou tire uma foto contendo o QR Code da NFC-e</strong>
           </p>
 
-          <input type="file" accept="image/*" (change)="processarFotoQrCode($event)" id="qr-file-input" class="file-input" style="display: none;" />
+          <input type="file" accept="image/*" (change)="processarFotoQrCode()" id="qr-file-input" class="file-input" style="display: none;" />
           <button class="btn-primary" (click)="triggerFileInput()">📷 Escolher Foto do QR Code</button>
         </div>
       </div>
@@ -421,7 +428,7 @@
     </div>
   </div>
 
-  <!-- VISÃO: LISTA DE PRODUTOS (Com Filtro por Estabelecimento, Nome do Estabelecimento, Datas e QTD) -->
+  <!-- VISÃO: LISTA DE PRODUTOS -->
   <div *ngIf="activeTab === 'produtos'">
     <div class="table-card">
       <div class="chart-header" style="flex-wrap: wrap; gap: 12px;">
@@ -485,10 +492,10 @@
               <td><strong style="color: #38bdf8;">R$ {{ (p.valor_total || p.gasto_total) | number:'1.2-2' }}</strong></td>
               <td>
                 <div class="action-btn-group">
-                  <button class="btn-chart-icon" title="Ver Evolução de Preços" (click)="$event.stopPropagation(); abrirModalEvolucaoPreco(p)">
+                  <button class="btn-chart-icon" title="Ver Evolução de Preços" (click)=".stopPropagation(); abrirModalEvolucaoPreco(p)">
                     📈 Evolução
                   </button>
-                  <button class="btn-delete-icon" title="Excluir Produto" (click)="$event.stopPropagation(); excluirItemProduto(p)">
+                  <button class="btn-delete-icon" title="Excluir Produto" (click)=".stopPropagation(); excluirItemProduto(p)">
                     🗑️ Excluir
                   </button>
                 </div>
@@ -507,7 +514,7 @@
 
 <!-- Modal de Evolução de Preço -->
 <div *ngIf="modalPrecoAberto" class="modal-backdrop" (click)="fecharModalPreco()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
+  <div class="modal-content" (click)=".stopPropagation()">
     <div class="modal-header">
       <div class="modal-title-group">
         <h3>📈 Evolução de Preço</h3>
