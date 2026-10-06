@@ -74,7 +74,7 @@ export class AppComponent implements OnInit, OnDestroy {
       const savedFontSize = localStorage.getItem('FONT_SIZE');
       if (savedFontSize) {
         this.tamanhoFonte = Number(savedFontSize);
-        document.documentElement.style.fontSize = ;
+        document.documentElement.style.fontSize = `${this.tamanhoFonte}px`;
       }
     }
   }
@@ -113,7 +113,7 @@ export class AppComponent implements OnInit, OnDestroy {
   aumentarFonte(): void {
     if (this.tamanhoFonte < 22) {
       this.tamanhoFonte += 1;
-      document.documentElement.style.fontSize = ;
+      document.documentElement.style.fontSize = `${this.tamanhoFonte}px`;
       localStorage.setItem('FONT_SIZE', String(this.tamanhoFonte));
     }
   }
@@ -121,7 +121,7 @@ export class AppComponent implements OnInit, OnDestroy {
   diminuirFonte(): void {
     if (this.tamanhoFonte > 12) {
       this.tamanhoFonte -= 1;
-      document.documentElement.style.fontSize = ;
+      document.documentElement.style.fontSize = `${this.tamanhoFonte}px`;
       localStorage.setItem('FONT_SIZE', String(this.tamanhoFonte));
     }
   }
@@ -275,7 +275,7 @@ export class AppComponent implements OnInit, OnDestroy {
         this.dadosNotaPreview = res?.dadosNota || null;
         if (this.dadosNotaPreview && this.dadosNotaPreview.itens) {
           const totalItens = this.dadosNotaPreview.itens.length;
-          this.mensagemNfce = ;
+          this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
         } else {
           this.mensagemNfce = '✅ Dados da nota extraídos. Confira abaixo e confirme para salvar.';
         }
@@ -283,7 +283,7 @@ export class AppComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.carregandoNfce = false;
         const msgErro = err?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
-        this.mensagemNfce = ;
+        this.mensagemNfce = `❌ ${msgErro}`;
         this.statusNfceSucesso = false;
         this.dadosNotaPreview = null;
       }
@@ -300,7 +300,7 @@ export class AppComponent implements OnInit, OnDestroy {
       next: () => {
         this.carregandoNfce = false;
         const count = this.dadosNotaPreview?.itens?.length || 0;
-        this.mensagemNfce = ;
+        this.mensagemNfce = `✅ Nota fiscal do estabelecimento ${this.dadosNotaPreview?.estabelecimento || "SEFAZ"} salva com sucesso!`;
         this.statusNfceSucesso = true;
         this.dadosNotaPreview = null;
         this.urlNfce = '';
@@ -310,7 +310,7 @@ export class AppComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.carregandoNfce = false;
         const msgErro = err?.error?.error || 'Erro ao salvar a nota fiscal no banco de dados.';
-        this.mensagemNfce = ;
+        this.mensagemNfce = `❌ ${msgErro}`;
         this.statusNfceSucesso = false;
       }
     });
@@ -480,7 +480,7 @@ export class AppComponent implements OnInit, OnDestroy {
       }
 
       const rawData = item.data_emissao || item.data_cadastro || item.data || '';
-      const dataFormatted = rawData ? rawData.split('-').slice(1).join('/') : ;
+      const dataFormatted = rawData ? rawData.split('-').slice(1).join('/') : `P${index + 1}`;
 
       return {
         x,
@@ -490,13 +490,13 @@ export class AppComponent implements OnInit, OnDestroy {
       };
     });
 
-    const ptsStr = this.pontosGrafico.map(pt => ).join(' ');
+    const ptsStr = this.pontosGrafico.map(pt => `${pt.x},${pt.y}`).join(' ');
     this.svgLinePoints = ptsStr;
 
     if (this.pontosGrafico.length > 0) {
       const firstX = this.pontosGrafico[0].x;
       const lastX = this.pontosGrafico[this.pontosGrafico.length - 1].x;
-      this.svgAreaPoints = ;
+      this.svgAreaPoints = `${firstX},150 ${ptsStr} ${lastX},150`;
     } else {
       this.svgAreaPoints = '';
     }

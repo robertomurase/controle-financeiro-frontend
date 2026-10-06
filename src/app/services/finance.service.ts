@@ -48,40 +48,40 @@ export class FinanceService {
   }
 
   getTransacoes(): Observable<Transacao[]> {
-    return this.http.get<Transacao[]>();
+    return this.http.get<Transacao[]>(`${this.apiUrl}/transacoes`);
   }
 
   addTransacao(transacao: Transacao): Observable<any> {
-    return this.http.post(, transacao);
+    return this.http.post(`${this.apiUrl}/transacoes`, transacao);
   }
 
   extrairNfce(urlNfce: string): Observable<any> {
-    return this.http.post(, { url: urlNfce });
+    return this.http.post(`${this.apiUrl}/nfce/extrair`, { url: urlNfce });
   }
 
   salvarNfce(dadosNota: any): Observable<any> {
-    return this.http.post(, { dadosNota });
+    return this.http.post(`${this.apiUrl}/nfce/salvar`, { dadosNota });
   }
 
   consultarNfce(urlNfce: string): Observable<any> {
-    return this.http.post(, { url: urlNfce });
+    return this.http.post(`${this.apiUrl}/nfce/consultar`, { url: urlNfce });
   }
 
   getProdutos(): Observable<any[]> {
-    return this.http.get<any[]>();
+    return this.http.get<any[]>(`${this.apiUrl}/produtos`);
   }
 
   deleteProdutoItem(id: number, origem?: string, nome?: string): Observable<any> {
     if (id && origem) {
-      return this.http.delete();
+      return this.http.delete(`${this.apiUrl}/produtos/item/${id}?origem=${origem}`);
     }
     if (nome) {
-      return this.http.delete();
+      return this.http.delete(`${this.apiUrl}/produtos/${encodeURIComponent(nome)}`);
     }
-    return this.http.delete();
+    return this.http.delete(`${this.apiUrl}/produtos/${id}`);
   }
 
   deleteProdutoPorNome(nome: string): Observable<any> {
-    return this.http.delete();
+    return this.http.delete(`${this.apiUrl}/produtos/${encodeURIComponent(nome)}`);
   }
 }
