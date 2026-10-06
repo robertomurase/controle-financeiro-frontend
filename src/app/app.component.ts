@@ -20,7 +20,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
   transacoes: Transacao[] = [];
   produtos: any[] = [];
-  dadosUltimaNota: any = null;
 
   // Busca e Filtro por Estabelecimento na Lista de Produtos
   buscaProduto: string = '';
@@ -38,17 +37,14 @@ export class AppComponent implements OnInit, OnDestroy {
   svgLinePoints: string = '';
   svgAreaPoints: string = '';
 
-  // Form Transação Manual + Pré-visualização
-  novaDescricao: string = '';
-  novoValor: number | null = null;
-  novaQuantidade: number = 1;
-  novoEstabelecimento: string = '';
+  // Form Transação Manual (Categoria em Primeiro, Auto Tipo Salário -> Receita, Valor R$, Data)
   novaCategoria: string = 'Alimentação / Mercado';
-  novaConta: string = 'Conta Corrente';
+  novaDescricao: string = '';
   novoTipo: 'receita' | 'despesa' = 'despesa';
+  novoValor: number | null = null;
   novaData: string = new Date().toISOString().split('T')[0];
 
-  // Leitor QR Code
+  // Leitor QR Code + Pré-Visualização / Conferência NFC-e
   urlNfce: string = '';
   carregandoNfce: boolean = false;
   mensagemNfce: string = '';
@@ -56,6 +52,7 @@ export class AppComponent implements OnInit, OnDestroy {
   scannerModo: 'camera' | 'arquivo' | 'manual' = 'camera';
   scannerAtivo: boolean = false;
   html5QrCode: any = null;
+  dadosNotaPreview: any = null;
 
   constructor(private financeService: FinanceService) {}
 
@@ -171,10 +168,10 @@ export class AppComponent implements OnInit, OnDestroy {
             config,
             (decodedText: string) => {
               this.urlNfce = decodedText;
-              this.mensagemNfce = '✅ QR Code lido com sucesso! Consultando nota fiscal...';
+              this.mensagemNfce = '✅ QR Code lido com sucesso! Extraindo dados da nota...';
               this.statusNfceSucesso = true;
               this.pararScanner();
-              this.consultarNfce();
+              this.extrairNfce();
             },
             () => {}
           ).then(() => {
@@ -186,10 +183,10 @@ export class AppComponent implements OnInit, OnDestroy {
               config,
               (decodedText: string) => {
                 this.urlNfce = decodedText;
-                this.mensagemNfce = '✅ QR Code lido com sucesso! Consultando nota fiscal...';
+                this.mensagemNfce = '✅ QR Code lido com sucesso! Extraindo dados da nota...';
                 this.statusNfceSucesso = true;
                 this.pararScanner();
-                this.consultarNfce();
+                this.extrairNfce();
               },
               () => {}
             ).then(() => {
@@ -243,9 +240,9 @@ export class AppComponent implements OnInit, OnDestroy {
       html5QrCodeTemp.scanFile(file, true)
         .then((decodedText: string) => {
           this.urlNfce = decodedText;
-          this.mensagemNfce = '✅ QR Code identificado! Importando nota fiscal...';
+          this.mensagemNfce = '✅ QR Code identificado! Extraindo dados da nota...';
           this.statusNfceSucesso = true;
-          this.consultarNfce();
+          this.extrairNfce();
         })
         .catch(() => {
           this.mensagemNfce = '❌ Não foi possível encontrar um QR Code válido na imagem. Tente uma imagem mais nítida.';
@@ -255,6 +252,67 @@ export class AppComponent implements OnInit, OnDestroy {
       this.mensagemNfce = '⚠️ Biblioteca do leitor indisponível no momento.';
       this.statusNfceSucesso = false;
     }
+  }
+
+  // Extrai NFC-e sem salvar no banco para exibir a pré-visualização dos produtos
+  extrairNfce(): void {
+    if (!this.urlNfce) {
+      alert('Cole ou escaneie o QR Code da NFC-e!');
+      return;
+    }
+
+    this.carregandoNfce = true;
+    this.mensagemNfce = '🔎 Consultando dados do cupom junto à SEFAZ... Aguarde.';
+    this.statusNfceSucesso = true;
+    this.dadosNotaPreview = null;
+
+    this.financeService.extrairNfce(this.urlNfce).subscribe({
+      next: (res) => {
+        this.carregandoNfce = false;
+        this.statusNfceSucesso = true;
+        this.dadosNotaPreview = res?.dadosNota || null;
+        if (this.dadosNotaPreview && this.dadosNotaPreview.itens) {
+          const totalItens = this.dadosNotaPreview.itens.length;
+          this.mensagemNfce = ;
+        } else {
+          this.mensagemNfce = '✅ Dados da nota extraídos. Confira abaixo e confirme para salvar.';
+        }
+      },
+      error: (err) => {
+        this.carregandoNfce = false;
+        const msgErro = err?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
+        this.mensagemNfce = ;
+        this.statusNfceSucesso = false;
+        this.dadosNotaPreview = null;
+      }
+    });
+  }
+
+  // Confirma e salva a nota e os produtos extraídos no banco de dados
+  confirmarSalvarNfce(): void {
+    if (!this.dadosNotaPreview) return;
+
+    this.carregandoNfce = true;
+    this.mensagemNfce = '💾 Salvando nota fiscal e produtos no banco de dados...';
+
+    this.financeService.salvarNfce(this.dadosNotaPreview).subscribe({
+      next: () => {
+        this.carregandoNfce = false;
+        const count = this.dadosNotaPreview?.itens?.length || 0;
+        this.mensagemNfce = ;
+        this.statusNfceSucesso = true;
+        this.dadosNotaPreview = null;
+        this.urlNfce = '';
+        this.carregarTransacoes();
+        this.carregarProdutos();
+      },
+      error: (err) => {
+        this.carregandoNfce = false;
+        const msgErro = err?.error?.error || 'Erro ao salvar a nota fiscal no banco de dados.';
+        this.mensagemNfce = ;
+        this.statusNfceSucesso = false;
+      }
+    });
   }
 
   carregarTransacoes(): void {
@@ -279,18 +337,12 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Apenas os 10 últimos lançamentos no Dashboard
-  get ultimos10Transacoes(): Transacao[] {
-    if (!this.transacoes) return [];
-    return this.transacoes.slice(0, 10);
-  }
-
   // Lista de Estabelecimentos Únicos para o Filtro Select
   get estabelecimentosUnicos(): string[] {
     if (!this.produtos) return [];
     const setEst = new Set<string>();
     this.produtos.forEach(p => {
-      const est = (p.estabelecimento || 'Cadastro Manual').trim();
+      const est = (p.estabelecimento || 'SEFAZ').trim();
       if (est) setEst.add(est);
     });
     return Array.from(setEst).sort();
@@ -305,7 +357,7 @@ export class AppComponent implements OnInit, OnDestroy {
     // Filtro por Estabelecimento
     if (this.filtroEstabelecimento && this.filtroEstabelecimento.trim()) {
       const estAlvo = this.filtroEstabelecimento.trim();
-      lista = lista.filter(p => (p.estabelecimento || 'Cadastro Manual').trim() === estAlvo);
+      lista = lista.filter(p => (p.estabelecimento || 'SEFAZ').trim() === estAlvo);
     }
 
     // Busca Textual
@@ -329,7 +381,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.buscaProduto = '';
   }
 
-  // Excluir Item individual de Produto
+  // Excluir Item individual de Produto da Lista
   excluirItemProduto(p: any): void {
     if (!p) return;
     const nomeItem = p.nome_produto || 'este produto';
@@ -337,14 +389,12 @@ export class AppComponent implements OnInit, OnDestroy {
       this.financeService.deleteProdutoItem(p.id, p.origem, p.nome_produto).subscribe({
         next: () => {
           this.carregarProdutos();
-          this.carregarTransacoes();
         },
         error: () => {
           if (p.nome_produto) {
             this.financeService.deleteProdutoPorNome(p.nome_produto).subscribe({
               next: () => {
                 this.carregarProdutos();
-                this.carregarTransacoes();
               }
             });
           }
@@ -458,73 +508,39 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Salvar Transação Manual com Quantidade e Estabelecimento
+  // Listener ao mudar Categoria no formulário de Transações
+  onCategoriaChange(): void {
+    if (this.novaCategoria === 'Salário') {
+      this.novoTipo = 'receita';
+    }
+  }
+
+  // Salvar Transação Manual (Salva no BD para o Dashboard/Fluxo de Caixa, mas NÃO salva na Lista de Produtos)
   salvarTransacao(): void {
-    if (!this.novaDescricao || this.novoValor === null || this.novoValor === undefined) {
-      alert('Preencha a descrição/produto e o valor unitário!');
+    if (!this.novaDescricao || !this.novoValor) {
+      alert('Preencha a descrição e o valor!');
       return;
     }
 
-    const qtd = this.novaQuantidade && Number(this.novaQuantidade) > 0 ? Number(this.novaQuantidade) : 1;
-    const valUnit = Number(this.novoValor) || 0;
-    const valTotal = valUnit * qtd;
+    const val = Number(this.novoValor) || 0;
 
-    const nova: any = {
+    const nova: Transacao = {
       descricao: this.novaDescricao,
-      estabelecimento: this.novoEstabelecimento && this.novoEstabelecimento.trim() ? this.novoEstabelecimento.trim() : 'Cadastro Manual',
-      quantidade: qtd,
-      valorUnitario: valUnit,
-      valor: valTotal,
-      categoria: this.novaCategoria || 'Alimentação / Mercado',
-      conta: this.novaConta || 'Conta Corrente',
-      tipo: this.novoTipo || 'despesa',
-      data: this.novaData || new Date().toISOString().split('T')[0]
+      valor: val,
+      categoria: this.novaCategoria,
+      tipo: this.novoTipo,
+      data: this.novaData,
+      estabelecimento: 'Cadastro Manual'
     };
 
     this.financeService.addTransacao(nova).subscribe({
       next: () => {
-        alert('✅ Transação e Produto salvos com sucesso!');
         this.carregarTransacoes();
-        this.carregarProdutos();
         this.novaDescricao = '';
         this.novoValor = null;
-        this.novaQuantidade = 1;
-        this.novoEstabelecimento = '';
         this.activeTab = 'dashboard';
       },
-      error: (err) => {
-        console.error('Erro ao salvar:', err);
-        alert('❌ Erro ao salvar transação. Tente novamente.');
-      }
-    });
-  }
-
-  consultarNfce(): void {
-    if (!this.urlNfce) {
-      alert('Cole ou escaneie o QR Code da NFC-e!');
-      return;
-    }
-
-    this.carregandoNfce = true;
-    this.mensagemNfce = 'Processando nota fiscal com a SEFAZ...';
-    this.statusNfceSucesso = true;
-
-    this.financeService.consultarNfce(this.urlNfce).subscribe({
-      next: (res) => {
-        this.carregandoNfce = false;
-        this.mensagemNfce = '✅ Nota fiscal importada e produtos cadastrados com sucesso!';
-        this.statusNfceSucesso = true;
-        this.dadosUltimaNota = res?.dadosNota || null;
-        this.carregarTransacoes();
-        this.carregarProdutos();
-        this.urlNfce = '';
-      },
-      error: (err) => {
-        this.carregandoNfce = false;
-        const msgErro = err?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
-        this.mensagemNfce = ;
-        this.statusNfceSucesso = false;
-      }
+      error: (err) => console.error('Erro ao salvar transação:', err)
     });
   }
 
