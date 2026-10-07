@@ -1,10 +1,7 @@
-import { Component, OnInit, OnDestroy, LOCALE_ID } from '@angular/core';
-import { CommonModule, registerLocaleData } from '@angular/common';
-import localePt from '@angular/common/locales/pt';
-
-registerLocaleData(localePt, 'pt-BR');
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { FinanceService, Transacao } from './services/finance.service';
+import { FinanceService, Transacao, EstabelecimentoMapeado } from './services/finance.service';
 
 declare var Html5Qrcode: any;
 
@@ -12,21 +9,10 @@ declare var Html5Qrcode: any;
   selector: 'app-root',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  providers: [{ provide: LOCALE_ID, useValue: 'pt-BR' }],
   templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit, OnDestroy {
-  formatarMoeda(valor: number | null | undefined): string {
-    if (valor === null || valor === undefined || isNaN(Number(valor))) {
-      return '0,00';
-    }
-    return Number(valor).toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
-  }
-
-  activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'entradas' | 'saidas' | 'produtos' = 'dashboard';
+  activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'entradas' | 'saidas' | 'produtos' | 'estabelecimentos' = 'dashboard';
   menuAberto: boolean = false;
   settingsMenuAberto: boolean = false;
   modoClaro: boolean = false;
@@ -34,49 +20,43 @@ export class AppComponent implements OnInit, OnDestroy {
 
   transacoes: Transacao[] = [];
   produtos: any[] = [];
-  dadosNotaPreview: any = null;
+  dadosUltimaNota: any = null;
 
-  // Filtros Entradas / Saídas / Produtos
+  // Estabelecimentos (De-Para)
+  estabelecimentosMapeados: EstabelecimentoMapeado[] = [];
+  novoRazaoSocial: string = '';
+  novoNomeSimplificado: string = '';
+  editEstId: number | null = null;
+  editRazaoSocial: string = '';
+  editNomeSimplificado: string = '';
+  modalEstAberto: boolean = false;
+
+  // Filtros de Entradas (Receitas)
   buscaEntrada: string = '';
+  filtroAnoEntrada: string = new Date().getFullYear().toString();
+  filtroMesEntrada: string = String(new Date().getMonth() + 1).padStart(2, '0');
+
+  // Filtros de Saídas (Despesas)
   buscaSaida: string = '';
-  buscaProduto: string = '';
-  filtroEstabelecimento: string = '';
+  filtroAnoSaida: string = new Date().getFullYear().toString();
+  filtroMesSaida: string = String(new Date().getMonth() + 1).padStart(2, '0');
   filtroEstabelecimentoSaida: string = '';
 
-  // Filtros Mês / Ano
-  filtroAnoEntrada: string = String(new Date().getFullYear());
-  filtroMesEntrada: string = String(new Date().getMonth() + 1).padStart(2, '0');
-  filtroAnoSaida: string = String(new Date().getFullYear());
-  filtroMesSaida: string = String(new Date().getMonth() + 1).padStart(2, '0');
-  anoGrafico: string = String(new Date().getFullYear());
-
-  mesesOpcoes: { valor: string, nome: string }[] = [
-    { valor: '01', nome: '01 - Janeiro' },
-    { valor: '02', nome: '02 - Fevereiro' },
-    { valor: '03', nome: '03 - Março' },
-    { valor: '04', nome: '04 - Abril' },
-    { valor: '05', nome: '05 - Maio' },
-    { valor: '06', nome: '06 - Junho' },
-    { valor: '07', nome: '07 - Julho' },
-    { valor: '08', nome: '08 - Agosto' },
-    { valor: '09', nome: '09 - Setembro' },
-    { valor: '10', nome: '10 - Outubro' },
-    { valor: '11', nome: '11 - Novembro' },
-    { valor: '12', nome: '12 - Dezembro' }
-  ];
-
-  // Modal Edição
+  // Modal de Edição de Transação
   modalEdicaoAberto: boolean = false;
-  transacaoEditando: any = null;
+  transacaoEditando: Transacao | null = null;
   editDescricao: string = '';
   editValor: number | null = null;
   editCategoria: string = '';
   editTipo: 'receita' | 'despesa' = 'despesa';
   editData: string = '';
   editEstabelecimento: string = '';
-  editConta: string = 'Conta Corrente';
 
-  // Modal Evolução de Preços
+  // Busca e Filtro por Estabelecimento na Lista de Produtos
+  buscaProduto: string = '';
+  filtroEstabelecimento: string = '';
+
+  // Modal de Evolução de Preços
   modalPrecoAberto: boolean = false;
   produtoSelecionado: any = null;
   historicoPrecosProduto: any[] = [];
@@ -106,12 +86,32 @@ export class AppComponent implements OnInit, OnDestroy {
   scannerModo: 'camera' | 'arquivo' | 'manual' = 'camera';
   scannerAtivo: boolean = false;
   html5QrCode: any = null;
+  dadosNotaPreview: any = null;
+
+  // Controle do Ano do Gráfico de Barras do Dashboard
+  anoGrafico: string = new Date().getFullYear().toString();
+
+  mesesOpcoes: { valor: string, nome: string }[] = [
+    { valor: '01', nome: '01 - Janeiro' },
+    { valor: '02', nome: '02 - Fevereiro' },
+    { valor: '03', nome: '03 - Março' },
+    { valor: '04', nome: '04 - Abril' },
+    { valor: '05', nome: '05 - Maio' },
+    { valor: '06', nome: '06 - Junho' },
+    { valor: '07', nome: '07 - Julho' },
+    { valor: '08', nome: '08 - Agosto' },
+    { valor: '09', nome: '09 - Setembro' },
+    { valor: '10', nome: '10 - Outubro' },
+    { valor: '11', nome: '11 - Novembro' },
+    { valor: '12', nome: '12 - Dezembro' }
+  ];
 
   constructor(private financeService: FinanceService) {}
 
   ngOnInit(): void {
     this.carregarTransacoes();
     this.carregarProdutos();
+    this.carregarEstabelecimentos();
 
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('THEME_MODE');
@@ -123,13 +123,29 @@ export class AppComponent implements OnInit, OnDestroy {
       const savedFontSize = localStorage.getItem('FONT_SIZE');
       if (savedFontSize) {
         this.tamanhoFonte = Number(savedFontSize);
-        document.documentElement.style.fontSize = `${this.tamanhoFonte}px`;
+        document.documentElement.style.fontSize = ;
       }
     }
   }
 
   ngOnDestroy(): void {
     this.pararScanner();
+  }
+
+  limparNomeProduto(nome: string): string {
+    if (!nome) return '';
+    return nome
+      .replace(/\s*\(?\s*(?:Vl\.?|Valor)\s*Total:?\s*(?:R\$\s*)?[\d.,]+\s*\)?/gi, '')
+      .replace(/\s*(?:Vl\.?|Valor)\s*Total.*$/gi, '')
+      .replace(/\s*\(?\s*(?:Vl\.?|Valor)\s*Unit:?\s*(?:R\$\s*)?[\d.,]+\s*\)?/gi, '')
+      .replace(/\s*[-–—]\s*$/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  formatarMoeda(valor: number): string {
+    const v = Number(valor) || 0;
+    return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   }
 
   toggleMenu(): void {
@@ -162,7 +178,7 @@ export class AppComponent implements OnInit, OnDestroy {
   aumentarFonte(): void {
     if (this.tamanhoFonte < 22) {
       this.tamanhoFonte += 1;
-      document.documentElement.style.fontSize = `${this.tamanhoFonte}px`;
+      document.documentElement.style.fontSize = ;
       localStorage.setItem('FONT_SIZE', String(this.tamanhoFonte));
     }
   }
@@ -170,12 +186,12 @@ export class AppComponent implements OnInit, OnDestroy {
   diminuirFonte(): void {
     if (this.tamanhoFonte > 12) {
       this.tamanhoFonte -= 1;
-      document.documentElement.style.fontSize = `${this.tamanhoFonte}px`;
+      document.documentElement.style.fontSize = ;
       localStorage.setItem('FONT_SIZE', String(this.tamanhoFonte));
     }
   }
 
-  setTab(tab: 'dashboard' | 'transacoes' | 'nfce' | 'entradas' | 'saidas' | 'produtos'): void {
+  setTab(tab: 'dashboard' | 'transacoes' | 'nfce' | 'entradas' | 'saidas' | 'produtos' | 'estabelecimentos'): void {
     this.pararScanner();
     this.activeTab = tab;
     this.fecharMenu();
@@ -292,7 +308,7 @@ export class AppComponent implements OnInit, OnDestroy {
       html5QrCodeTemp.scanFile(file, true)
         .then((decodedText: string) => {
           this.urlNfce = decodedText;
-          this.mensagemNfce = '✅ QR Code identificado! Extraindo produtos...';
+          this.mensagemNfce = '✅ QR Code identificado! Extraindo dados da nota...';
           this.statusNfceSucesso = true;
           this.extrairNfce();
         })
@@ -309,16 +325,14 @@ export class AppComponent implements OnInit, OnDestroy {
   carregarTransacoes(): void {
     this.financeService.getTransacoes().subscribe({
       next: (dados) => {
-        this.transacoes = dados || [];
+        this.transacoes = (dados || []).map(t => ({
+          ...t,
+          descricao: this.limparNomeProduto(t.descricao),
+          estabelecimento: this.obterNomeEstabelecimentoSimplificado(t.estabelecimento || t.descricao)
+        }));
       },
       error: () => {
-        this.transacoes = [
-          { id: 5, data: '2026-09-29', estabelecimento: 'TRIGO KIBE YOKI 500G', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 12.99, isNfce: true },
-          { id: 4, data: '2026-09-28', estabelecimento: 'TRIGO KIBE YOKI 500G', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 11.19, isNfce: true },
-          { id: 3, data: '2026-09-27', estabelecimento: 'Restaurante', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 200.00, isNfce: true },
-          { id: 2, data: '2026-09-26', estabelecimento: 'Compra - AUTO POSTO MUFFATO LTDA', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 220.95, isNfce: true },
-          { id: 1, data: '2026-09-26', estabelecimento: 'Compra - CARREFOUR COMERCIO E INDUSTRIA LTDA', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 8.99, isNfce: true }
-        ];
+        this.transacoes = [];
       }
     });
   }
@@ -326,7 +340,11 @@ export class AppComponent implements OnInit, OnDestroy {
   carregarProdutos(): void {
     this.financeService.getProdutos().subscribe({
       next: (dados) => {
-        this.produtos = dados || [];
+        this.produtos = (dados || []).map(p => ({
+          ...p,
+          nome_produto: this.limparNomeProduto(p.nome_produto),
+          estabelecimento: this.obterNomeEstabelecimentoSimplificado(p.estabelecimento)
+        }));
       },
       error: () => {
         this.produtos = [];
@@ -334,88 +352,208 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  get anosDisponiveis(): string[] {
-    const anos = new Set<string>();
-    anos.add(String(new Date().getFullYear()));
-    (this.transacoes || []).forEach(t => {
-      if (t.data && t.data.length >= 4) {
-        anos.add(t.data.substring(0, 4));
+  carregarEstabelecimentos(): void {
+    this.financeService.getEstabelecimentos().subscribe({
+      next: (dados) => {
+        this.estabelecimentosMapeados = dados || [];
+        this.carregarTransacoes();
+        this.carregarProdutos();
+      },
+      error: () => {
+        this.estabelecimentosMapeados = [];
       }
     });
-    return Array.from(anos).sort().reverse();
+  }
+
+  obterNomeEstabelecimentoSimplificado(nomeOriginal: string): string {
+    if (!nomeOriginal) return 'Cadastro Manual';
+    const orig = nomeOriginal.trim().toLowerCase();
+
+    const mapeado = (this.estabelecimentosMapeados || []).find(e =>
+      e.razao_social && e.razao_social.trim().toLowerCase() === orig
+    );
+    if (mapeado && mapeado.nome_simplificado) {
+      return mapeado.nome_simplificado.trim();
+    }
+
+    const parcial = (this.estabelecimentosMapeados || []).find(e =>
+      e.razao_social && orig.includes(e.razao_social.trim().toLowerCase())
+    );
+    if (parcial && parcial.nome_simplificado) {
+      return parcial.nome_simplificado.trim();
+    }
+
+    return nomeOriginal.trim();
+  }
+
+  salvarEstabelecimento(): void {
+    if (!this.novoRazaoSocial || !this.novoNomeSimplificado) {
+      alert('Preencha a Razão Social e o Nome Simplificado!');
+      return;
+    }
+
+    this.financeService.addEstabelecimento({
+      razaoSocial: this.novoRazaoSocial,
+      nomeSimplificado: this.novoNomeSimplificado
+    }).subscribe({
+      next: () => {
+        this.novoRazaoSocial = '';
+        this.novoNomeSimplificado = '';
+        this.carregarEstabelecimentos();
+        alert('✅ Mapeamento de estabelecimento salvo com sucesso!');
+      },
+      error: (err) => alert('❌ Erro ao cadastrar mapeamento.')
+    });
+  }
+
+  abrirModalEdicaoEst(e: EstabelecimentoMapeado): void {
+    if (!e) return;
+    this.editEstId = e.id || null;
+    this.editRazaoSocial = e.razao_social;
+    this.editNomeSimplificado = e.nome_simplificado;
+    this.modalEstAberto = true;
+  }
+
+  salvarEdicaoEst(): void {
+    if (!this.editEstId || !this.editRazaoSocial || !this.editNomeSimplificado) {
+      alert('Preencha a Razão Social e o Nome Simplificado!');
+      return;
+    }
+
+    this.financeService.updateEstabelecimento(this.editEstId, {
+      razaoSocial: this.editRazaoSocial,
+      nomeSimplificado: this.editNomeSimplificado
+    }).subscribe({
+      next: () => {
+        this.fecharModalEst();
+        this.carregarEstabelecimentos();
+        alert('✅ Mapeamento atualizado com sucesso!');
+      },
+      error: () => alert('❌ Erro ao atualizar mapeamento.')
+    });
+  }
+
+  fecharModalEst(): void {
+    this.modalEstAberto = false;
+    this.editEstId = null;
+  }
+
+  excluirEstabelecimento(e: EstabelecimentoMapeado): void {
+    if (!e || !e.id) return;
+    if (confirm()) {
+      this.financeService.deleteEstabelecimento(e.id).subscribe({
+        next: () => this.carregarEstabelecimentos(),
+        error: () => alert('❌ Erro ao excluir mapeamento.')
+      });
+    }
+  }
+
+  get anosDisponiveis(): string[] {
+    const setAnos = new Set<string>();
+    setAnos.add(new Date().getFullYear().toString());
+
+    (this.transacoes || []).forEach(t => {
+      if (t.data && t.data.length >= 4) {
+        setAnos.add(t.data.substring(0, 4));
+      }
+    });
+
+    return Array.from(setAnos).sort((a, b) => b.localeCompare(a));
+  }
+
+  get anosDisponiveisGrafico(): string[] {
+    return this.anosDisponiveis;
+  }
+
+  get dadosGraficoBarras(): any[] {
+    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const ano = this.anoGrafico || String(new Date().getFullYear());
+
+    const transAno = (this.transacoes || []).filter(t => t.data && t.data.startsWith(ano));
+
+    const totaisPorMes = meses.map((mesLabel, index) => {
+      const mesNum = String(index + 1).padStart(2, '0');
+      const prefixo = ;
+
+      const transMes = transAno.filter(t => t.data && t.data.startsWith(prefixo));
+      const receitaVal = transMes.filter(t => t.tipo === 'receita').reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+      const despesaVal = transMes.filter(t => t.tipo === 'despesa').reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+
+      return {
+        mesLabel,
+        receitaVal,
+        despesaVal
+      };
+    });
+
+    const maxVal = Math.max(...totaisPorMes.map(m => Math.max(m.receitaVal, m.despesaVal)), 100);
+
+    return totaisPorMes.map(m => ({
+      ...m,
+      receitaHeight: Math.round((m.receitaVal / maxVal) * 100),
+      despesaHeight: Math.round((m.despesaVal / maxVal) * 100)
+    }));
   }
 
   get estabelecimentosUnicos(): string[] {
     if (!this.produtos) return [];
     const setEst = new Set<string>();
     this.produtos.forEach(p => {
-      const est = (p.estabelecimento || 'Cadastro Manual').trim();
+      const est = (this.obterNomeEstabelecimentoSimplificado(p.estabelecimento) || 'Cadastro Manual').trim();
       if (est) setEst.add(est);
     });
     return Array.from(setEst).sort();
   }
 
   get produtosFiltrados(): any[] {
-    if (!this.produtos || this.produtos.length === 0) return [];
-    
-    const mapaAgrupado = new Map<string, any[]>();
-    
-    for (const p of this.produtos) {
-      if (!p || !p.nome_produto) continue;
-      const chave = p.nome_produto.toLowerCase().trim();
-      if (!mapaAgrupado.has(chave)) {
-        mapaAgrupado.set(chave, []);
-      }
-      mapaAgrupado.get(chave)!.push(p);
-    }
+    if (!this.produtos) return [];
 
-    const listaConsolidada: any[] = [];
-
-    mapaAgrupado.forEach((itens, _chave) => {
-      itens.sort((a, b) => {
-        const dataA = a.data_emissao || a.data_cadastro || a.data || '';
-        const dataB = b.data_emissao || b.data_cadastro || b.data || '';
-        return dataB.localeCompare(dataA);
-      });
-
-      const maisRecente = itens[0];
-      
-      listaConsolidada.push({
-        id: maisRecente.id,
-        nome_produto: maisRecente.nome_produto,
-        codigo: maisRecente.codigo,
-        quantidade: (maisRecente.quantidade !== null && maisRecente.quantidade !== undefined) ? maisRecente.quantidade : 1,
-        unidade: maisRecente.unidade || 'UN',
-        valor_unitario: maisRecente.valor_unitario || maisRecente.preco_medio || 0,
-        valor_total: maisRecente.valor_total || maisRecente.gasto_total || 0,
-        data_emissao: maisRecente.data_emissao || maisRecente.data_nfce || '-',
-        data_cadastro: maisRecente.data_cadastro || maisRecente.data || '-',
-        estabelecimento: maisRecente.estabelecimento || 'Cadastro Manual',
-        origem: maisRecente.origem,
-        total_compras: itens.length,
-        historico_completo: itens
-      });
-    });
-
-    let resultado = listaConsolidada;
+    let lista = [...this.produtos];
 
     if (this.filtroEstabelecimento && this.filtroEstabelecimento.trim()) {
       const estAlvo = this.filtroEstabelecimento.trim();
-      resultado = resultado.filter(p => 
-        (p.estabelecimento || 'Cadastro Manual').trim() === estAlvo ||
-        (p.historico_completo && p.historico_completo.some((h: any) => (h.estabelecimento || 'Cadastro Manual').trim() === estAlvo))
+      lista = lista.filter(p =>
+        (this.obterNomeEstabelecimentoSimplificado(p.estabelecimento) || 'Cadastro Manual').trim() === estAlvo
       );
     }
 
     if (this.buscaProduto && this.buscaProduto.trim()) {
       const termo = this.buscaProduto.toLowerCase().trim();
-      resultado = resultado.filter(p =>
-        (p.nome_produto && p.nome_produto.toLowerCase().includes(termo)) ||
-        (p.estabelecimento && p.estabelecimento.toLowerCase().includes(termo))
-      );
+      lista = lista.filter(p => {
+        const nomeLimpo = this.limparNomeProduto(p.nome_produto || '').toLowerCase();
+        const estSimplificado = this.obterNomeEstabelecimentoSimplificado(p.estabelecimento || '').toLowerCase();
+        return nomeLimpo.includes(termo) || estSimplificado.includes(termo);
+      });
     }
 
-    return resultado.sort((a, b) => {
+    const mapaUnicos = new Map<string, any>();
+
+    lista.forEach(p => {
+      const nomeLimpo = this.limparNomeProduto(p.nome_produto || '');
+      if (!nomeLimpo) return;
+
+      const chave = nomeLimpo.toLowerCase().trim();
+      const pFormatado = {
+        ...p,
+        nome_produto: nomeLimpo,
+        estabelecimento: this.obterNomeEstabelecimentoSimplificado(p.estabelecimento)
+      };
+
+      if (!mapaUnicos.has(chave)) {
+        mapaUnicos.set(chave, pFormatado);
+      } else {
+        const existente = mapaUnicos.get(chave);
+        const dataEx = existente.data_emissao || existente.data_cadastro || existente.data || '';
+        const dataNova = p.data_emissao || p.data_cadastro || p.data || '';
+        if (dataNova.localeCompare(dataEx) > 0) {
+          mapaUnicos.set(chave, pFormatado);
+        }
+      }
+    });
+
+    const unicos = Array.from(mapaUnicos.values());
+
+    return unicos.sort((a, b) => {
       const nomeA = (a.nome_produto || '').toLowerCase();
       const nomeB = (b.nome_produto || '').toLowerCase();
       return nomeA.localeCompare(nomeB);
@@ -442,8 +580,8 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     if (this.filtroMesEntrada) {
-      const prefixo = `${this.filtroAnoEntrada || new Date().getFullYear()}-${this.filtroMesEntrada}`;
-      lista = lista.filter(t => t.data && t.data.startsWith(prefixo));
+      const prefixoMes = ;
+      lista = lista.filter(t => t.data && t.data.startsWith(prefixoMes));
     }
 
     if (this.buscaEntrada && this.buscaEntrada.trim()) {
@@ -469,13 +607,15 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     if (this.filtroMesSaida) {
-      const prefixo = `${this.filtroAnoSaida || new Date().getFullYear()}-${this.filtroMesSaida}`;
-      lista = lista.filter(t => t.data && t.data.startsWith(prefixo));
+      const prefixoMes = ;
+      lista = lista.filter(t => t.data && t.data.startsWith(prefixoMes));
     }
 
     if (this.filtroEstabelecimentoSaida && this.filtroEstabelecimentoSaida.trim()) {
       const estAlvo = this.filtroEstabelecimentoSaida.trim();
-      lista = lista.filter(t => (t.estabelecimento || t.descricao || 'Cadastro Manual').trim() === estAlvo);
+      lista = lista.filter(t =>
+        (this.obterNomeEstabelecimentoSimplificado(t.estabelecimento || t.descricao) || 'Cadastro Manual').trim() === estAlvo
+      );
     }
 
     if (this.buscaSaida && this.buscaSaida.trim()) {
@@ -492,7 +632,7 @@ export class AppComponent implements OnInit, OnDestroy {
   get estabelecimentosSaidasUnicos(): string[] {
     const setEst = new Set<string>();
     (this.transacoes || []).filter(t => t.tipo === 'despesa').forEach(t => {
-      const est = (t.estabelecimento || t.descricao || 'Cadastro Manual').trim();
+      const est = (this.obterNomeEstabelecimentoSimplificado(t.estabelecimento || t.descricao) || 'Cadastro Manual').trim();
       if (est) setEst.add(est);
     });
     return Array.from(setEst).sort();
@@ -502,52 +642,15 @@ export class AppComponent implements OnInit, OnDestroy {
     return this.saidasFiltradas.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
   }
 
-  get anosDisponiveisGrafico(): string[] {
-    return this.anosDisponiveis;
-  }
-
-  get dadosGraficoBarras(): any[] {
-    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-    const ano = this.anoGrafico || String(new Date().getFullYear());
-
-    const transAno = (this.transacoes || []).filter(t => t.data && t.data.startsWith(ano));
-
-    const totaisPorMes = meses.map((mesLabel, index) => {
-      const mesNum = String(index + 1).padStart(2, '0');
-      const prefixo = `${ano}-${mesNum}`;
-
-      const transMes = transAno.filter(t => t.data && t.data.startsWith(prefixo));
-      const receitaVal = transMes.filter(t => t.tipo === 'receita').reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
-      const despesaVal = transMes.filter(t => t.tipo === 'despesa').reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
-
-      return {
-        mesLabel,
-        receitaVal,
-        despesaVal
-      };
-    });
-
-    const maxVal = Math.max(...totaisPorMes.map(m => Math.max(m.receitaVal, m.despesaVal)), 100);
-
-    return totaisPorMes.map(m => ({
-      mesLabel: m.mesLabel,
-      receitaVal: m.receitaVal,
-      despesaVal: m.despesaVal,
-      receitaHeight: Math.round((m.receitaVal / maxVal) * 100),
-      despesaHeight: Math.round((m.despesaVal / maxVal) * 100)
-    }));
-  }
-
   abrirModalEdicao(t: Transacao): void {
     if (!t) return;
     this.transacaoEditando = t;
-    this.editDescricao = t.descricao || '';
-    this.editValor = t.valor || 0;
+    this.editDescricao = this.limparNomeProduto(t.descricao);
+    this.editValor = t.valor;
     this.editCategoria = t.categoria || 'Outros';
-    this.editTipo = t.tipo || 'despesa';
-    this.editData = t.data || new Date().toISOString().split('T')[0];
+    this.editTipo = t.tipo;
+    this.editData = t.data;
     this.editEstabelecimento = t.estabelecimento || '';
-    this.editConta = t.conta || 'Conta Corrente';
     this.modalEdicaoAberto = true;
   }
 
@@ -564,60 +667,54 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     const payload: Partial<Transacao> = {
-      descricao: this.editDescricao,
+      descricao: this.limparNomeProduto(this.editDescricao),
       valor: Number(this.editValor) || 0,
       categoria: this.editCategoria,
       tipo: this.editTipo,
       data: this.editData,
-      estabelecimento: this.editEstabelecimento || 'Cadastro Manual',
-      conta: this.editConta
+      estabelecimento: this.editEstabelecimento ? this.obterNomeEstabelecimentoSimplificado(this.editEstabelecimento) : 'Cadastro Manual'
     };
 
     this.financeService.updateTransacao(this.transacaoEditando.id, payload).subscribe({
       next: () => {
-        this.carregarTransacoes();
         this.fecharModalEdicao();
+        this.carregarTransacoes();
+        this.carregarProdutos();
         alert('✅ Transação atualizada com sucesso!');
       },
-      error: () => {
-        alert('❌ Erro ao atualizar transação.');
-      }
+      error: () => alert('❌ Erro ao atualizar transação.')
     });
   }
 
   excluirTransacao(t: Transacao): void {
     if (!t || !t.id) return;
-    if (confirm(`Tem certeza que deseja excluir "${t.descricao}"?`)) {
+    if (confirm()) {
       this.financeService.deleteTransacao(t.id).subscribe({
         next: () => {
           this.carregarTransacoes();
           this.carregarProdutos();
         },
-        error: () => {
-          alert('❌ Erro ao excluir transação.');
-        }
+        error: () => alert('❌ Erro ao excluir transação.')
       });
     }
   }
 
   excluirItemProduto(p: any): void {
-    if (!p || !p.nome_produto) return;
-    const nomeItem = p.nome_produto;
-    if (confirm(`Tem certeza que deseja excluir "${nomeItem}" e todo o seu histórico da lista?`)) {
-      this.financeService.deleteProdutoPorNome(nomeItem).subscribe({
+    if (!p) return;
+    const nomeItem = this.limparNomeProduto(p.nome_produto || 'este produto');
+    if (confirm()) {
+      this.financeService.deleteProdutoItem(p.id, p.origem, nomeItem).subscribe({
         next: () => {
           this.carregarProdutos();
           this.carregarTransacoes();
         },
         error: () => {
-          if (p.id && p.origem) {
-            this.financeService.deleteProdutoItem(p.id, p.origem, p.nome_produto).subscribe({
-              next: () => {
-                this.carregarProdutos();
-                this.carregarTransacoes();
-              }
-            });
-          }
+          this.financeService.deleteProdutoPorNome(nomeItem).subscribe({
+            next: () => {
+              this.carregarProdutos();
+              this.carregarTransacoes();
+            }
+          });
         }
       });
     }
@@ -625,12 +722,21 @@ export class AppComponent implements OnInit, OnDestroy {
 
   abrirModalEvolucaoPreco(p: any): void {
     if (!p || !p.nome_produto) return;
-    this.produtoSelecionado = p;
+    const nomeLimpoAlvo = this.limparNomeProduto(p.nome_produto).toLowerCase().trim();
 
-    const nomeAlvo = p.nome_produto.toLowerCase().trim();
-    const historico = this.produtos.filter(item => 
-      item.nome_produto && item.nome_produto.toLowerCase().trim() === nomeAlvo
-    );
+    this.produtoSelecionado = {
+      ...p,
+      nome_produto: this.limparNomeProduto(p.nome_produto)
+    };
+
+    const historico = this.produtos.filter(item => {
+      const nomeItemLimpo = this.limparNomeProduto(item.nome_produto || '').toLowerCase().trim();
+      return nomeItemLimpo === nomeLimpoAlvo;
+    }).map(item => ({
+      ...item,
+      nome_produto: this.limparNomeProduto(item.nome_produto || ''),
+      estabelecimento: this.obterNomeEstabelecimentoSimplificado(item.estabelecimento)
+    }));
 
     historico.sort((a, b) => {
       const dataA = a.data_emissao || a.data_cadastro || a.data || '';
@@ -677,7 +783,6 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     const svgWidth = 500;
-    const svgHeight = 200;
     const marginX = 50;
     const marginYTop = 30;
     const marginYBottom = 150;
@@ -694,14 +799,14 @@ export class AppComponent implements OnInit, OnDestroy {
     this.pontosGrafico = historico.map((item, index) => {
       const val = Number(item.valor_unitario || item.preco_medio || 0);
       const x = n === 1 ? svgWidth / 2 : marginX + (index / (n - 1)) * availableWidth;
-      
+
       let y = marginYBottom - ((val - minVal) / valRange) * availableHeight;
       if (maxVal === minVal) {
         y = 90;
       }
 
       const rawData = item.data_emissao || item.data_cadastro || item.data || '';
-      const dataFormatted = rawData ? rawData.split('-').slice(1).join('/') : `P${index + 1}`;
+      const dataFormatted = rawData ? rawData.split('-').slice(1).join('/') : ;
 
       return {
         x,
@@ -711,13 +816,13 @@ export class AppComponent implements OnInit, OnDestroy {
       };
     });
 
-    const ptsStr = this.pontosGrafico.map(pt => `${pt.x},${pt.y}`).join(' ');
+    const ptsStr = this.pontosGrafico.map(pt => ).join(' ');
     this.svgLinePoints = ptsStr;
 
     if (this.pontosGrafico.length > 0) {
       const firstX = this.pontosGrafico[0].x;
       const lastX = this.pontosGrafico[this.pontosGrafico.length - 1].x;
-      this.svgAreaPoints = `${firstX},150 ${ptsStr} ${lastX},150`;
+      this.svgAreaPoints = ;
     } else {
       this.svgAreaPoints = '';
     }
@@ -735,8 +840,8 @@ export class AppComponent implements OnInit, OnDestroy {
     const valTotal = isSalario ? valUnit : valUnit * qtd;
 
     const nova: any = {
-      descricao: this.novaDescricao,
-      estabelecimento: isSalario ? 'Cadastro Manual' : (this.novoEstabelecimento && this.novoEstabelecimento.trim() ? this.novoEstabelecimento.trim() : 'Cadastro Manual'),
+      descricao: this.limparNomeProduto(this.novaDescricao),
+      estabelecimento: isSalario ? 'Cadastro Manual' : (this.novoEstabelecimento && this.novoEstabelecimento.trim() ? this.obterNomeEstabelecimentoSimplificado(this.novoEstabelecimento) : 'Cadastro Manual'),
       quantidade: qtd,
       valorUnitario: valUnit,
       valor: valTotal,
@@ -757,9 +862,7 @@ export class AppComponent implements OnInit, OnDestroy {
         this.activeTab = 'dashboard';
         alert('✅ Transação salva com sucesso!');
       },
-      error: () => {
-        alert('❌ Erro ao salvar transação. Verifique a conexão com o servidor.');
-      }
+      error: (err) => alert('❌ Erro ao salvar transação.')
     });
   }
 
@@ -770,15 +873,25 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     this.carregandoNfce = true;
-    this.mensagemNfce = 'Processando nota fiscal com a SEFAZ...';
+    this.mensagemNfce = 'Consultando SEFAZ e extraindo produtos...';
     this.statusNfceSucesso = true;
 
     this.financeService.extrairNfce(this.urlNfce).subscribe({
       next: (res) => {
         this.carregandoNfce = false;
         const totalItens = res?.dadosNota?.itens?.length || 0;
-        this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
+        this.mensagemNfce = ;
         this.statusNfceSucesso = true;
+
+        if (res?.dadosNota) {
+          res.dadosNota.estabelecimento = this.obterNomeEstabelecimentoSimplificado(res.dadosNota.estabelecimento);
+          if (res.dadosNota.itens) {
+            res.dadosNota.itens = res.dadosNota.itens.map((i: any) => ({
+              ...i,
+              nomeProduto: this.limparNomeProduto(i.nomeProduto)
+            }));
+          }
+        }
         this.dadosNotaPreview = res?.dadosNota || null;
       },
       error: () => {
@@ -786,14 +899,24 @@ export class AppComponent implements OnInit, OnDestroy {
           next: (res) => {
             this.carregandoNfce = false;
             const totalItens = res?.dadosNota?.itens?.length || 0;
-            this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
+            this.mensagemNfce = ;
             this.statusNfceSucesso = true;
+
+            if (res?.dadosNota) {
+              res.dadosNota.estabelecimento = this.obterNomeEstabelecimentoSimplificado(res.dadosNota.estabelecimento);
+              if (res.dadosNota.itens) {
+                res.dadosNota.itens = res.dadosNota.itens.map((i: any) => ({
+                  ...i,
+                  nomeProduto: this.limparNomeProduto(i.nomeProduto)
+                }));
+              }
+            }
             this.dadosNotaPreview = res?.dadosNota || null;
           },
           error: (err2) => {
             this.carregandoNfce = false;
             const msgErro = err2?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
-            this.mensagemNfce = `❌ ${msgErro}`;
+            this.mensagemNfce = ;
             this.statusNfceSucesso = false;
           }
         });
@@ -813,7 +936,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.financeService.salvarNfce(this.dadosNotaPreview).subscribe({
       next: () => {
         this.carregandoNfce = false;
-        this.mensagemNfce = '✅ NFC-e e produtos salvos com sucesso!';
+        this.mensagemNfce = '✅ Nota fiscal e produtos salvos com sucesso!';
         this.statusNfceSucesso = true;
         this.dadosNotaPreview = null;
         this.urlNfce = '';
@@ -824,7 +947,7 @@ export class AppComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.carregandoNfce = false;
         const msgErro = err?.error?.error || 'Erro ao salvar a nota fiscal.';
-        this.mensagemNfce = `❌ ${msgErro}`;
+        this.mensagemNfce = ;
         this.statusNfceSucesso = false;
       }
     });
@@ -850,10 +973,10 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   get receitasMes(): number {
-    return this.transacoes.filter(t => t.tipo === 'receita').reduce((a, b) => a + (Number(b.valor) || 0), 0);
+    return (this.transacoes || []).filter(t => t.tipo === 'receita').reduce((a, b) => a + (Number(b.valor) || 0), 0);
   }
 
   get despesasMes(): number {
-    return this.transacoes.filter(t => t.tipo === 'despesa').reduce((a, b) => a + (Number(b.valor) || 0), 0);
+    return (this.transacoes || []).filter(t => t.tipo === 'despesa').reduce((a, b) => a + (Number(b.valor) || 0), 0);
   }
 }

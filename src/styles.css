@@ -1072,3 +1072,24 @@ input:focus, select:focus {
     height: 42px;
   }
 }
+
+/* Filter Group Row */
+.filter-group-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .filter-group-row {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  .filter-group-row select,
+  .filter-group-row .search-box {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+}
