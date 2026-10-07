@@ -9,7 +9,7 @@
       </svg>
       <div>
         <span class="brand-title">Finanças Pro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v38 - back v19</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v39 - back v19</span>
       </div>
     </div>
 
@@ -385,7 +385,7 @@
           <p style="margin: 12px 0 16px 0; color: #cbd5e1; font-size: 0.9rem;">
             <strong>Selecione ou tire uma foto contendo o QR Code da NFC-e</strong>
           </p>
-          <input type="file" accept="image/*" (change)="processarFotoQrCode()" id="qr-file-input" class="file-input" style="display: none;" />
+          <input type="file" accept="image/*" (change)="processarFotoQrCode($event)" id="qr-file-input" class="file-input" style="display: none;" />
           <button class="btn-primary" (click)="triggerFileInput()">📷 Escolher Foto do QR Code</button>
         </div>
       </div>

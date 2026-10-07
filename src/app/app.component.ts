@@ -91,7 +91,7 @@ export class AppComponent implements OnInit, OnDestroy {
       const savedFontSize = localStorage.getItem('FONT_SIZE');
       if (savedFontSize) {
         this.tamanhoFonte = Number(savedFontSize);
-        document.documentElement.style.fontSize = ;
+        document.documentElement.style.fontSize = `${this.tamanhoFonte}px`;
       }
     }
   }
@@ -130,7 +130,7 @@ export class AppComponent implements OnInit, OnDestroy {
   aumentarFonte(): void {
     if (this.tamanhoFonte < 22) {
       this.tamanhoFonte += 1;
-      document.documentElement.style.fontSize = ;
+      document.documentElement.style.fontSize = `${this.tamanhoFonte}px`;
       localStorage.setItem('FONT_SIZE', String(this.tamanhoFonte));
     }
   }
@@ -138,7 +138,7 @@ export class AppComponent implements OnInit, OnDestroy {
   diminuirFonte(): void {
     if (this.tamanhoFonte > 12) {
       this.tamanhoFonte -= 1;
-      document.documentElement.style.fontSize = ;
+      document.documentElement.style.fontSize = `${this.tamanhoFonte}px`;
       localStorage.setItem('FONT_SIZE', String(this.tamanhoFonte));
     }
   }
@@ -180,11 +180,11 @@ export class AppComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       if (typeof Html5Qrcode !== 'undefined') {
         try {
-          this.html5QrCode = new Html5Qrcode(qr-reader);
+          this.html5QrCode = new Html5Qrcode("qr-reader");
           const config = { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 };
 
           this.html5QrCode.start(
-            { facingMode: environment },
+            { facingMode: "environment" },
             config,
             (decodedText: string) => {
               this.urlNfce = decodedText;
@@ -199,7 +199,7 @@ export class AppComponent implements OnInit, OnDestroy {
             this.statusNfceSucesso = true;
           }).catch(() => {
             this.html5QrCode.start(
-              { facingMode: user },
+              { facingMode: "user" },
               config,
               (decodedText: string) => {
                 this.urlNfce = decodedText;
@@ -256,7 +256,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.statusNfceSucesso = true;
 
     if (typeof Html5Qrcode !== 'undefined') {
-      const html5QrCodeTemp = new Html5Qrcode(qr-reader);
+      const html5QrCodeTemp = new Html5Qrcode("qr-reader");
       html5QrCodeTemp.scanFile(file, true)
         .then((decodedText: string) => {
           this.urlNfce = decodedText;
@@ -427,7 +427,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
     const totaisPorMes = meses.map((mesLabel, index) => {
       const mesNum = String(index + 1).padStart(2, '0');
-      const prefixo = ;
+      const prefixo = `${dataObj.getFullYear()}-${String(dataObj.getMonth() + 1).padStart(2, "0")}`;
 
       const transMes = transAno.filter(t => t.data.startsWith(prefixo));
       const receitaVal = transMes.filter(t => t.tipo === 'receita').reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
@@ -652,7 +652,7 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.pontosGrafico.length > 0) {
       const firstX = this.pontosGrafico[0].x;
       const lastX = this.pontosGrafico[this.pontosGrafico.length - 1].x;
-      this.svgAreaPoints = ;
+      this.svgAreaPoints = `${firstX},150 ${ptsStr} ${lastX},150`;
     } else {
       this.svgAreaPoints = '';
     }
@@ -714,7 +714,7 @@ export class AppComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.carregandoNfce = false;
         const totalItens = res?.dadosNota?.itens?.length || 0;
-        this.mensagemNfce = ;
+        this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
         this.statusNfceSucesso = true;
         this.dadosNotaPreview = res?.dadosNota || null;
       },
@@ -723,14 +723,14 @@ export class AppComponent implements OnInit, OnDestroy {
           next: (res) => {
             this.carregandoNfce = false;
             const totalItens = res?.dadosNota?.itens?.length || 0;
-            this.mensagemNfce = ;
+            this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
             this.statusNfceSucesso = true;
             this.dadosNotaPreview = res?.dadosNota || null;
           },
           error: (err2) => {
             this.carregandoNfce = false;
             const msgErro = err2?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
-            this.mensagemNfce = ;
+            this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
             this.statusNfceSucesso = false;
           }
         });
@@ -751,7 +751,7 @@ export class AppComponent implements OnInit, OnDestroy {
       next: () => {
         this.carregandoNfce = false;
         const totalItens = this.dadosNotaPreview?.itens?.length || 0;
-        this.mensagemNfce = ;
+        this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
         this.statusNfceSucesso = true;
         this.dadosNotaPreview = null;
         this.urlNfce = '';
@@ -762,7 +762,7 @@ export class AppComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.carregandoNfce = false;
         const msgErro = err?.error?.error || 'Erro ao salvar a nota fiscal.';
-        this.mensagemNfce = ;
+        this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
         this.statusNfceSucesso = false;
       }
     });
