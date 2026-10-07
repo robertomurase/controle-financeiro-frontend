@@ -342,24 +342,66 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   get produtosFiltrados(): any[] {
-    if (!this.produtos) return [];
+    if (!this.produtos || this.produtos.length === 0) return [];
     
-    let lista = [...this.produtos];
+    const mapaAgrupado = new Map<string, any[]>();
+    
+    for (const p of this.produtos) {
+      if (!p || !p.nome_produto) continue;
+      const chave = p.nome_produto.toLowerCase().trim();
+      if (!mapaAgrupado.has(chave)) {
+        mapaAgrupado.set(chave, []);
+      }
+      mapaAgrupado.get(chave)!.push(p);
+    }
+
+    const listaConsolidada: any[] = [];
+
+    mapaAgrupado.forEach((itens, _chave) => {
+      itens.sort((a, b) => {
+        const dataA = a.data_emissao || a.data_cadastro || a.data || '';
+        const dataB = b.data_emissao || b.data_cadastro || b.data || '';
+        return dataB.localeCompare(dataA);
+      });
+
+      const maisRecente = itens[0];
+      
+      listaConsolidada.push({
+        id: maisRecente.id,
+        nome_produto: maisRecente.nome_produto,
+        codigo: maisRecente.codigo,
+        quantidade: (maisRecente.quantidade !== null && maisRecente.quantidade !== undefined) ? maisRecente.quantidade : 1,
+        unidade: maisRecente.unidade || 'UN',
+        valor_unitario: maisRecente.valor_unitario || maisRecente.preco_medio || 0,
+        valor_total: maisRecente.valor_total || maisRecente.gasto_total || 0,
+        data_emissao: maisRecente.data_emissao || maisRecente.data_nfce || '-',
+        data_cadastro: maisRecente.data_cadastro || maisRecente.data || '-',
+        estabelecimento: maisRecente.estabelecimento || 'Cadastro Manual',
+        origem: maisRecente.origem,
+        total_compras: itens.length,
+        historico_completo: itens
+      });
+    });
+
+    let resultado = listaConsolidada;
 
     if (this.filtroEstabelecimento && this.filtroEstabelecimento.trim()) {
       const estAlvo = this.filtroEstabelecimento.trim();
-      lista = lista.filter(p => (p.estabelecimento || 'Cadastro Manual').trim() === estAlvo);
+      resultado = resultado.filter(p => 
+        (p.estabelecimento || 'Cadastro Manual').trim() === estAlvo ||
+        (p.historico_completo && p.historico_completo.some((h: any) => (h.estabelecimento || 'Cadastro Manual').trim() === estAlvo))
+      );
     }
 
     if (this.buscaProduto && this.buscaProduto.trim()) {
       const termo = this.buscaProduto.toLowerCase().trim();
-      lista = lista.filter(p =>
+      resultado = resultado.filter(p =>
         (p.nome_produto && p.nome_produto.toLowerCase().includes(termo)) ||
         (p.estabelecimento && p.estabelecimento.toLowerCase().includes(termo))
       );
     }
 
-    return lista.sort((a, b) => {
+    return resultado.sort((a, b) => {
       const nomeA = (a.nome_produto || '').toLowerCase();
       const nomeB = (b.nome_produto || '').toLowerCase();
       return nomeA.localeCompare(nomeB);
@@ -545,17 +587,17 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   excluirItemProduto(p: any): void {
-    if (!p) return;
-    const nomeItem = p.nome_produto || 'este produto';
-    if (confirm(`Tem certeza que deseja excluir "${nomeItem}" da lista?`)) {
-      this.financeService.deleteProdutoItem(p.id, p.origem, p.nome_produto).subscribe({
+    if (!p || !p.nome_produto) return;
+    const nomeItem = p.nome_produto;
+    if (confirm(`Tem certeza que deseja excluir "${nomeItem}" e todo o seu histórico da lista?`)) {
+      this.financeService.deleteProdutoPorNome(nomeItem).subscribe({
         next: () => {
           this.carregarProdutos();
           this.carregarTransacoes();
         },
         error: () => {
-          if (p.nome_produto) {
-            this.financeService.deleteProdutoPorNome(p.nome_produto).subscribe({
+          if (p.id && p.origem) {
+            this.financeService.deleteProdutoItem(p.id, p.origem, p.nome_produto).subscribe({
               next: () => {
                 this.carregarProdutos();
                 this.carregarTransacoes();
