@@ -95,8 +95,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.carregarEstabelecimentos();
-    this.carregarTransacoes();
-    this.carregarProdutos();
 
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('THEME_MODE');
@@ -133,20 +131,25 @@ export class AppComponent implements OnInit, OnDestroy {
 
   obterNomeEstabelecimentoSimplificado(nomeOriginal: string): string {
     if (!nomeOriginal) return 'Cadastro Manual';
-    const orig = nomeOriginal.trim().toLowerCase();
-    if (!orig) return 'Cadastro Manual';
+    const orig = nomeOriginal.trim();
+    if (!orig || orig === 'Cadastro Manual' || orig === 'SEFAZ') return orig;
 
-    const exact = (this.estabelecimentosMapeados || []).find(e =>
-      e.razao_social && e.razao_social.trim().toLowerCase() === orig
-    );
-    if (exact && exact.nome_simplificado) return exact.nome_simplificado;
+    const origLower = orig.toLowerCase();
 
-    const partial = (this.estabelecimentosMapeados || []).find(e =>
-      e.razao_social && orig.includes(e.razao_social.trim().toLowerCase())
-    );
-    if (partial && partial.nome_simplificado) return partial.nome_simplificado;
+    for (const e of (this.estabelecimentosMapeados || [])) {
+      if (!e.razao_social || !e.nome_simplificado) continue;
+      const razaoLower = e.razao_social.trim().toLowerCase();
+      const simpLower = e.nome_simplificado.trim().toLowerCase();
 
-    return nomeOriginal.trim();
+      if (razaoLower === origLower || simpLower === origLower) {
+        return e.nome_simplificado.trim();
+      }
+      if (razaoLower.length > 2 && (origLower.includes(razaoLower) || razaoLower.includes(origLower))) {
+        return e.nome_simplificado.trim();
+      }
+    }
+
+    return orig;
   }
 
   toggleMenu(): void {
@@ -207,9 +210,13 @@ export class AppComponent implements OnInit, OnDestroy {
     this.financeService.getEstabelecimentos().subscribe({
       next: (dados) => {
         this.estabelecimentosMapeados = dados || [];
+        this.carregarTransacoes();
+        this.carregarProdutos();
       },
       error: () => {
         this.estabelecimentosMapeados = [];
+        this.carregarTransacoes();
+        this.carregarProdutos();
       }
     });
   }
