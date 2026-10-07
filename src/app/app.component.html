@@ -7,7 +7,7 @@
       </svg>
       <div>
         <span class="brand-title">Controle Financeiro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v45 - back v20</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v51 - back v21</span>
       </div>
     </div>
     <div class="header-right-mobile">
@@ -516,7 +516,7 @@
       </div>
 
       <!-- Filtros entre Título e Boxes -->
-      <div class="filter-group-row" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 20px;">
+      <div class="filter-group-row">
         <select [(ngModel)]="filtroAnoEntrada" class="select-responsive filter-select">
           <option value="">📅 Todos os Anos</option>
           <option *ngFor="let ano of anosDisponiveis" [value]="ano">{{ ano }}</option>
@@ -604,7 +604,7 @@
       </div>
 
       <!-- Filtros entre Título e Boxes -->
-      <div class="filter-group-row" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 20px;">
+      <div class="filter-group-row">
         <select [(ngModel)]="filtroAnoSaida" class="select-responsive filter-select">
           <option value="">📅 Todos os Anos</option>
           <option *ngFor="let ano of anosDisponiveis" [value]="ano">{{ ano }}</option>
@@ -615,7 +615,7 @@
           <option *ngFor="let mes of mesesOpcoes" [value]="mes.valor">{{ mes.nome }}</option>
         </select>
 
-        <select [(ngModel)]="filtroEstabelecimentoSaida" class="select-responsive filter-select" style="min-width: 180px;">
+        <select [(ngModel)]="filtroEstabelecimentoSaida" class="select-responsive filter-select">
           <option value="">🏢 Todos os Estabelecimentos</option>
           <option *ngFor="let est of estabelecimentosSaidasUnicos" [value]="est">{{ est }}</option>
         </select>
@@ -690,7 +690,7 @@
   <!-- VISÃO: LISTA DE PRODUTOS -->
   <div *ngIf="activeTab === 'produtos'">
     <div class="table-card">
-      <div class="chart-header" style="flex-wrap: wrap; gap: 12px;">
+      <div class="chart-header">
         <div class="chart-title">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="9" cy="21" r="1"></circle>
@@ -699,17 +699,18 @@
           </svg>
           <span>Lista Consolidada de Produtos</span>
         </div>
+      </div>
 
-        <div class="filter-group-header" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-          <select [(ngModel)]="filtroEstabelecimento" class="select-responsive filter-select" style="min-width: 200px;">
-            <option value="">🏢 Todos os Estabelecimentos</option>
-            <option *ngFor="let est of estabelecimentosUnicos" [value]="est">{{ est }}</option>
-          </select>
+      <!-- Filtro abaixo do Título -->
+      <div class="filter-group-row">
+        <select [(ngModel)]="filtroEstabelecimento" class="select-responsive filter-select">
+          <option value="">🏢 Todos os Estabelecimentos</option>
+          <option *ngFor="let est of estabelecimentosUnicos" [value]="est">{{ est }}</option>
+        </select>
 
-          <div class="search-box">
-            <input type="text" [(ngModel)]="buscaProduto" placeholder="🔍 Buscar produto..." class="search-input" />
-            <button *ngIf="buscaProduto" class="search-clear-btn" (click)="limparBusca()">×</button>
-          </div>
+        <div class="search-box">
+          <input type="text" [(ngModel)]="buscaProduto" placeholder="🔍 Buscar produto..." class="search-input" />
+          <button *ngIf="buscaProduto" class="search-clear-btn" (click)="limparBusca()">×</button>
         </div>
       </div>
 
