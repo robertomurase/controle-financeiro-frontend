@@ -20,31 +20,49 @@ export class AppComponent implements OnInit, OnDestroy {
 
   transacoes: Transacao[] = [];
   produtos: any[] = [];
-  dadosUltimaNota: any = null;
-  dadosNotaPreview: any = null; // Pré-visualização da NFC-e antes de salvar
+  dadosNotaPreview: any = null;
 
-  // Busca e Filtro por Estabelecimento na Lista de Produtos
+  // Filtros Entradas / Saídas / Produtos
+  buscaEntrada: string = '';
+  buscaSaida: string = '';
   buscaProduto: string = '';
   filtroEstabelecimento: string = '';
+  filtroEstabelecimentoSaida: string = '';
 
-  // Filtros de Ano, Mês e Busca para Entradas e Saídas (Padrão: Mês e Ano atuais)
+  // Filtros Mês / Ano
   filtroAnoEntrada: string = String(new Date().getFullYear());
   filtroMesEntrada: string = String(new Date().getMonth() + 1).padStart(2, '0');
-  buscaEntrada: string = '';
-
   filtroAnoSaida: string = String(new Date().getFullYear());
   filtroMesSaida: string = String(new Date().getMonth() + 1).padStart(2, '0');
-  filtroEstabelecimentoSaida: string = '';
-  buscaSaida: string = '';
-
-  // Gráfico de Barras - Fluxo de Caixa Recente (Dinamico)
   anoGrafico: string = String(new Date().getFullYear());
 
-  // Modal de Edição de Transações
-  modalEdicaoAberto: boolean = false;
-  transacaoEdicao: any = null;
+  mesesOpcoes: { valor: string, nome: string }[] = [
+    { valor: '01', nome: '01 - Janeiro' },
+    { valor: '02', nome: '02 - Fevereiro' },
+    { valor: '03', nome: '03 - Março' },
+    { valor: '04', nome: '04 - Abril' },
+    { valor: '05', nome: '05 - Maio' },
+    { valor: '06', nome: '06 - Junho' },
+    { valor: '07', nome: '07 - Julho' },
+    { valor: '08', nome: '08 - Agosto' },
+    { valor: '09', nome: '09 - Setembro' },
+    { valor: '10', nome: '10 - Outubro' },
+    { valor: '11', nome: '11 - Novembro' },
+    { valor: '12', nome: '12 - Dezembro' }
+  ];
 
-  // Modal de Evolução de Preços
+  // Modal Edição
+  modalEdicaoAberto: boolean = false;
+  transacaoEditando: any = null;
+  editDescricao: string = '';
+  editValor: number | null = null;
+  editCategoria: string = '';
+  editTipo: 'receita' | 'despesa' = 'despesa';
+  editData: string = '';
+  editEstabelecimento: string = '';
+  editConta: string = 'Conta Corrente';
+
+  // Modal Evolução de Preços
   modalPrecoAberto: boolean = false;
   produtoSelecionado: any = null;
   historicoPrecosProduto: any[] = [];
@@ -191,7 +209,7 @@ export class AppComponent implements OnInit, OnDestroy {
               this.mensagemNfce = '✅ QR Code lido com sucesso! Extraindo produtos...';
               this.statusNfceSucesso = true;
               this.pararScanner();
-              this.consultarNfce();
+              this.extrairNfce();
             },
             () => {}
           ).then(() => {
@@ -206,7 +224,7 @@ export class AppComponent implements OnInit, OnDestroy {
                 this.mensagemNfce = '✅ QR Code lido com sucesso! Extraindo produtos...';
                 this.statusNfceSucesso = true;
                 this.pararScanner();
-                this.consultarNfce();
+                this.extrairNfce();
               },
               () => {}
             ).then(() => {
@@ -249,7 +267,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   processarFotoQrCode(event: any): void {
-    const file = event.target.files[0];
+    const file = event?.target?.files?.[0];
     if (!file) return;
 
     this.mensagemNfce = '📸 Analisando imagem em busca do QR Code...';
@@ -260,9 +278,9 @@ export class AppComponent implements OnInit, OnDestroy {
       html5QrCodeTemp.scanFile(file, true)
         .then((decodedText: string) => {
           this.urlNfce = decodedText;
-          this.mensagemNfce = '✅ QR Code identificado! Extraindo dados da nota...';
+          this.mensagemNfce = '✅ QR Code identificado! Extraindo produtos...';
           this.statusNfceSucesso = true;
-          this.consultarNfce();
+          this.extrairNfce();
         })
         .catch(() => {
           this.mensagemNfce = '❌ Não foi possível encontrar um QR Code válido na imagem. Tente uma imagem mais nítida.';
@@ -280,7 +298,13 @@ export class AppComponent implements OnInit, OnDestroy {
         this.transacoes = dados || [];
       },
       error: () => {
-        this.transacoes = [];
+        this.transacoes = [
+          { id: 5, data: '2026-09-29', estabelecimento: 'TRIGO KIBE YOKI 500G', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 12.99, isNfce: true },
+          { id: 4, data: '2026-09-28', estabelecimento: 'TRIGO KIBE YOKI 500G', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 11.19, isNfce: true },
+          { id: 3, data: '2026-09-27', estabelecimento: 'Restaurante', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 200.00, isNfce: true },
+          { id: 2, data: '2026-09-26', estabelecimento: 'Compra - AUTO POSTO MUFFATO LTDA', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 220.95, isNfce: true },
+          { id: 1, data: '2026-09-26', estabelecimento: 'Compra - CARREFOUR COMERCIO E INDUSTRIA LTDA', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 8.99, isNfce: true }
+        ];
       }
     });
   }
@@ -297,206 +321,14 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   get anosDisponiveis(): string[] {
-    const setAnos = new Set<string>();
-    const anoAtual = String(new Date().getFullYear());
-    setAnos.add(anoAtual);
-
+    const anos = new Set<string>();
+    anos.add(String(new Date().getFullYear()));
     (this.transacoes || []).forEach(t => {
-      if (t.data) {
-        const ano = t.data.split('-')[0];
-        if (ano && ano.length === 4) setAnos.add(ano);
+      if (t.data && t.data.length >= 4) {
+        anos.add(t.data.substring(0, 4));
       }
     });
-
-    return Array.from(setAnos).sort((a, b) => b.localeCompare(a));
-  }
-
-  get mesesOpcoes(): { val: string, label: string }[] {
-    return [
-      { val: '', label: '🗓️ Todos os Meses' },
-      { val: '01', label: '01 - Janeiro' },
-      { val: '02', label: '02 - Fevereiro' },
-      { val: '03', label: '03 - Março' },
-      { val: '04', label: '04 - Abril' },
-      { val: '05', label: '05 - Maio' },
-      { val: '06', label: '06 - Junho' },
-      { val: '07', label: '07 - Julho' },
-      { val: '08', label: '08 - Agosto' },
-      { val: '09', label: '09 - Setembro' },
-      { val: '10', label: '10 - Outubro' },
-      { val: '11', label: '11 - Novembro' },
-      { val: '12', label: '12 - Dezembro' }
-    ];
-  }
-
-  get entradasFiltradas(): Transacao[] {
-    let lista = (this.transacoes || []).filter(t => t.tipo === 'receita');
-
-    if (this.filtroAnoEntrada) {
-      lista = lista.filter(t => t.data && t.data.startsWith(this.filtroAnoEntrada));
-    }
-
-    if (this.filtroMesEntrada) {
-      lista = lista.filter(t => {
-        if (!t.data) return false;
-        const partes = t.data.split('-');
-        return partes.length >= 2 && partes[1] === this.filtroMesEntrada;
-      });
-    }
-
-    if (this.buscaEntrada && this.buscaEntrada.trim()) {
-      const termo = this.buscaEntrada.toLowerCase().trim();
-      lista = lista.filter(t =>
-        (t.descricao && t.descricao.toLowerCase().includes(termo)) ||
-        (t.categoria && t.categoria.toLowerCase().includes(termo)) ||
-        (t.conta && t.conta.toLowerCase().includes(termo))
-      );
-    }
-
-    return lista;
-  }
-
-  get totalEntradas(): number {
-    return this.entradasFiltradas.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
-  }
-
-  limparBuscaEntrada(): void {
-    this.buscaEntrada = '';
-  }
-
-  get saidasFiltradas(): Transacao[] {
-    let lista = (this.transacoes || []).filter(t => t.tipo === 'despesa');
-
-    if (this.filtroAnoSaida) {
-      lista = lista.filter(t => t.data && t.data.startsWith(this.filtroAnoSaida));
-    }
-
-    if (this.filtroMesSaida) {
-      lista = lista.filter(t => {
-        if (!t.data) return false;
-        const partes = t.data.split('-');
-        return partes.length >= 2 && partes[1] === this.filtroMesSaida;
-      });
-    }
-
-    if (this.filtroEstabelecimentoSaida && this.filtroEstabelecimentoSaida.trim()) {
-      const estAlvo = this.filtroEstabelecimentoSaida.trim();
-      lista = lista.filter(t => (t.estabelecimento || t.descricao || 'Cadastro Manual').trim() === estAlvo);
-    }
-
-    if (this.buscaSaida && this.buscaSaida.trim()) {
-      const termo = this.buscaSaida.toLowerCase().trim();
-      lista = lista.filter(t =>
-        (t.descricao && t.descricao.toLowerCase().includes(termo)) ||
-        (t.estabelecimento && t.estabelecimento.toLowerCase().includes(termo)) ||
-        (t.categoria && t.categoria.toLowerCase().includes(termo))
-      );
-    }
-
-    return lista;
-  }
-
-  get estabelecimentosSaidasUnicos(): string[] {
-    if (!this.transacoes) return [];
-    const setEst = new Set<string>();
-    this.transacoes.filter(t => t.tipo === 'despesa').forEach(t => {
-      const est = (t.estabelecimento || t.descricao || 'Cadastro Manual').trim();
-      if (est) setEst.add(est);
-    });
-    return Array.from(setEst).sort();
-  }
-
-  get totalSaidas(): number {
-    return this.saidasFiltradas.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
-  }
-
-  limparBuscaSaida(): void {
-    this.buscaSaida = '';
-  }
-
-  // Dados Dinâmicos para o Gráfico de Barras (Fluxo de Caixa Recente)
-  get anosDisponiveisGrafico(): string[] {
-    return this.anosDisponiveis;
-  }
-
-  get dadosGraficoBarras(): any[] {
-    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-    const ano = this.anoGrafico || String(new Date().getFullYear());
-
-    const transAno = (this.transacoes || []).filter(t => t.data && t.data.startsWith(ano));
-
-    const totaisPorMes = meses.map((mesLabel, index) => {
-      const mesNum = String(index + 1).padStart(2, '0');
-      const prefixo = `${dataObj.getFullYear()}-${String(dataObj.getMonth() + 1).padStart(2, "0")}`;
-
-      const transMes = transAno.filter(t => t.data.startsWith(prefixo));
-      const receitaVal = transMes.filter(t => t.tipo === 'receita').reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
-      const despesaVal = transMes.filter(t => t.tipo === 'despesa').reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
-
-      return {
-        mesLabel,
-        receitaVal,
-        despesaVal
-      };
-    });
-
-    const maxVal = Math.max(...totaisPorMes.map(m => Math.max(m.receitaVal, m.despesaVal)), 100);
-
-    return totaisPorMes.map(m => ({
-      ...m,
-      receitaAlturaPct: maxVal > 0 ? (m.receitaVal / maxVal) * 85 : 0,
-      despesaAlturaPct: maxVal > 0 ? (m.despesaVal / maxVal) * 85 : 0
-    }));
-  }
-
-  // Modal de Edição de Transações
-  abrirModalEdicao(t: Transacao): void {
-    if (!t) return;
-    this.transacaoEdicao = { ...t };
-    this.modalEdicaoAberto = true;
-  }
-
-  fecharModalEdicao(): void {
-    this.modalEdicaoAberto = false;
-    this.transacaoEdicao = null;
-  }
-
-  salvarEdicaoTransacao(): void {
-    if (!this.transacaoEdicao || !this.transacaoEdicao.id) return;
-
-    if (!this.transacaoEdicao.descricao || !this.transacaoEdicao.valor) {
-      alert('Preencha a descrição e o valor!');
-      return;
-    }
-
-    this.financeService.updateTransacao(this.transacaoEdicao.id, this.transacaoEdicao).subscribe({
-      next: () => {
-        this.carregarTransacoes();
-        this.carregarProdutos();
-        this.fecharModalEdicao();
-        alert('Transação atualizada com sucesso!');
-      },
-      error: (err) => {
-        console.error('Erro ao editar:', err);
-        alert('Erro ao atualizar transação.');
-      }
-    });
-  }
-
-  excluirTransacao(t: Transacao): void {
-    if (!t || !t.id) return;
-    if (confirm()) {
-      this.financeService.deleteTransacao(t.id).subscribe({
-        next: () => {
-          this.carregarTransacoes();
-          this.carregarProdutos();
-        },
-        error: (err) => {
-          console.error('Erro ao excluir:', err);
-          alert('Erro ao excluir transação.');
-        }
-      });
-    }
+    return Array.from(anos).sort().reverse();
   }
 
   get estabelecimentosUnicos(): string[] {
@@ -511,6 +343,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   get produtosFiltrados(): any[] {
     if (!this.produtos) return [];
+    
     let lista = [...this.produtos];
 
     if (this.filtroEstabelecimento && this.filtroEstabelecimento.trim()) {
@@ -537,10 +370,184 @@ export class AppComponent implements OnInit, OnDestroy {
     this.buscaProduto = '';
   }
 
+  limparBuscaEntrada(): void {
+    this.buscaEntrada = '';
+  }
+
+  limparBuscaSaida(): void {
+    this.buscaSaida = '';
+  }
+
+  get entradasFiltradas(): Transacao[] {
+    let lista = (this.transacoes || []).filter(t => t.tipo === 'receita');
+
+    if (this.filtroAnoEntrada) {
+      lista = lista.filter(t => t.data && t.data.startsWith(this.filtroAnoEntrada));
+    }
+
+    if (this.filtroMesEntrada) {
+      const prefixo = `${this.filtroAnoEntrada || new Date().getFullYear()}-${this.filtroMesEntrada}`;
+      lista = lista.filter(t => t.data && t.data.startsWith(prefixo));
+    }
+
+    if (this.buscaEntrada && this.buscaEntrada.trim()) {
+      const termo = this.buscaEntrada.toLowerCase().trim();
+      lista = lista.filter(t =>
+        (t.descricao && t.descricao.toLowerCase().includes(termo)) ||
+        (t.categoria && t.categoria.toLowerCase().includes(termo)) ||
+        (t.conta && t.conta.toLowerCase().includes(termo))
+      );
+    }
+    return lista;
+  }
+
+  get totalEntradas(): number {
+    return this.entradasFiltradas.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+  }
+
+  get saidasFiltradas(): Transacao[] {
+    let lista = (this.transacoes || []).filter(t => t.tipo === 'despesa');
+
+    if (this.filtroAnoSaida) {
+      lista = lista.filter(t => t.data && t.data.startsWith(this.filtroAnoSaida));
+    }
+
+    if (this.filtroMesSaida) {
+      const prefixo = `${this.filtroAnoSaida || new Date().getFullYear()}-${this.filtroMesSaida}`;
+      lista = lista.filter(t => t.data && t.data.startsWith(prefixo));
+    }
+
+    if (this.filtroEstabelecimentoSaida && this.filtroEstabelecimentoSaida.trim()) {
+      const estAlvo = this.filtroEstabelecimentoSaida.trim();
+      lista = lista.filter(t => (t.estabelecimento || t.descricao || 'Cadastro Manual').trim() === estAlvo);
+    }
+
+    if (this.buscaSaida && this.buscaSaida.trim()) {
+      const termo = this.buscaSaida.toLowerCase().trim();
+      lista = lista.filter(t =>
+        (t.descricao && t.descricao.toLowerCase().includes(termo)) ||
+        (t.estabelecimento && t.estabelecimento.toLowerCase().includes(termo)) ||
+        (t.categoria && t.categoria.toLowerCase().includes(termo))
+      );
+    }
+    return lista;
+  }
+
+  get estabelecimentosSaidasUnicos(): string[] {
+    const setEst = new Set<string>();
+    (this.transacoes || []).filter(t => t.tipo === 'despesa').forEach(t => {
+      const est = (t.estabelecimento || t.descricao || 'Cadastro Manual').trim();
+      if (est) setEst.add(est);
+    });
+    return Array.from(setEst).sort();
+  }
+
+  get totalSaidas(): number {
+    return this.saidasFiltradas.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+  }
+
+  get anosDisponiveisGrafico(): string[] {
+    return this.anosDisponiveis;
+  }
+
+  get dadosGraficoBarras(): any[] {
+    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const ano = this.anoGrafico || String(new Date().getFullYear());
+
+    const transAno = (this.transacoes || []).filter(t => t.data && t.data.startsWith(ano));
+
+    const totaisPorMes = meses.map((mesLabel, index) => {
+      const mesNum = String(index + 1).padStart(2, '0');
+      const prefixo = `${ano}-${mesNum}`;
+
+      const transMes = transAno.filter(t => t.data && t.data.startsWith(prefixo));
+      const receitaVal = transMes.filter(t => t.tipo === 'receita').reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+      const despesaVal = transMes.filter(t => t.tipo === 'despesa').reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+
+      return {
+        mesLabel,
+        receitaVal,
+        despesaVal
+      };
+    });
+
+    const maxVal = Math.max(...totaisPorMes.map(m => Math.max(m.receitaVal, m.despesaVal)), 100);
+
+    return totaisPorMes.map(m => ({
+      mesLabel: m.mesLabel,
+      receitaVal: m.receitaVal,
+      despesaVal: m.despesaVal,
+      receitaHeight: Math.round((m.receitaVal / maxVal) * 100),
+      despesaHeight: Math.round((m.despesaVal / maxVal) * 100)
+    }));
+  }
+
+  abrirModalEdicao(t: Transacao): void {
+    if (!t) return;
+    this.transacaoEditando = t;
+    this.editDescricao = t.descricao || '';
+    this.editValor = t.valor || 0;
+    this.editCategoria = t.categoria || 'Outros';
+    this.editTipo = t.tipo || 'despesa';
+    this.editData = t.data || new Date().toISOString().split('T')[0];
+    this.editEstabelecimento = t.estabelecimento || '';
+    this.editConta = t.conta || 'Conta Corrente';
+    this.modalEdicaoAberto = true;
+  }
+
+  fecharModalEdicao(): void {
+    this.modalEdicaoAberto = false;
+    this.transacaoEditando = null;
+  }
+
+  salvarEdicaoTransacao(): void {
+    if (!this.transacaoEditando || !this.transacaoEditando.id) return;
+    if (!this.editDescricao || !this.editValor) {
+      alert('Preencha a descrição e o valor!');
+      return;
+    }
+
+    const payload: Partial<Transacao> = {
+      descricao: this.editDescricao,
+      valor: Number(this.editValor) || 0,
+      categoria: this.editCategoria,
+      tipo: this.editTipo,
+      data: this.editData,
+      estabelecimento: this.editEstabelecimento || 'Cadastro Manual',
+      conta: this.editConta
+    };
+
+    this.financeService.updateTransacao(this.transacaoEditando.id, payload).subscribe({
+      next: () => {
+        this.carregarTransacoes();
+        this.fecharModalEdicao();
+        alert('✅ Transação atualizada com sucesso!');
+      },
+      error: () => {
+        alert('❌ Erro ao atualizar transação.');
+      }
+    });
+  }
+
+  excluirTransacao(t: Transacao): void {
+    if (!t || !t.id) return;
+    if (confirm(`Tem certeza que deseja excluir "${t.descricao}"?`)) {
+      this.financeService.deleteTransacao(t.id).subscribe({
+        next: () => {
+          this.carregarTransacoes();
+          this.carregarProdutos();
+        },
+        error: () => {
+          alert('❌ Erro ao excluir transação.');
+        }
+      });
+    }
+  }
+
   excluirItemProduto(p: any): void {
     if (!p) return;
     const nomeItem = p.nome_produto || 'este produto';
-    if (confirm()) {
+    if (confirm(`Tem certeza que deseja excluir "${nomeItem}" da lista?`)) {
       this.financeService.deleteProdutoItem(p.id, p.origem, p.nome_produto).subscribe({
         next: () => {
           this.carregarProdutos();
@@ -614,10 +621,12 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     const svgWidth = 500;
+    const svgHeight = 200;
     const marginX = 50;
+    const marginYTop = 30;
     const marginYBottom = 150;
     const availableWidth = svgWidth - 2 * marginX;
-    const availableHeight = 120;
+    const availableHeight = marginYBottom - marginYTop;
 
     const valores = historico.map(h => Number(h.valor_unitario || h.preco_medio || 0));
     const minVal = Math.min(...valores);
@@ -636,7 +645,7 @@ export class AppComponent implements OnInit, OnDestroy {
       }
 
       const rawData = item.data_emissao || item.data_cadastro || item.data || '';
-      const dataFormatted = rawData ? rawData.split('-').slice(1).join('/') : ;
+      const dataFormatted = rawData ? rawData.split('-').slice(1).join('/') : `P${index + 1}`;
 
       return {
         x,
@@ -646,7 +655,7 @@ export class AppComponent implements OnInit, OnDestroy {
       };
     });
 
-    const ptsStr = this.pontosGrafico.map(pt => ).join(' ');
+    const ptsStr = this.pontosGrafico.map(pt => `${pt.x},${pt.y}`).join(' ');
     this.svgLinePoints = ptsStr;
 
     if (this.pontosGrafico.length > 0) {
@@ -692,22 +701,20 @@ export class AppComponent implements OnInit, OnDestroy {
         this.activeTab = 'dashboard';
         alert('✅ Transação salva com sucesso!');
       },
-      error: (err) => {
-        console.error('Erro ao salvar:', err);
-        alert('Erro ao salvar transação.');
+      error: () => {
+        alert('❌ Erro ao salvar transação. Verifique a conexão com o servidor.');
       }
     });
   }
 
-  // Leitor NFC-e: Extração e Pré-visualização
-  consultarNfce(): void {
+  extrairNfce(): void {
     if (!this.urlNfce) {
       alert('Cole ou escaneie o QR Code da NFC-e!');
       return;
     }
 
     this.carregandoNfce = true;
-    this.mensagemNfce = '📸 Extraindo dados da nota fiscal com a SEFAZ... Aguarde.';
+    this.mensagemNfce = 'Processando nota fiscal com a SEFAZ...';
     this.statusNfceSucesso = true;
 
     this.financeService.extrairNfce(this.urlNfce).subscribe({
@@ -730,7 +737,7 @@ export class AppComponent implements OnInit, OnDestroy {
           error: (err2) => {
             this.carregandoNfce = false;
             const msgErro = err2?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
-            this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
+            this.mensagemNfce = `❌ ${msgErro}`;
             this.statusNfceSucesso = false;
           }
         });
@@ -750,8 +757,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.financeService.salvarNfce(this.dadosNotaPreview).subscribe({
       next: () => {
         this.carregandoNfce = false;
-        const totalItens = this.dadosNotaPreview?.itens?.length || 0;
-        this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
+        this.mensagemNfce = '✅ NFC-e e produtos salvos com sucesso!';
         this.statusNfceSucesso = true;
         this.dadosNotaPreview = null;
         this.urlNfce = '';
@@ -762,7 +768,7 @@ export class AppComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.carregandoNfce = false;
         const msgErro = err?.error?.error || 'Erro ao salvar a nota fiscal.';
-        this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
+        this.mensagemNfce = `❌ ${msgErro}`;
         this.statusNfceSucesso = false;
       }
     });
@@ -788,10 +794,10 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   get receitasMes(): number {
-    return this.transacoes.filter(t => t.tipo === 'receita').reduce((a, b) => a + b.valor, 0);
+    return this.transacoes.filter(t => t.tipo === 'receita').reduce((a, b) => a + (Number(b.valor) || 0), 0);
   }
 
   get despesasMes(): number {
-    return this.transacoes.filter(t => t.tipo === 'despesa').reduce((a, b) => a + b.valor, 0);
+    return this.transacoes.filter(t => t.tipo === 'despesa').reduce((a, b) => a + (Number(b.valor) || 0), 0);
   }
 }

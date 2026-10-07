@@ -9,7 +9,7 @@
       </svg>
       <div>
         <span class="brand-title">Finanças Pro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v39 - back v19</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v40 - back v19</span>
       </div>
     </div>
 
@@ -60,7 +60,6 @@
       <span>Leitor NFC-e</span>
     </button>
 
-    <!-- Nova Tela: Entradas -->
     <button class="nav-item" [class.active]="activeTab === 'entradas'" (click)="setTab('entradas')">
       <svg class="nav-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="12" y1="19" x2="12" y2="5"></line>
@@ -69,7 +68,6 @@
       <span>Entradas</span>
     </button>
 
-    <!-- Nova Tela: Saídas -->
     <button class="nav-item" [class.active]="activeTab === 'saidas'" (click)="setTab('saidas')">
       <svg class="nav-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -120,14 +118,14 @@
 
 <main class="main-container">
 
-  <!-- VISÃO: DASHBOARD (Com Título e KPIs Exclusivos) -->
+  <!-- VISÃO: DASHBOARD (Título e KPIs exclusivos do Dashboard) -->
   <div *ngIf="activeTab === 'dashboard'">
     <div class="page-header">
       <h1 class="page-title">Visão Geral do Fluxo de Caixa</h1>
       <p class="page-subtitle">Acompanhamento consolidado de saldos, entradas e saídas</p>
     </div>
 
-    <!-- Cartões KPIs (Exclusivos do Dashboard) -->
+    <!-- Cartões KPIs Exclusivos do Dashboard -->
     <div class="kpi-grid">
       <div class="kpi-card">
         <div class="kpi-top-row">
@@ -159,7 +157,7 @@
     
     <!-- Seção de Gráficos do Dashboard -->
     <div class="charts-grid">
-      <!-- Gráfico de Barras: Fluxo de Caixa Recente (Dinamico) -->
+      <!-- Gráfico de Barras Dinâmico: Fluxo de Caixa Recente -->
       <div class="chart-card">
         <div class="chart-header">
           <div class="chart-title">
@@ -180,8 +178,8 @@
         <div class="bar-chart-container">
           <div class="bar-group" *ngFor="let m of dadosGraficoBarras">
             <div class="bars-wrapper">
-              <div class="bar receita" [style.height.%]="m.receitaAlturaPct" [title]="'Receita: R$ ' + (m.receitaVal | number:'1.2-2')"></div>
-              <div class="bar despesa" [style.height.%]="m.despesaAlturaPct" [title]="'Despesa: R$ ' + (m.despesaVal | number:'1.2-2')"></div>
+              <div class="bar receita" [style.height.%]="m.receitaHeight" [title]="'Receitas: R$ ' + m.receitaVal"></div>
+              <div class="bar despesa" [style.height.%]="m.despesaHeight" [title]="'Despesas: R$ ' + m.despesaVal"></div>
             </div>
             <span class="bar-label">{{ m.mesLabel }}</span>
           </div>
@@ -224,7 +222,7 @@
       </div>
     </div>
 
-    <!-- Tabela de Últimos Lançamentos (Apenas 10 Mais Recentes) -->
+    <!-- Tabela de Últimos 10 Lançamentos -->
     <div class="table-card">
       <div class="chart-header">
         <div class="chart-title">
@@ -272,7 +270,7 @@
     </div>
   </div>
 
-  <!-- VISÃO: TRANSAÇÕES MANUAL -->
+  <!-- VISÃO: TRANSAÇÕES MANUAL (Reordenação de Campos) -->
   <div *ngIf="activeTab === 'transacoes'">
     <div class="form-box">
       <div class="chart-title" style="margin-bottom: 16px;">
@@ -309,16 +307,16 @@
           </select>
         </div>
 
-        <!-- Campos para Não-Salário: Quantidade, Valor Unit, Estabelecimento -->
+        <!-- Campos para Não Salário -->
         <ng-container *ngIf="novaCategoria !== 'Salário'">
           <div class="form-group-field" style="flex: 1; min-width: 100px;">
-            <label class="field-label">Qtd *</label>
-            <input type="number" [(ngModel)]="novaQuantidade" min="1" step="1" />
+            <label class="field-label">Quantidade</label>
+            <input type="number" [(ngModel)]="novaQuantidade" min="0.01" step="1" placeholder="Qtd" />
           </div>
 
           <div class="form-group-field" style="flex: 1.2; min-width: 120px;">
-            <label class="field-label">Valor Unit. (R$) *</label>
-            <input type="number" [(ngModel)]="novoValor" min="0" step="0.01" placeholder="R$ Unitario" />
+            <label class="field-label">Valor Unit. (R$)</label>
+            <input type="number" [(ngModel)]="novoValor" min="0" step="0.01" placeholder="R$ Unit." />
           </div>
 
           <div class="form-group-field" style="flex: 1.5; min-width: 150px;">
@@ -327,13 +325,11 @@
           </div>
         </ng-container>
 
-        <!-- Campo único de Valor para Salário -->
-        <ng-container *ngIf="novaCategoria === 'Salário'">
-          <div class="form-group-field" style="flex: 1.2; min-width: 130px;">
-            <label class="field-label">Valor (R$) *</label>
-            <input type="number" [(ngModel)]="novoValor" min="0" step="0.01" placeholder="R$ Total" />
-          </div>
-        </ng-container>
+        <!-- Campo de Valor Único para Salário -->
+        <div *ngIf="novaCategoria === 'Salário'" class="form-group-field" style="flex: 1.2; min-width: 130px;">
+          <label class="field-label">Valor (R$) *</label>
+          <input type="number" [(ngModel)]="novoValor" min="0" step="0.01" placeholder="R$ Total" />
+        </div>
 
         <!-- 5. Data -->
         <div class="form-group-field" style="flex: 1.2; min-width: 130px;">
@@ -341,13 +337,57 @@
           <input type="date" [(ngModel)]="novaData" />
         </div>
 
-        <!-- Botão Confirmar -->
-        <div style="flex: 1; min-width: 140px;">
+        <!-- Botão Salvar -->
+        <div style="flex: 1; min-width: 130px;">
           <button class="btn-primary" style="width: 100%; height: 42px; font-weight: 700;" (click)="salvarTransacao()">
             {{ novaCategoria === 'Salário' ? 'Confirmar' : '✅ Confirmar e Salvar' }}
           </button>
         </div>
       </div>
+
+      <!-- Pré-visualização ao Vivo para Não Salário -->
+      <div *ngIf="novaCategoria !== 'Salário' && (novaDescricao || (novoValor && novoValor > 0))" class="staging-preview-box" style="margin-top: 24px; padding: 20px; background: #0f172a; border: 1px solid #38bdf8; border-radius: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
+          <h3 style="font-size: 1rem; color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            👁️ Pré-visualização do Lançamento
+          </h3>
+          <span style="font-size: 0.8rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 4px 10px; border-radius: 6px;">
+            Verifique os dados antes de confirmar
+          </span>
+        </div>
+
+        <div class="preview-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 16px;">
+          <div>
+            <span style="font-size: 0.75rem; color: #64748b; display: block;">PRODUTO / DESCRIÇÃO</span>
+            <strong style="color: #f8fafc; font-size: 1.05rem;">{{ novaDescricao || '...' }}</strong>
+          </div>
+          <div>
+            <span style="font-size: 0.75rem; color: #64748b; display: block;">ESTABELECIMENTO</span>
+            <strong style="color: #f8fafc;">{{ novoEstabelecimento || 'Cadastro Manual' }}</strong>
+          </div>
+          <div>
+            <span style="font-size: 0.75rem; color: #64748b; display: block;">QUANTIDADE</span>
+            <strong style="color: #38bdf8; font-size: 1.05rem;">{{ novaQuantidade || 1 }} UN</strong>
+          </div>
+          <div>
+            <span style="font-size: 0.75rem; color: #64748b; display: block;">VALOR UNITÁRIO</span>
+            <strong style="color: #f8fafc;">R$ {{ (novoValor || 0) | number:'1.2-2' }}</strong>
+          </div>
+          <div>
+            <span style="font-size: 0.75rem; color: #64748b; display: block;">VALOR TOTAL DO ITEM</span>
+            <strong style="color: #22c55e; font-size: 1.15rem;">
+              R$ {{ ((novoValor || 0) * (novaQuantidade || 1)) | number:'1.2-2' }}
+            </strong>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #1e293b; padding-top: 16px;">
+          <button class="btn-primary" style="padding: 12px 24px; font-size: 1rem; width: 100%; max-width: 420px;" (click)="salvarTransacao()">
+            ✅ Confirmar e Salvar na Lista de Produtos
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -367,6 +407,7 @@
         <button class="toggle-btn" [class.active]="scannerModo === 'manual'" (click)="setModoScanner('manual')">Colar Link</button>
       </div>
 
+      <!-- Modo Câmera -->
       <div *ngIf="scannerModo === 'camera'" class="camera-scanner-container">
         <div id="qr-reader" class="qr-viewport"></div>
         <div class="scanner-controls" style="margin-top: 12px;">
@@ -375,6 +416,7 @@
         </div>
       </div>
 
+      <!-- Modo Enviar Foto -->
       <div *ngIf="scannerModo === 'arquivo'" class="file-upload-container" style="margin-top: 16px;">
         <div class="upload-dropzone">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.5">
@@ -385,16 +427,18 @@
           <p style="margin: 12px 0 16px 0; color: #cbd5e1; font-size: 0.9rem;">
             <strong>Selecione ou tire uma foto contendo o QR Code da NFC-e</strong>
           </p>
+
           <input type="file" accept="image/*" (change)="processarFotoQrCode($event)" id="qr-file-input" class="file-input" style="display: none;" />
           <button class="btn-primary" (click)="triggerFileInput()">📷 Escolher Foto do QR Code</button>
         </div>
       </div>
 
+      <!-- Modo Manual -->
       <div *ngIf="scannerModo === 'manual'" class="manual-container">
         <div class="form-row">
           <input type="text" [(ngModel)]="urlNfce" placeholder="Cole aqui o link do QR Code (ex: https://...)" />
-          <button class="btn-primary" (click)="consultarNfce()" [disabled]="carregandoNfce">
-            {{ carregandoNfce ? 'Extraindo...' : 'Importar Nota' }}
+          <button class="btn-primary" (click)="extrairNfce()" [disabled]="carregandoNfce">
+            {{ carregandoNfce ? 'Consultando SEFAZ...' : 'Ler Cupom Fiscal' }}
           </button>
         </div>
       </div>
@@ -403,42 +447,41 @@
         {{ mensagemNfce }}
       </div>
 
-      <!-- Pré-visualização da NFC-e Extraída com a Tabela de Produtos antes de Salvar -->
+      <!-- Pré-visualização da Nota Extraída da SEFAZ -->
       <div *ngIf="dadosNotaPreview" class="staging-preview-box" style="margin-top: 24px; padding: 20px; background: #0f172a; border: 1px solid #38bdf8; border-radius: 12px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
-          <h3 style="font-size: 1rem; color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-            🧾 Pré-visualização do Cupom Fiscal (NFC-e)
+          <h3 style="font-size: 1.1rem; color: #38bdf8; font-weight: 700;">
+            🧾 Conferência dos Produtos da NFC-e
           </h3>
           <span style="font-size: 0.8rem; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 4px 10px; border-radius: 6px;">
-            Confira a lista de produtos antes de confirmar
+            SEFAZ • Extração Concluída
           </span>
         </div>
 
-        <div class="preview-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 16px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 20px; background: #1e293b; padding: 14px; border-radius: 8px;">
           <div>
-            <span style="font-size: 0.75rem; color: #64748b; display: block;">ESTABELECIMENTO / LOJA</span>
-            <strong style="color: #f8fafc; font-size: 1.05rem;">{{ dadosNotaPreview.estabelecimento || 'SEFAZ' }}</strong>
+            <span style="font-size: 0.75rem; color: #64748b; display: block;">ESTABELECIMENTO</span>
+            <strong style="color: #f8fafc; font-size: 1rem;">{{ dadosNotaPreview.estabelecimento || 'SEFAZ' }}</strong>
           </div>
           <div>
             <span style="font-size: 0.75rem; color: #64748b; display: block;">DATA DE EMISSÃO</span>
-            <strong style="color: #f8fafc;">{{ dadosNotaPreview.dataEmissao || novaData }}</strong>
+            <strong style="color: #f8fafc;">{{ dadosNotaPreview.dataEmissao ? (dadosNotaPreview.dataEmissao.split('T')[0]) : '-' }}</strong>
           </div>
           <div>
-            <span style="font-size: 0.75rem; color: #64748b; display: block;">QUANTIDADE DE ITENS</span>
-            <strong style="color: #38bdf8; font-size: 1.05rem;">{{ dadosNotaPreview.itens?.length || 0 }} produtos</strong>
+            <span style="font-size: 0.75rem; color: #64748b; display: block;">TOTAL DE ITENS</span>
+            <strong style="color: #38bdf8; font-size: 1.05rem;">{{ dadosNotaPreview.itens?.length || 0 }} PRODUTOS</strong>
           </div>
           <div>
             <span style="font-size: 0.75rem; color: #64748b; display: block;">VALOR TOTAL DA NOTA</span>
-            <strong style="color: #ef4444; font-size: 1.25rem;">
-              R$ {{ (dadosNotaPreview.valorTotal || 0) | number:'1.2-2' }}
-            </strong>
+            <strong style="color: #22c55e; font-size: 1.2rem;">R$ {{ dadosNotaPreview.valorTotal | number:'1.2-2' }}</strong>
           </div>
         </div>
 
-        <h4 style="font-size: 0.85rem; color: #94a3b8; margin: 16px 0 8px 0; font-weight: 600;">
-          Lista de Produtos Extraídos
+        <h4 style="font-size: 0.9rem; color: #cbd5e1; margin-bottom: 12px; font-weight: 600;">
+          Itens que serão cadastrados na Lista de Produtos:
         </h4>
-        <div class="table-responsive" style="max-height: 280px; overflow-y: auto; margin-bottom: 16px; border: 1px solid #1e293b; border-radius: 8px;">
+
+        <div class="table-responsive" style="max-height: 280px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #334155; border-radius: 8px;">
           <table>
             <thead>
               <tr>
@@ -446,7 +489,7 @@
                 <th>QTD</th>
                 <th>UN</th>
                 <th>VALOR UNIT.</th>
-                <th>VALOR TOTAL</th>
+                <th>TOTAL ITEM</th>
               </tr>
             </thead>
             <tbody>
@@ -463,17 +506,18 @@
 
         <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #1e293b; padding-top: 16px; flex-wrap: wrap;">
           <button class="btn-danger" style="padding: 10px 18px; font-size: 0.9rem;" (click)="descartarPreviewNfce()">
-            🗑️ Descartar
+            Descartar Nota
           </button>
           <button class="btn-primary" style="padding: 12px 24px; font-size: 1rem; width: 100%; max-width: 420px;" (click)="confirmarEGravarNfce()">
             ✅ Confirmar e Salvar na Lista de Produtos
           </button>
         </div>
       </div>
+
     </div>
   </div>
 
-  <!-- VISÃO: TELA ENTRADAS -->
+  <!-- VISÃO: TELA "ENTRADAS" (Receitas com Editar e Excluir + Filtros Mês/Ano) -->
   <div *ngIf="activeTab === 'entradas'">
     <div class="table-card">
       <div class="chart-header" style="flex-wrap: wrap; gap: 12px;">
@@ -486,25 +530,31 @@
         </div>
 
         <div class="filter-group-header" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-          <!-- Filtro de Ano -->
-          <select [(ngModel)]="filtroAnoEntrada" class="select-responsive filter-select" style="min-width: 120px;">
+          <!-- Filtro Ano -->
+          <select [(ngModel)]="filtroAnoEntrada" class="select-responsive filter-select">
             <option value="">📅 Todos os Anos</option>
             <option *ngFor="let ano of anosDisponiveis" [value]="ano">{{ ano }}</option>
           </select>
 
-          <!-- Filtro de Mês -->
-          <select [(ngModel)]="filtroMesEntrada" class="select-responsive filter-select" style="min-width: 160px;">
-            <option *ngFor="let m of mesesOpcoes" [value]="m.val">{{ m.label }}</option>
+          <!-- Filtro Mês -->
+          <select [(ngModel)]="filtroMesEntrada" class="select-responsive filter-select">
+            <option value="">🗓️ Todos os Meses</option>
+            <option *ngFor="let mes of mesesOpcoes" [value]="mes.valor">{{ mes.nome }}</option>
           </select>
 
-          <!-- Busca Textual -->
           <div class="search-box">
-            <input type="text" [(ngModel)]="buscaEntrada" placeholder="🔍 Buscar receita..." class="search-input" />
+            <input 
+              type="text" 
+              [(ngModel)]="buscaEntrada" 
+              placeholder="🔍 Buscar receita..." 
+              class="search-input"
+            />
             <button *ngIf="buscaEntrada" class="search-clear-btn" (click)="limparBuscaEntrada()">×</button>
           </div>
         </div>
       </div>
 
+      <!-- KPI de Resumo de Entradas -->
       <div style="display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
         <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px; padding: 12px 18px;">
           <span style="font-size: 0.75rem; color: #4ade80; font-weight: 700;">TOTAL DE RECEITAS</span>
@@ -549,13 +599,13 @@
           </tbody>
         </table>
         <ng-template #semEntradas>
-          <p style="color: #64748b; padding: 24px 0; text-align: center;">Nenhuma receita encontrada no período selecionado.</p>
+          <p style="color: #64748b; padding: 24px 0; text-align: center;">Nenhuma receita encontrada para os filtros selecionados.</p>
         </ng-template>
       </div>
     </div>
   </div>
 
-  <!-- VISÃO: TELA SAÍDAS -->
+  <!-- VISÃO: TELA "SAÍDAS" (Despesas por Estabelecimento com Editar / Excluir + Filtros Mês/Ano) -->
   <div *ngIf="activeTab === 'saidas'">
     <div class="table-card">
       <div class="chart-header" style="flex-wrap: wrap; gap: 12px;">
@@ -568,31 +618,36 @@
         </div>
 
         <div class="filter-group-header" style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-          <!-- Filtro de Ano -->
-          <select [(ngModel)]="filtroAnoSaida" class="select-responsive filter-select" style="min-width: 120px;">
+          <!-- Filtro Ano -->
+          <select [(ngModel)]="filtroAnoSaida" class="select-responsive filter-select">
             <option value="">📅 Todos os Anos</option>
             <option *ngFor="let ano of anosDisponiveis" [value]="ano">{{ ano }}</option>
           </select>
 
-          <!-- Filtro de Mês -->
-          <select [(ngModel)]="filtroMesSaida" class="select-responsive filter-select" style="min-width: 160px;">
-            <option *ngFor="let m of mesesOpcoes" [value]="m.val">{{ m.label }}</option>
+          <!-- Filtro Mês -->
+          <select [(ngModel)]="filtroMesSaida" class="select-responsive filter-select">
+            <option value="">🗓️ Todos os Meses</option>
+            <option *ngFor="let mes of mesesOpcoes" [value]="mes.valor">{{ mes.nome }}</option>
           </select>
 
-          <!-- Filtro por Estabelecimento -->
-          <select [(ngModel)]="filtroEstabelecimentoSaida" class="select-responsive filter-select" style="min-width: 200px;">
+          <select [(ngModel)]="filtroEstabelecimentoSaida" class="select-responsive filter-select" style="min-width: 180px;">
             <option value="">🏢 Todos os Estabelecimentos</option>
             <option *ngFor="let est of estabelecimentosSaidasUnicos" [value]="est">{{ est }}</option>
           </select>
 
-          <!-- Busca Textual -->
           <div class="search-box">
-            <input type="text" [(ngModel)]="buscaSaida" placeholder="🔍 Buscar saída..." class="search-input" />
+            <input 
+              type="text" 
+              [(ngModel)]="buscaSaida" 
+              placeholder="🔍 Buscar saída..." 
+              class="search-input"
+            />
             <button *ngIf="buscaSaida" class="search-clear-btn" (click)="limparBuscaSaida()">×</button>
           </div>
         </div>
       </div>
 
+      <!-- KPI de Resumo de Saídas -->
       <div style="display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;">
         <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; padding: 12px 18px;">
           <span style="font-size: 0.75rem; color: #f87171; font-weight: 700;">TOTAL DE SAÍDAS</span>
@@ -642,7 +697,7 @@
           </tbody>
         </table>
         <ng-template #semSaidas>
-          <p style="color: #64748b; padding: 24px 0; text-align: center;">Nenhuma saída encontrada no período selecionado.</p>
+          <p style="color: #64748b; padding: 24px 0; text-align: center;">Nenhuma saída encontrada para os filtros selecionados.</p>
         </ng-template>
       </div>
     </div>
@@ -668,7 +723,12 @@
           </select>
 
           <div class="search-box">
-            <input type="text" [(ngModel)]="buscaProduto" placeholder="🔍 Buscar produto..." class="search-input" />
+            <input 
+              type="text" 
+              [(ngModel)]="buscaProduto" 
+              placeholder="🔍 Buscar produto..." 
+              class="search-input"
+            />
             <button *ngIf="buscaProduto" class="search-clear-btn" (click)="limparBusca()">×</button>
           </div>
         </div>
@@ -725,59 +785,62 @@
 
 </main>
 
-<!-- Modal de Edição de Transações -->
+<!-- Modal de Edição de Transação -->
 <div *ngIf="modalEdicaoAberto" class="modal-backdrop" (click)="fecharModalEdicao()">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <div class="modal-title-group">
-        <h3>✏️ Editar Lançamento</h3>
+        <h3>✏️ Editar Transação</h3>
+        <p class="modal-product-name">{{ transacaoEditando?.descricao }}</p>
       </div>
       <button class="modal-close-btn" (click)="fecharModalEdicao()">×</button>
     </div>
 
-    <div class="modal-body" *ngIf="transacaoEdicao">
-      <div class="form-group-field" style="margin-bottom: 12px;">
-        <label class="field-label">Descrição / Lançamento *</label>
-        <input type="text" [(ngModel)]="transacaoEdicao.descricao" />
-      </div>
-
-      <div class="form-group-field" style="margin-bottom: 12px;">
-        <label class="field-label">Estabelecimento / Loja</label>
-        <input type="text" [(ngModel)]="transacaoEdicao.estabelecimento" />
-      </div>
-
-      <div class="form-row" style="margin-bottom: 12px;">
-        <div class="form-group-field" style="flex: 1;">
-          <label class="field-label">Categoria *</label>
-          <select [(ngModel)]="transacaoEdicao.categoria">
-            <option value="Alimentação / Mercado">Alimentação / Mercado</option>
-            <option value="Moradia">Moradia</option>
-            <option value="Transporte">Transporte</option>
-            <option value="Lazer">Lazer</option>
-            <option value="Salário">Salário</option>
-            <option value="Saúde">Saúde</option>
-            <option value="Outros">Outros</option>
-          </select>
+    <div class="modal-body">
+      <div class="form-row" style="flex-direction: column; gap: 14px;">
+        <div class="form-group-field">
+          <label class="field-label">Descrição / Lançamento *</label>
+          <input type="text" [(ngModel)]="editDescricao" />
         </div>
 
-        <div class="form-group-field" style="flex: 1;">
-          <label class="field-label">Tipo *</label>
-          <select [(ngModel)]="transacaoEdicao.tipo">
-            <option value="despesa">Despesa</option>
-            <option value="receita">Receita</option>
-          </select>
-        </div>
-      </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <div class="form-group-field" style="flex: 1; min-width: 140px;">
+            <label class="field-label">Valor (R$) *</label>
+            <input type="number" [(ngModel)]="editValor" min="0" step="0.01" />
+          </div>
 
-      <div class="form-row" style="margin-bottom: 12px;">
-        <div class="form-group-field" style="flex: 1;">
-          <label class="field-label">Valor (R$) *</label>
-          <input type="number" [(ngModel)]="transacaoEdicao.valor" step="0.01" />
+          <div class="form-group-field" style="flex: 1; min-width: 140px;">
+            <label class="field-label">Tipo *</label>
+            <select [(ngModel)]="editTipo">
+              <option value="despesa">Despesa</option>
+              <option value="receita">Receita</option>
+            </select>
+          </div>
         </div>
 
-        <div class="form-group-field" style="flex: 1;">
-          <label class="field-label">Data *</label>
-          <input type="date" [(ngModel)]="transacaoEdicao.data" />
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <div class="form-group-field" style="flex: 1; min-width: 140px;">
+            <label class="field-label">Categoria</label>
+            <select [(ngModel)]="editCategoria">
+              <option value="Alimentação / Mercado">Alimentação / Mercado</option>
+              <option value="Moradia">Moradia</option>
+              <option value="Transporte">Transporte</option>
+              <option value="Lazer">Lazer</option>
+              <option value="Salário">Salário</option>
+              <option value="Saúde">Saúde</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </div>
+
+          <div class="form-group-field" style="flex: 1; min-width: 140px;">
+            <label class="field-label">Data *</label>
+            <input type="date" [(ngModel)]="editData" />
+          </div>
+        </div>
+
+        <div class="form-group-field">
+          <label class="field-label">Estabelecimento / Loja</label>
+          <input type="text" [(ngModel)]="editEstabelecimento" placeholder="Ex: Mercado Muffato" />
         </div>
       </div>
     </div>

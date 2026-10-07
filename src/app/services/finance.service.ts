@@ -18,7 +18,6 @@ export interface Transacao {
   providedIn: 'root'
 })
 export class FinanceService {
-  // URL de produção padrão no Render (utilizada automaticamente na Vercel/Web)
   private readonly PROD_API_URL = 'https://controle-financeiro-backend-b3wz.onrender.com/api';
   private readonly DEV_API_URL = 'http://localhost:3000/api';
 

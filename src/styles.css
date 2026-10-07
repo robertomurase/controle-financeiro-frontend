@@ -166,6 +166,13 @@ body.light-theme .font-btn {
   color: #38bdf8;
 }
 
+/* Esconde o texto Configurações no Desktop */
+@media (min-width: 769px) {
+  .settings-btn-label {
+    display: none;
+  }
+}
+
 .settings-menu-dropdown {
   position: absolute;
   top: 42px;
@@ -272,7 +279,7 @@ body.light-theme .font-btn {
   color: #64748b;
 }
 
-/* KPIs Grid (3 Cards Balanced) */
+/* KPIs Grid */
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -924,16 +931,7 @@ input:focus, select:focus {
   .settings-dropdown-container {
     width: 100%;
   }
-}
-
-
-/* Oculta o texto Configurações no Desktop (Web) mantendo apenas o ícone */
-.settings-nav-btn .settings-btn-label {
-  display: none;
-}
-
-@media (max-width: 768px) {
-  .settings-nav-btn .settings-btn-label {
-    display: inline;
+  .settings-btn-label {
+    display: inline !important;
   }
 }
