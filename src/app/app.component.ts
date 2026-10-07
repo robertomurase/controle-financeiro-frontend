@@ -1,5 +1,8 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, OnDestroy, LOCALE_ID } from '@angular/core';
+import { CommonModule, registerLocaleData } from '@angular/common';
+import localePt from '@angular/common/locales/pt';
+
+registerLocaleData(localePt, 'pt-BR');
 import { FormsModule } from '@angular/forms';
 import { FinanceService, Transacao } from './services/finance.service';
 
@@ -9,9 +12,20 @@ declare var Html5Qrcode: any;
   selector: 'app-root',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  providers: [{ provide: LOCALE_ID, useValue: 'pt-BR' }],
   templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit, OnDestroy {
+  formatarMoeda(valor: number | null | undefined): string {
+    if (valor === null || valor === undefined || isNaN(Number(valor))) {
+      return '0,00';
+    }
+    return Number(valor).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
   activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'entradas' | 'saidas' | 'produtos' = 'dashboard';
   menuAberto: boolean = false;
   settingsMenuAberto: boolean = false;
