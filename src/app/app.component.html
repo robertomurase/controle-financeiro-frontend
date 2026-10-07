@@ -9,7 +9,7 @@
       </svg>
       <div>
         <span class="brand-title">Finanças Pro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v42 - back v19</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v43 - back v19</span>
       </div>
     </div>
 
@@ -87,7 +87,7 @@
 
     <!-- Dropdown de Configuração -->
     <div class="settings-dropdown-container">
-      <button class="nav-item settings-nav-btn" (click)="toggleSettingsMenu(); .stopPropagation()" title="Configurações" aria-label="Configurações">
+      <button class="nav-item settings-nav-btn" (click)="toggleSettingsMenu(); $event.stopPropagation()" title="Configurações" aria-label="Configurações">
         <svg class="nav-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"></circle>
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
@@ -95,7 +95,7 @@
         <span class="settings-btn-label">Configurações</span>
       </button>
 
-      <div *ngIf="settingsMenuAberto" class="settings-menu-dropdown" (click)=".stopPropagation()">
+      <div *ngIf="settingsMenuAberto" class="settings-menu-dropdown" (click)="$event.stopPropagation()">
         <div class="settings-menu-header">
           <span>Configurações</span>
         </div>
@@ -445,7 +445,7 @@
             <strong>Selecione ou tire uma foto contendo o QR Code da NFC-e</strong>
           </p>
 
-          <input type="file" accept="image/*" (change)="processarFotoQrCode()" id="qr-file-input" class="file-input" style="display: none;" />
+          <input type="file" accept="image/*" (change)="processarFotoQrCode($event)" id="qr-file-input" class="file-input" style="display: none;" />
           <button class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px;" (click)="triggerFileInput()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
             <span>Escolher Foto do QR Code</span>
@@ -610,13 +610,13 @@
               <td><strong style="color: #22c55e;">+ R$ {{ formatarMoeda(t.valor) }}</strong></td>
               <td>
                 <div class="action-btn-group">
-                  <button class="btn-action-icon btn-edit" title="Editar" (click)=".stopPropagation(); abrirModalEdicao(t)" aria-label="Editar">
+                  <button class="btn-action-icon btn-edit" title="Editar" (click)="$event.stopPropagation(); abrirModalEdicao(t)" aria-label="Editar">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
                   </button>
-                  <button class="btn-action-icon btn-delete" title="Excluir" (click)=".stopPropagation(); excluirTransacao(t)" aria-label="Excluir">
+                  <button class="btn-action-icon btn-delete" title="Excluir" (click)="$event.stopPropagation(); excluirTransacao(t)" aria-label="Excluir">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <polyline points="3 6 5 6 21 6"></polyline>
                       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -716,13 +716,13 @@
               <td><strong style="color: #dc2626;">- R$ {{ formatarMoeda(t.valor) }}</strong></td>
               <td>
                 <div class="action-btn-group">
-                  <button class="btn-action-icon btn-edit" title="Editar" (click)=".stopPropagation(); abrirModalEdicao(t)" aria-label="Editar">
+                  <button class="btn-action-icon btn-edit" title="Editar" (click)="$event.stopPropagation(); abrirModalEdicao(t)" aria-label="Editar">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                     </svg>
                   </button>
-                  <button class="btn-action-icon btn-delete" title="Excluir" (click)=".stopPropagation(); excluirTransacao(t)" aria-label="Excluir">
+                  <button class="btn-action-icon btn-delete" title="Excluir" (click)="$event.stopPropagation(); excluirTransacao(t)" aria-label="Excluir">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <polyline points="3 6 5 6 21 6"></polyline>
                       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -806,13 +806,13 @@
               <td><strong style="color: #38bdf8;">R$ {{ formatarMoeda(p.valor_total || p.gasto_total) }}</strong></td>
               <td>
                 <div class="action-btn-group">
-                  <button class="btn-action-icon btn-chart" title="Ver Evolução de Preços" (click)=".stopPropagation(); abrirModalEvolucaoPreco(p)" aria-label="Ver Evolução de Preços">
+                  <button class="btn-action-icon btn-chart" title="Ver Evolução de Preços" (click)="$event.stopPropagation(); abrirModalEvolucaoPreco(p)" aria-label="Ver Evolução de Preços">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                       <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
                   </button>
-                  <button class="btn-action-icon btn-delete" title="Excluir" (click)=".stopPropagation(); excluirItemProduto(p)" aria-label="Excluir">
+                  <button class="btn-action-icon btn-delete" title="Excluir" (click)="$event.stopPropagation(); excluirItemProduto(p)" aria-label="Excluir">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <polyline points="3 6 5 6 21 6"></polyline>
                       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -836,7 +836,7 @@
 
 <!-- Modal de Edição de Transação -->
 <div *ngIf="modalEdicaoAberto" class="modal-backdrop" (click)="fecharModalEdicao()">
-  <div class="modal-content" (click)=".stopPropagation()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <div class="modal-title-group">
         <h3 style="display: flex; align-items: center; gap: 8px;">
@@ -914,7 +914,7 @@
 
 <!-- Modal de Evolução de Preço -->
 <div *ngIf="modalPrecoAberto" class="modal-backdrop" (click)="fecharModalPreco()">
-  <div class="modal-content" (click)=".stopPropagation()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <div class="modal-title-group">
         <h3 style="display: flex; align-items: center; gap: 8px;">
