@@ -62,6 +62,14 @@ export class FinanceService {
     return this.http.delete(`${this.apiUrl}/transacoes/${id}`);
   }
 
+  extrairNfce(urlNfce: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/nfce/extrair`, { url: urlNfce });
+  }
+
+  salvarNfce(dadosNota: any): Observable<any> {
+    return this.http.post(`${this.apiUrl}/nfce/salvar`, { dadosNota });
+  }
+
   consultarNfce(urlNfce: string): Observable<any> {
     return this.http.post(`${this.apiUrl}/nfce/consultar`, { url: urlNfce });
   }

@@ -925,3 +925,15 @@ input:focus, select:focus {
     width: 100%;
   }
 }
+
+
+/* Oculta o texto Configurações no Desktop (Web) mantendo apenas o ícone */
+.settings-nav-btn .settings-btn-label {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .settings-nav-btn .settings-btn-label {
+    display: inline;
+  }
+}

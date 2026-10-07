@@ -21,35 +21,28 @@ export class AppComponent implements OnInit, OnDestroy {
   transacoes: Transacao[] = [];
   produtos: any[] = [];
   dadosUltimaNota: any = null;
+  dadosNotaPreview: any = null; // Pré-visualização da NFC-e antes de salvar
 
   // Busca e Filtro por Estabelecimento na Lista de Produtos
   buscaProduto: string = '';
   filtroEstabelecimento: string = '';
 
-  // Filtros de Entradas e Saídas
-  buscaEntrada: string = '';
-  filtroAnoEntrada: string = new Date().getFullYear().toString();
+  // Filtros de Ano, Mês e Busca para Entradas e Saídas (Padrão: Mês e Ano atuais)
+  filtroAnoEntrada: string = String(new Date().getFullYear());
   filtroMesEntrada: string = String(new Date().getMonth() + 1).padStart(2, '0');
+  buscaEntrada: string = '';
 
-  filtroAnoSaida: string = new Date().getFullYear().toString();
+  filtroAnoSaida: string = String(new Date().getFullYear());
   filtroMesSaida: string = String(new Date().getMonth() + 1).padStart(2, '0');
-
-  mesesOpcoes = [
-    { valor: '01', nome: '01 - Janeiro' },
-    { valor: '02', nome: '02 - Fevereiro' },
-    { valor: '03', nome: '03 - Março' },
-    { valor: '04', nome: '04 - Abril' },
-    { valor: '05', nome: '05 - Maio' },
-    { valor: '06', nome: '06 - Junho' },
-    { valor: '07', nome: '07 - Julho' },
-    { valor: '08', nome: '08 - Agosto' },
-    { valor: '09', nome: '09 - Setembro' },
-    { valor: '10', nome: '10 - Outubro' },
-    { valor: '11', nome: '11 - Novembro' },
-    { valor: '12', nome: '12 - Dezembro' }
-  ];
-  buscaSaida: string = '';
   filtroEstabelecimentoSaida: string = '';
+  buscaSaida: string = '';
+
+  // Gráfico de Barras - Fluxo de Caixa Recente (Dinamico)
+  anoGrafico: string = String(new Date().getFullYear());
+
+  // Modal de Edição de Transações
+  modalEdicaoAberto: boolean = false;
+  transacaoEdicao: any = null;
 
   // Modal de Evolução de Preços
   modalPrecoAberto: boolean = false;
@@ -63,7 +56,7 @@ export class AppComponent implements OnInit, OnDestroy {
   svgLinePoints: string = '';
   svgAreaPoints: string = '';
 
-  // Form Transação Manual + Pré-visualização
+  // Form Transação Manual
   novaDescricao: string = '';
   novoValor: number | null = null;
   novaQuantidade: number = 1;
@@ -72,18 +65,6 @@ export class AppComponent implements OnInit, OnDestroy {
   novaConta: string = 'Conta Corrente';
   novoTipo: 'receita' | 'despesa' = 'despesa';
   novaData: string = new Date().toISOString().split('T')[0];
-
-  // Modal de Edição de Transação
-  modalEdicaoAberto: boolean = false;
-  transacaoEditando: Transacao | null = null;
-  editId: number | null = null;
-  editDescricao: string = '';
-  editEstabelecimento: string = '';
-  editValor: number | null = null;
-  editCategoria: string = 'Alimentação / Mercado';
-  editTipo: 'receita' | 'despesa' = 'despesa';
-  editData: string = '';
-  editConta: string = 'Conta Corrente';
 
   // Leitor QR Code
   urlNfce: string = '';
@@ -100,16 +81,6 @@ export class AppComponent implements OnInit, OnDestroy {
     this.carregarTransacoes();
     this.carregarProdutos();
 
-    // Carrega preferências salvas de tema e tamanho de fonte
-    const hoje = new Date();
-    const anoAtualStr = hoje.getFullYear().toString();
-    const mesAtualStr = String(hoje.getMonth() + 1).padStart(2, '0');
-
-    this.filtroAnoEntrada = anoAtualStr;
-    this.filtroMesEntrada = mesAtualStr;
-    this.filtroAnoSaida = anoAtualStr;
-    this.filtroMesSaida = mesAtualStr;
-
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('THEME_MODE');
       if (savedTheme === 'light') {
@@ -120,7 +91,7 @@ export class AppComponent implements OnInit, OnDestroy {
       const savedFontSize = localStorage.getItem('FONT_SIZE');
       if (savedFontSize) {
         this.tamanhoFonte = Number(savedFontSize);
-        document.documentElement.style.fontSize = `${this.tamanhoFonte}px`;
+        document.documentElement.style.fontSize = ;
       }
     }
   }
@@ -159,7 +130,7 @@ export class AppComponent implements OnInit, OnDestroy {
   aumentarFonte(): void {
     if (this.tamanhoFonte < 22) {
       this.tamanhoFonte += 1;
-      document.documentElement.style.fontSize = `${this.tamanhoFonte}px`;
+      document.documentElement.style.fontSize = ;
       localStorage.setItem('FONT_SIZE', String(this.tamanhoFonte));
     }
   }
@@ -167,7 +138,7 @@ export class AppComponent implements OnInit, OnDestroy {
   diminuirFonte(): void {
     if (this.tamanhoFonte > 12) {
       this.tamanhoFonte -= 1;
-      document.documentElement.style.fontSize = `${this.tamanhoFonte}px`;
+      document.documentElement.style.fontSize = ;
       localStorage.setItem('FONT_SIZE', String(this.tamanhoFonte));
     }
   }
@@ -209,15 +180,15 @@ export class AppComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       if (typeof Html5Qrcode !== 'undefined') {
         try {
-          this.html5QrCode = new Html5Qrcode("qr-reader");
+          this.html5QrCode = new Html5Qrcode(qr-reader);
           const config = { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 };
 
           this.html5QrCode.start(
-            { facingMode: "environment" },
+            { facingMode: environment },
             config,
             (decodedText: string) => {
               this.urlNfce = decodedText;
-              this.mensagemNfce = '✅ QR Code lido com sucesso! Consultando nota fiscal...';
+              this.mensagemNfce = '✅ QR Code lido com sucesso! Extraindo produtos...';
               this.statusNfceSucesso = true;
               this.pararScanner();
               this.consultarNfce();
@@ -228,11 +199,11 @@ export class AppComponent implements OnInit, OnDestroy {
             this.statusNfceSucesso = true;
           }).catch(() => {
             this.html5QrCode.start(
-              { facingMode: "user" },
+              { facingMode: user },
               config,
               (decodedText: string) => {
                 this.urlNfce = decodedText;
-                this.mensagemNfce = '✅ QR Code lido com sucesso! Consultando nota fiscal...';
+                this.mensagemNfce = '✅ QR Code lido com sucesso! Extraindo produtos...';
                 this.statusNfceSucesso = true;
                 this.pararScanner();
                 this.consultarNfce();
@@ -285,11 +256,11 @@ export class AppComponent implements OnInit, OnDestroy {
     this.statusNfceSucesso = true;
 
     if (typeof Html5Qrcode !== 'undefined') {
-      const html5QrCodeTemp = new Html5Qrcode("qr-reader");
+      const html5QrCodeTemp = new Html5Qrcode(qr-reader);
       html5QrCodeTemp.scanFile(file, true)
         .then((decodedText: string) => {
           this.urlNfce = decodedText;
-          this.mensagemNfce = '✅ QR Code identificado! Importando nota fiscal...';
+          this.mensagemNfce = '✅ QR Code identificado! Extraindo dados da nota...';
           this.statusNfceSucesso = true;
           this.consultarNfce();
         })
@@ -309,13 +280,7 @@ export class AppComponent implements OnInit, OnDestroy {
         this.transacoes = dados || [];
       },
       error: () => {
-        this.transacoes = [
-          { id: 5, data: '2026-09-29', estabelecimento: 'TRIGO KIBE YOKI 500G', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 12.99, isNfce: true },
-          { id: 4, data: '2026-09-28', estabelecimento: 'TRIGO KIBE YOKI 500G', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 11.19, isNfce: true },
-          { id: 3, data: '2026-09-27', estabelecimento: 'Restaurante', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 200.00, isNfce: true },
-          { id: 2, data: '2026-09-26', estabelecimento: 'Compra - AUTO POSTO MUFFATO LTDA', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 220.95, isNfce: true },
-          { id: 1, data: '2026-09-26', estabelecimento: 'Compra - CARREFOUR COMERCIO E INDUSTRIA LTDA', descricao: 'Alimentação / Mercado', categoria: 'Alimentação / Mercado', conta: 'Conta Corrente', tipo: 'despesa', valor: 8.99, isNfce: true }
-        ];
+        this.transacoes = [];
       }
     });
   }
@@ -331,7 +296,209 @@ export class AppComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Lista de Estabelecimentos Únicos para o Filtro Select na Lista de Produtos
+  get anosDisponiveis(): string[] {
+    const setAnos = new Set<string>();
+    const anoAtual = String(new Date().getFullYear());
+    setAnos.add(anoAtual);
+
+    (this.transacoes || []).forEach(t => {
+      if (t.data) {
+        const ano = t.data.split('-')[0];
+        if (ano && ano.length === 4) setAnos.add(ano);
+      }
+    });
+
+    return Array.from(setAnos).sort((a, b) => b.localeCompare(a));
+  }
+
+  get mesesOpcoes(): { val: string, label: string }[] {
+    return [
+      { val: '', label: '🗓️ Todos os Meses' },
+      { val: '01', label: '01 - Janeiro' },
+      { val: '02', label: '02 - Fevereiro' },
+      { val: '03', label: '03 - Março' },
+      { val: '04', label: '04 - Abril' },
+      { val: '05', label: '05 - Maio' },
+      { val: '06', label: '06 - Junho' },
+      { val: '07', label: '07 - Julho' },
+      { val: '08', label: '08 - Agosto' },
+      { val: '09', label: '09 - Setembro' },
+      { val: '10', label: '10 - Outubro' },
+      { val: '11', label: '11 - Novembro' },
+      { val: '12', label: '12 - Dezembro' }
+    ];
+  }
+
+  get entradasFiltradas(): Transacao[] {
+    let lista = (this.transacoes || []).filter(t => t.tipo === 'receita');
+
+    if (this.filtroAnoEntrada) {
+      lista = lista.filter(t => t.data && t.data.startsWith(this.filtroAnoEntrada));
+    }
+
+    if (this.filtroMesEntrada) {
+      lista = lista.filter(t => {
+        if (!t.data) return false;
+        const partes = t.data.split('-');
+        return partes.length >= 2 && partes[1] === this.filtroMesEntrada;
+      });
+    }
+
+    if (this.buscaEntrada && this.buscaEntrada.trim()) {
+      const termo = this.buscaEntrada.toLowerCase().trim();
+      lista = lista.filter(t =>
+        (t.descricao && t.descricao.toLowerCase().includes(termo)) ||
+        (t.categoria && t.categoria.toLowerCase().includes(termo)) ||
+        (t.conta && t.conta.toLowerCase().includes(termo))
+      );
+    }
+
+    return lista;
+  }
+
+  get totalEntradas(): number {
+    return this.entradasFiltradas.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+  }
+
+  limparBuscaEntrada(): void {
+    this.buscaEntrada = '';
+  }
+
+  get saidasFiltradas(): Transacao[] {
+    let lista = (this.transacoes || []).filter(t => t.tipo === 'despesa');
+
+    if (this.filtroAnoSaida) {
+      lista = lista.filter(t => t.data && t.data.startsWith(this.filtroAnoSaida));
+    }
+
+    if (this.filtroMesSaida) {
+      lista = lista.filter(t => {
+        if (!t.data) return false;
+        const partes = t.data.split('-');
+        return partes.length >= 2 && partes[1] === this.filtroMesSaida;
+      });
+    }
+
+    if (this.filtroEstabelecimentoSaida && this.filtroEstabelecimentoSaida.trim()) {
+      const estAlvo = this.filtroEstabelecimentoSaida.trim();
+      lista = lista.filter(t => (t.estabelecimento || t.descricao || 'Cadastro Manual').trim() === estAlvo);
+    }
+
+    if (this.buscaSaida && this.buscaSaida.trim()) {
+      const termo = this.buscaSaida.toLowerCase().trim();
+      lista = lista.filter(t =>
+        (t.descricao && t.descricao.toLowerCase().includes(termo)) ||
+        (t.estabelecimento && t.estabelecimento.toLowerCase().includes(termo)) ||
+        (t.categoria && t.categoria.toLowerCase().includes(termo))
+      );
+    }
+
+    return lista;
+  }
+
+  get estabelecimentosSaidasUnicos(): string[] {
+    if (!this.transacoes) return [];
+    const setEst = new Set<string>();
+    this.transacoes.filter(t => t.tipo === 'despesa').forEach(t => {
+      const est = (t.estabelecimento || t.descricao || 'Cadastro Manual').trim();
+      if (est) setEst.add(est);
+    });
+    return Array.from(setEst).sort();
+  }
+
+  get totalSaidas(): number {
+    return this.saidasFiltradas.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+  }
+
+  limparBuscaSaida(): void {
+    this.buscaSaida = '';
+  }
+
+  // Dados Dinâmicos para o Gráfico de Barras (Fluxo de Caixa Recente)
+  get anosDisponiveisGrafico(): string[] {
+    return this.anosDisponiveis;
+  }
+
+  get dadosGraficoBarras(): any[] {
+    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    const ano = this.anoGrafico || String(new Date().getFullYear());
+
+    const transAno = (this.transacoes || []).filter(t => t.data && t.data.startsWith(ano));
+
+    const totaisPorMes = meses.map((mesLabel, index) => {
+      const mesNum = String(index + 1).padStart(2, '0');
+      const prefixo = ;
+
+      const transMes = transAno.filter(t => t.data.startsWith(prefixo));
+      const receitaVal = transMes.filter(t => t.tipo === 'receita').reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+      const despesaVal = transMes.filter(t => t.tipo === 'despesa').reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+
+      return {
+        mesLabel,
+        receitaVal,
+        despesaVal
+      };
+    });
+
+    const maxVal = Math.max(...totaisPorMes.map(m => Math.max(m.receitaVal, m.despesaVal)), 100);
+
+    return totaisPorMes.map(m => ({
+      ...m,
+      receitaAlturaPct: maxVal > 0 ? (m.receitaVal / maxVal) * 85 : 0,
+      despesaAlturaPct: maxVal > 0 ? (m.despesaVal / maxVal) * 85 : 0
+    }));
+  }
+
+  // Modal de Edição de Transações
+  abrirModalEdicao(t: Transacao): void {
+    if (!t) return;
+    this.transacaoEdicao = { ...t };
+    this.modalEdicaoAberto = true;
+  }
+
+  fecharModalEdicao(): void {
+    this.modalEdicaoAberto = false;
+    this.transacaoEdicao = null;
+  }
+
+  salvarEdicaoTransacao(): void {
+    if (!this.transacaoEdicao || !this.transacaoEdicao.id) return;
+
+    if (!this.transacaoEdicao.descricao || !this.transacaoEdicao.valor) {
+      alert('Preencha a descrição e o valor!');
+      return;
+    }
+
+    this.financeService.updateTransacao(this.transacaoEdicao.id, this.transacaoEdicao).subscribe({
+      next: () => {
+        this.carregarTransacoes();
+        this.carregarProdutos();
+        this.fecharModalEdicao();
+        alert('Transação atualizada com sucesso!');
+      },
+      error: (err) => {
+        console.error('Erro ao editar:', err);
+        alert('Erro ao atualizar transação.');
+      }
+    });
+  }
+
+  excluirTransacao(t: Transacao): void {
+    if (!t || !t.id) return;
+    if (confirm()) {
+      this.financeService.deleteTransacao(t.id).subscribe({
+        next: () => {
+          this.carregarTransacoes();
+          this.carregarProdutos();
+        },
+        error: (err) => {
+          console.error('Erro ao excluir:', err);
+          alert('Erro ao excluir transação.');
+        }
+      });
+    }
+  }
+
   get estabelecimentosUnicos(): string[] {
     if (!this.produtos) return [];
     const setEst = new Set<string>();
@@ -342,10 +509,8 @@ export class AppComponent implements OnInit, OnDestroy {
     return Array.from(setEst).sort();
   }
 
-  // Lista Filtrada de Produtos
   get produtosFiltrados(): any[] {
     if (!this.produtos) return [];
-    
     let lista = [...this.produtos];
 
     if (this.filtroEstabelecimento && this.filtroEstabelecimento.trim()) {
@@ -372,179 +537,10 @@ export class AppComponent implements OnInit, OnDestroy {
     this.buscaProduto = '';
   }
 
-  // Getters para a Tela de Entradas (Receitas)
-    get anosDisponiveis(): string[] {
-    const setAnos = new Set<string>();
-    const anoAtual = new Date().getFullYear().toString();
-    setAnos.add(anoAtual);
-
-    (this.transacoes || []).forEach(t => {
-      if (t.data) {
-        const ano = t.data.split('-')[0];
-        if (ano && ano.length === 4) {
-          setAnos.add(ano);
-        }
-      }
-    });
-
-    return Array.from(setAnos).sort((a, b) => b.localeCompare(a));
-  }
-
-  get entradasFiltradas(): Transacao[] {
-    let lista = (this.transacoes || []).filter(t => t.tipo === 'receita');
-
-    if (this.filtroAnoEntrada && this.filtroAnoEntrada.trim()) {
-      lista = lista.filter(t => t.data && t.data.startsWith(this.filtroAnoEntrada));
-    }
-
-    if (this.filtroMesEntrada && this.filtroMesEntrada.trim()) {
-      lista = lista.filter(t => {
-        if (!t.data) return false;
-        const partes = t.data.split('-');
-        return partes.length >= 2 && partes[1] === this.filtroMesEntrada;
-      });
-    }
-
-    if (this.buscaEntrada && this.buscaEntrada.trim()) {
-      const termo = this.buscaEntrada.toLowerCase().trim();
-      lista = lista.filter(t =>
-        (t.descricao && t.descricao.toLowerCase().includes(termo)) ||
-        (t.categoria && t.categoria.toLowerCase().includes(termo)) ||
-        (t.conta && t.conta.toLowerCase().includes(termo))
-      );
-    }
-    return lista;
-  }
-
-  get totalEntradas(): number {
-    return this.entradasFiltradas.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
-  }
-
-  limparBuscaEntrada(): void {
-    this.buscaEntrada = '';
-  }
-
-  // Getters para a Tela de Saídas (Despesas por Estabelecimento)
-  get saidasFiltradas(): Transacao[] {
-    let lista = (this.transacoes || []).filter(t => t.tipo === 'despesa');
-
-    if (this.filtroAnoSaida && this.filtroAnoSaida.trim()) {
-      lista = lista.filter(t => t.data && t.data.startsWith(this.filtroAnoSaida));
-    }
-
-    if (this.filtroMesSaida && this.filtroMesSaida.trim()) {
-      lista = lista.filter(t => {
-        if (!t.data) return false;
-        const partes = t.data.split('-');
-        return partes.length >= 2 && partes[1] === this.filtroMesSaida;
-      });
-    }
-
-    if (this.filtroEstabelecimentoSaida && this.filtroEstabelecimentoSaida.trim()) {
-      const estAlvo = this.filtroEstabelecimentoSaida.trim();
-      lista = lista.filter(t => (t.estabelecimento || t.descricao || 'Cadastro Manual').trim() === estAlvo);
-    }
-
-    if (this.buscaSaida && this.buscaSaida.trim()) {
-      const termo = this.buscaSaida.toLowerCase().trim();
-      lista = lista.filter(t =>
-        (t.descricao && t.descricao.toLowerCase().includes(termo)) ||
-        (t.estabelecimento && t.estabelecimento.toLowerCase().includes(termo)) ||
-        (t.categoria && t.categoria.toLowerCase().includes(termo))
-      );
-    }
-    return lista;
-  }
-
-  get estabelecimentosSaidasUnicos(): string[] {
-    const setEst = new Set<string>();
-    (this.transacoes || []).filter(t => t.tipo === 'despesa').forEach(t => {
-      const est = (t.estabelecimento || t.descricao || 'Cadastro Manual').trim();
-      if (est) setEst.add(est);
-    });
-    return Array.from(setEst).sort();
-  }
-
-  get totalSaidas(): number {
-    return this.saidasFiltradas.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
-  }
-
-  limparBuscaSaida(): void {
-    this.buscaSaida = '';
-  }
-
-  // Modal de Edição de Transações
-  abrirModalEdicao(t: Transacao): void {
-    if (!t) return;
-    this.transacaoEditando = t;
-    this.editId = t.id || null;
-    this.editDescricao = t.descricao || '';
-    this.editEstabelecimento = t.estabelecimento || '';
-    this.editValor = t.valor || 0;
-    this.editCategoria = t.categoria || 'Alimentação / Mercado';
-    this.editTipo = t.tipo || 'despesa';
-    this.editData = t.data || new Date().toISOString().split('T')[0];
-    this.editConta = t.conta || 'Conta Corrente';
-    this.modalEdicaoAberto = true;
-  }
-
-  fecharModalEdicao(): void {
-    this.modalEdicaoAberto = false;
-    this.transacaoEditando = null;
-  }
-
-  salvarEdicaoTransacao(): void {
-    if (!this.editId) return;
-    if (!this.editDescricao || !this.editValor) {
-      alert('Preencha a descrição e o valor!');
-      return;
-    }
-
-    const payload: Partial<Transacao> = {
-      descricao: this.editDescricao,
-      estabelecimento: this.editEstabelecimento || 'Cadastro Manual',
-      valor: Number(this.editValor) || 0,
-      categoria: this.editCategoria,
-      tipo: this.editTipo,
-      data: this.editData,
-      conta: this.editConta
-    };
-
-    this.financeService.updateTransacao(this.editId, payload).subscribe({
-      next: () => {
-        this.carregarTransacoes();
-        this.carregarProdutos();
-        this.fecharModalEdicao();
-      },
-      error: () => {
-        if (this.transacaoEditando) {
-          Object.assign(this.transacaoEditando, payload);
-        }
-        this.fecharModalEdicao();
-      }
-    });
-  }
-
-  excluirTransacao(t: Transacao): void {
-    if (!t || !t.id) return;
-    if (confirm(`Tem certeza que deseja excluir "${t.descricao}"?`)) {
-      this.financeService.deleteTransacao(t.id).subscribe({
-        next: () => {
-          this.carregarTransacoes();
-          this.carregarProdutos();
-        },
-        error: () => {
-          this.transacoes = this.transacoes.filter(item => item.id !== t.id);
-        }
-      });
-    }
-  }
-
-  // Excluir Item individual de Produto
   excluirItemProduto(p: any): void {
     if (!p) return;
     const nomeItem = p.nome_produto || 'este produto';
-    if (confirm(`Tem certeza que deseja excluir "${nomeItem}" da lista?`)) {
+    if (confirm()) {
       this.financeService.deleteProdutoItem(p.id, p.origem, p.nome_produto).subscribe({
         next: () => {
           this.carregarProdutos();
@@ -564,7 +560,6 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Modal de Evolução de Preços
   abrirModalEvolucaoPreco(p: any): void {
     if (!p || !p.nome_produto) return;
     this.produtoSelecionado = p;
@@ -620,10 +615,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
     const svgWidth = 500;
     const marginX = 50;
-    const marginYTop = 30;
     const marginYBottom = 150;
     const availableWidth = svgWidth - 2 * marginX;
-    const availableHeight = marginYBottom - marginYTop;
+    const availableHeight = 120;
 
     const valores = historico.map(h => Number(h.valor_unitario || h.preco_medio || 0));
     const minVal = Math.min(...valores);
@@ -642,7 +636,7 @@ export class AppComponent implements OnInit, OnDestroy {
       }
 
       const rawData = item.data_emissao || item.data_cadastro || item.data || '';
-      const dataFormatted = rawData ? rawData.split('-').slice(1).join('/') : `P${index + 1}`;
+      const dataFormatted = rawData ? rawData.split('-').slice(1).join('/') : ;
 
       return {
         x,
@@ -652,19 +646,18 @@ export class AppComponent implements OnInit, OnDestroy {
       };
     });
 
-    const ptsStr = this.pontosGrafico.map(pt => `${pt.x},${pt.y}`).join(' ');
+    const ptsStr = this.pontosGrafico.map(pt => ).join(' ');
     this.svgLinePoints = ptsStr;
 
     if (this.pontosGrafico.length > 0) {
       const firstX = this.pontosGrafico[0].x;
       const lastX = this.pontosGrafico[this.pontosGrafico.length - 1].x;
-      this.svgAreaPoints = `${firstX},150 ${ptsStr} ${lastX},150`;
+      this.svgAreaPoints = ;
     } else {
       this.svgAreaPoints = '';
     }
   }
 
-  // Salvar Transação Manual
   salvarTransacao(): void {
     if (!this.novaDescricao || !this.novoValor) {
       alert('Preencha a descrição e o valor!');
@@ -697,11 +690,16 @@ export class AppComponent implements OnInit, OnDestroy {
         this.novaQuantidade = 1;
         this.novoEstabelecimento = '';
         this.activeTab = 'dashboard';
+        alert('✅ Transação salva com sucesso!');
       },
-      error: (err) => console.error('Erro ao salvar:', err)
+      error: (err) => {
+        console.error('Erro ao salvar:', err);
+        alert('Erro ao salvar transação.');
+      }
     });
   }
 
+  // Leitor NFC-e: Extração e Pré-visualização
   consultarNfce(): void {
     if (!this.urlNfce) {
       alert('Cole ou escaneie o QR Code da NFC-e!');
@@ -709,26 +707,70 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     this.carregandoNfce = true;
-    this.mensagemNfce = 'Processando nota fiscal com a SEFAZ...';
+    this.mensagemNfce = '📸 Extraindo dados da nota fiscal com a SEFAZ... Aguarde.';
     this.statusNfceSucesso = true;
 
-    this.financeService.consultarNfce(this.urlNfce).subscribe({
+    this.financeService.extrairNfce(this.urlNfce).subscribe({
       next: (res) => {
         this.carregandoNfce = false;
-        this.mensagemNfce = '✅ Nota fiscal importada e produtos cadastrados com sucesso!';
+        const totalItens = res?.dadosNota?.itens?.length || 0;
+        this.mensagemNfce = ;
         this.statusNfceSucesso = true;
-        this.dadosUltimaNota = res?.dadosNota || null;
+        this.dadosNotaPreview = res?.dadosNota || null;
+      },
+      error: () => {
+        this.financeService.consultarNfce(this.urlNfce).subscribe({
+          next: (res) => {
+            this.carregandoNfce = false;
+            const totalItens = res?.dadosNota?.itens?.length || 0;
+            this.mensagemNfce = ;
+            this.statusNfceSucesso = true;
+            this.dadosNotaPreview = res?.dadosNota || null;
+          },
+          error: (err2) => {
+            this.carregandoNfce = false;
+            const msgErro = err2?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
+            this.mensagemNfce = ;
+            this.statusNfceSucesso = false;
+          }
+        });
+      }
+    });
+  }
+
+  confirmarEGravarNfce(): void {
+    if (!this.dadosNotaPreview) {
+      alert('Nenhum dado de nota para salvar.');
+      return;
+    }
+
+    this.carregandoNfce = true;
+    this.mensagemNfce = '💾 Salvando transação em Saídas e cadastrando produtos...';
+
+    this.financeService.salvarNfce(this.dadosNotaPreview).subscribe({
+      next: () => {
+        this.carregandoNfce = false;
+        const totalItens = this.dadosNotaPreview?.itens?.length || 0;
+        this.mensagemNfce = ;
+        this.statusNfceSucesso = true;
+        this.dadosNotaPreview = null;
+        this.urlNfce = '';
         this.carregarTransacoes();
         this.carregarProdutos();
-        this.urlNfce = '';
+        alert('✅ NFC-e e produtos salvos com sucesso!');
       },
       error: (err) => {
         this.carregandoNfce = false;
-        const msgErro = err?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
-        this.mensagemNfce = `❌ ${msgErro}`;
+        const msgErro = err?.error?.error || 'Erro ao salvar a nota fiscal.';
+        this.mensagemNfce = ;
         this.statusNfceSucesso = false;
       }
     });
+  }
+
+  descartarPreviewNfce(): void {
+    this.dadosNotaPreview = null;
+    this.mensagemNfce = '';
   }
 
   get ultimos10Transacoes(): Transacao[] {
