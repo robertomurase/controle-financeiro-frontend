@@ -7,7 +7,7 @@
       </svg>
       <div>
         <span class="brand-title">Controle Financeiro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v51 - back v21</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v52 - back v24</span>
       </div>
     </div>
     <div class="header-right-mobile">
@@ -280,7 +280,8 @@
         <div class="form-group-field" style="flex: 1.5; min-width: 160px;">
           <label class="field-label">Categoria *</label>
           <select [(ngModel)]="novaCategoria" (change)="onCategoriaChange()">
-            <option value="Alimentação / Mercado">Alimentação / Mercado</option>
+            <option value="Mercado">Mercado</option>
+          <option value="Alimentação">Alimentação</option>
             <option value="Moradia">Moradia</option>
             <option value="Transporte">Transporte</option>
             <option value="Lazer">Lazer</option>
@@ -887,7 +888,8 @@
           <div class="form-group-field" style="flex: 1; min-width: 140px;">
             <label class="field-label">Categoria</label>
             <select [(ngModel)]="editCategoria">
-              <option value="Alimentação / Mercado">Alimentação / Mercado</option>
+              <option value="Mercado">Mercado</option>
+          <option value="Alimentação">Alimentação</option>
               <option value="Moradia">Moradia</option>
               <option value="Transporte">Transporte</option>
               <option value="Lazer">Lazer</option>

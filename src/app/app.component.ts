@@ -52,7 +52,7 @@ export class AppComponent implements OnInit, OnDestroy {
   editDescricao: string = '';
   editValor: number | null = null;
   editTipo: 'receita' | 'despesa' = 'despesa';
-  editCategoria: string = 'Alimentação / Mercado';
+  editCategoria: string = 'Mercado';
   editData: string = new Date().toISOString().split('T')[0];
   editEstabelecimento: string = '';
 
@@ -73,7 +73,7 @@ export class AppComponent implements OnInit, OnDestroy {
   novoValor: number | null = null;
   novaQuantidade: number = 1;
   novoEstabelecimento: string = '';
-  novaCategoria: string = 'Alimentação / Mercado';
+  novaCategoria: string = 'Mercado';
   novaConta: string = 'Conta Corrente';
   novoTipo: 'receita' | 'despesa' = 'despesa';
   novaData: string = new Date().toISOString().split('T')[0];
@@ -491,7 +491,7 @@ export class AppComponent implements OnInit, OnDestroy {
     this.editDescricao = t.descricao || '';
     this.editValor = t.valor || 0;
     this.editTipo = t.tipo || 'despesa';
-    this.editCategoria = t.categoria || 'Alimentação / Mercado';
+    this.editCategoria = t.categoria || 'Mercado';
     this.editData = t.data || new Date().toISOString().split('T')[0];
     this.editEstabelecimento = t.estabelecimento || '';
     this.modalEdicaoAberto = true;
