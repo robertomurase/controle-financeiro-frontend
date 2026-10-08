@@ -23,6 +23,15 @@ export class AppComponent implements OnInit, OnDestroy {
   estabelecimentosMapeados: EstabelecimentoMapeado[] = [];
   dadosUltimaNota: any = null;
 
+  // Tela Mapeamento de Produtos (De-Para)
+  produtosMapeados: ProdutoMapeado[] = [];
+  novoProdOriginal: string = '';
+  novoProdSimplificado: string = '';
+  modalEdicaoProdMapeadoAberto: boolean = false;
+  editProdId: number | null = null;
+  editProdOriginal: string = '';
+  editProdSimplificado: string = '';
+
   // Tela Estabelecimentos (De-Para)
   novaRazaoSocial: string = '';
   novoNomeSimplificado: string = '';

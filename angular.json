@@ -62,8 +62,5 @@
         }
       }
     }
-  },
-  "cli": {
-    "analytics": false
   }
 }
