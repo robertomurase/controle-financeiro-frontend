@@ -7,7 +7,7 @@
       </svg>
       <div>
         <span class="brand-title">Controle Financeiro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v52 - back v24</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v53 - back v24</span>
       </div>
     </div>
     <div class="header-right-mobile">
@@ -375,7 +375,7 @@
 
         <div style="display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid #1e293b; padding-top: 16px;">
           <button class="btn-primary" style="padding: 12px 24px; font-size: 1rem; width: 100%; max-width: 420px;" (click)="salvarTransacao()">
-            ✅ Confirmar e Salvar na Lista de Produtos
+            {{ novaCategoria === 'Mercado' ? '✅ Confirmar e Salvar na Lista de Produtos' : '✅ Confirmar e Salvar Lançamento' }}
           </button>
         </div>
       </div>
