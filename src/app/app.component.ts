@@ -788,9 +788,10 @@ carregarEstabelecimentos(): void {
     }
 
     const isSalario = this.novaCategoria === 'Salário';
-    const qtd = isSalario ? 1 : (this.novaQuantidade && this.novaQuantidade > 0 ? Number(this.novaQuantidade) : 1);
+    const isMercado = this.novaCategoria === 'Mercado';
+    const qtd = isMercado ? (this.novaQuantidade && this.novaQuantidade > 0 ? Number(this.novaQuantidade) : 1) : 1;
     const valUnit = Number(this.novoValor) || 0;
-    const valTotal = isSalario ? valUnit : valUnit * qtd;
+    const valTotal = isMercado ? valUnit * qtd : valUnit;
 
     const nova: any = {
       descricao: this.limparNomeProduto(this.novaDescricao),
@@ -825,6 +826,11 @@ carregarEstabelecimentos(): void {
   onCategoriaChange(): void {
     if (this.novaCategoria === 'Salário') {
       this.novoTipo = 'receita';
+    } else if (this.novoTipo === 'receita') {
+      this.novoTipo = 'despesa';
+    }
+    if (this.novaCategoria !== 'Mercado') {
+      this.novaQuantidade = 1;
     }
   }
 
