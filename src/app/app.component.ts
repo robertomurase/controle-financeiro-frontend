@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { FinanceService, Transacao, EstabelecimentoMapeado } from './services/finance.service';
+import { FinanceService, Transacao, EstabelecimentoMapeado, ProdutoMapeado } from './services/finance.service';
 
 declare var Html5Qrcode: any;
 
@@ -95,6 +95,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.carregarEstabelecimentos();
+    this.carregarMapeamentosProdutos();
     this.carregarTransacoes();
     this.carregarProdutos();
 
@@ -203,7 +204,107 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   // --- CRUD ESTABELECIMENTOS (DE-PARA) ---
-  carregarEstabelecimentos(): void {
+  
+  carregarMapeamentosProdutos(): void {
+    this.financeService.getMapeamentosProdutos().subscribe({
+      next: (dados) => {
+        this.produtosMapeados = dados || [];
+      },
+      error: () => {
+        this.produtosMapeados = [];
+      }
+    });
+  }
+
+  obterNomeProdutoMapeado(nomeOriginal: string): string {
+    if (!nomeOriginal) return '';
+    const limpo = this.limparNomeProduto(nomeOriginal).trim();
+    if (!limpo) return '';
+
+    const origLower = limpo.toLowerCase();
+    const exact = (this.produtosMapeados || []).find(p =>
+      p.nome_original && p.nome_original.trim().toLowerCase() === origLower
+    );
+    if (exact && exact.nome_simplificado) return exact.nome_simplificado.trim();
+
+    const partial = (this.produtosMapeados || []).find(p =>
+      p.nome_original && origLower.includes(p.nome_original.trim().toLowerCase())
+    );
+    if (partial && partial.nome_simplificado) return partial.nome_simplificado.trim();
+
+    return limpo;
+  }
+
+  salvarMapeamentoProduto(): void {
+    if (!this.novoProdOriginal || !this.novoProdSimplificado) {
+      alert('Preencha o Nome do Produto na SEFAZ e o Nome Simplificado!');
+      return;
+    }
+
+    this.financeService.addMapeamentoProduto({
+      nomeOriginal: this.novoProdOriginal.trim(),
+      nomeSimplificado: this.novoProdSimplificado.trim()
+    }).subscribe({
+      next: () => {
+        this.novoProdOriginal = '';
+        this.novoProdSimplificado = '';
+        this.carregarMapeamentosProdutos();
+        this.carregarProdutos();
+        alert('✅ Mapeamento de produto salvo com sucesso!');
+      },
+      error: (err) => console.error('Erro ao salvar mapeamento de produto:', err)
+    });
+  }
+
+  abrirModalEdicaoProdMapeado(p: ProdutoMapeado): void {
+    if (!p) return;
+    this.editProdId = p.id || null;
+    this.editProdOriginal = p.nome_original || '';
+    this.editProdSimplificado = p.nome_simplificado || '';
+    this.modalEdicaoProdMapeadoAberto = true;
+  }
+
+  fecharModalEdicaoProdMapeado(): void {
+    this.modalEdicaoProdMapeadoAberto = false;
+    this.editProdId = null;
+    this.editProdOriginal = '';
+    this.editProdSimplificado = '';
+  }
+
+  salvarEdicaoProdMapeado(): void {
+    if (!this.editProdId || !this.editProdOriginal || !this.editProdSimplificado) {
+      alert('Preencha todos os campos!');
+      return;
+    }
+
+    this.financeService.updateMapeamentoProduto(this.editProdId, {
+      nomeOriginal: this.editProdOriginal.trim(),
+      nomeSimplificado: this.editProdSimplificado.trim()
+    }).subscribe({
+      next: () => {
+        this.fecharModalEdicaoProdMapeado();
+        this.carregarMapeamentosProdutos();
+        this.carregarProdutos();
+        alert('✅ Mapeamento de produto atualizado!');
+      },
+      error: (err) => console.error('Erro ao editar mapeamento de produto:', err)
+    });
+  }
+
+  excluirMapeamentoProduto(p: ProdutoMapeado): void {
+    if (!p || !p.id) return;
+    if (confirm(`Excluir o mapeamento de "${p.nome_simplificado}"?`)) {
+      this.financeService.deleteMapeamentoProduto(p.id).subscribe({
+        next: () => {
+          this.carregarMapeamentosProdutos();
+          this.carregarProdutos();
+        },
+        error: (err) => console.error('Erro ao excluir mapeamento de produto:', err)
+      });
+    }
+  }
+
+carregarEstabelecimentos(): void {
     this.financeService.getEstabelecimentos().subscribe({
       next: (dados) => {
         this.estabelecimentosMapeados = dados || [];
@@ -228,6 +329,7 @@ export class AppComponent implements OnInit, OnDestroy {
         this.novaRazaoSocial = '';
         this.novoNomeSimplificado = '';
         this.carregarEstabelecimentos();
+    this.carregarMapeamentosProdutos();
         this.carregarTransacoes();
         this.carregarProdutos();
         alert('✅ Mapeamento de estabelecimento salvo!');
@@ -264,6 +366,7 @@ export class AppComponent implements OnInit, OnDestroy {
       next: () => {
         this.fecharModalEst();
         this.carregarEstabelecimentos();
+    this.carregarMapeamentosProdutos();
         this.carregarTransacoes();
         this.carregarProdutos();
         alert('✅ Mapeamento atualizado com sucesso!');
@@ -278,6 +381,7 @@ export class AppComponent implements OnInit, OnDestroy {
       this.financeService.deleteEstabelecimento(e.id).subscribe({
         next: () => {
           this.carregarEstabelecimentos();
+    this.carregarMapeamentosProdutos();
           this.carregarTransacoes();
           this.carregarProdutos();
         },
@@ -474,7 +578,7 @@ export class AppComponent implements OnInit, OnDestroy {
       next: (dados) => {
         this.produtos = (dados || []).map(p => ({
           ...p,
-          nome_produto: this.limparNomeProduto(p.nome_produto),
+          nome_produto: this.obterNomeProdutoMapeado(p.nome_produto),
           estabelecimento: this.obterNomeEstabelecimentoSimplificado(p.estabelecimento)
         }));
       },

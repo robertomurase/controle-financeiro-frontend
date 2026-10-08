@@ -20,6 +20,12 @@ export interface EstabelecimentoMapeado {
   nome_simplificado: string;
 }
 
+export interface ProdutoMapeado {
+  id?: number;
+  nome_original: string;
+  nome_simplificado: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -111,5 +117,21 @@ export class FinanceService {
 
   deleteEstabelecimento(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/estabelecimentos/${id}`);
+  }
+
+  getMapeamentosProdutos(): Observable<ProdutoMapeado[]> {
+    return this.http.get<ProdutoMapeado[]>(`${this.apiUrl}/mapeamento-produtos`);
+  }
+
+  addMapeamentoProduto(prod: { nomeOriginal: string, nomeSimplificado: string }): Observable<any> {
+    return this.http.post(`${this.apiUrl}/mapeamento-produtos`, prod);
+  }
+
+  updateMapeamentoProduto(id: number, prod: { nomeOriginal: string, nomeSimplificado: string }): Observable<any> {
+    return this.http.put(`${this.apiUrl}/mapeamento-produtos/${id}`, prod);
+  }
+
+  deleteMapeamentoProduto(id: number): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/mapeamento-produtos/${id}`);
   }
 }
