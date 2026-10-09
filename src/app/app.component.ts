@@ -1149,16 +1149,16 @@ carregarEstabelecimentos(): void {
       const inicio = acum;
       acum += item.percentual;
       const fim = acum;
-      partes.push();
+      partes.push(item.cor + ' ' + inicio.toFixed(1) + '% ' + fim.toFixed(1) + '%');
     });
 
     if (acum < 100 && partes.length > 0) {
       const ultima = cats[cats.length - 1];
       const penultimoAcum = acum - ultima.percentual;
-      partes[partes.length - 1] = ;
+      partes[partes.length - 1] = ultima.cor + ' ' + penultimoAcum.toFixed(1) + '% 100%';
     }
 
-    return ;
+    return 'conic-gradient(' + partes.join(', ') + ')';
   }
 
   get saldoTotal(): number {
