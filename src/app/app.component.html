@@ -7,7 +7,7 @@
       </svg>
       <div>
         <span class="brand-title">Controle Financeiro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v57 - back v28</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v58 - back v28</span>
       </div>
     </div>
     <div class="header-right-mobile">
@@ -199,25 +199,21 @@
         </div>
 
         <div class="donut-chart-container">
-          <div class="donut-visual"></div>
-          <div class="donut-legend">
-            <div class="legend-item">
-              <span><span class="legend-color" style="background: #2563eb;"></span> Alimentação / Mercado</span>
-              <strong>65%</strong>
-            </div>
-            <div class="legend-item">
-              <span><span class="legend-color" style="background: #10b981;"></span> Compras</span>
-              <strong>20%</strong>
-            </div>
-            <div class="legend-item">
-              <span><span class="legend-color" style="background: #f97316;"></span> Transporte</span>
-              <strong>10%</strong>
-            </div>
-            <div class="legend-item">
-              <span><span class="legend-color" style="background: #8b5cf6;"></span> Saúde</span>
-              <strong>5%</strong>
+          <div class="donut-visual" [style.background]="donutGradient"></div>
+          <div class="donut-legend" *ngIf="despesasPorCategoria.length > 0; else semDespesasCat">
+            <div class="legend-item" *ngFor="let item of despesasPorCategoria">
+              <span>
+                <span class="legend-color" [style.background]="item.cor"></span>
+                {{ item.categoria }}
+              </span>
+              <strong>{{ item.percentual }}% ({{ formatarMoeda(item.valor) }})</strong>
             </div>
           </div>
+          <ng-template #semDespesasCat>
+            <p style="color: #64748b; font-size: 0.85rem; text-align: center; margin-top: 8px;">
+              Nenhuma despesa registrada para exibir a distribuição.
+            </p>
+          </ng-template>
         </div>
       </div>
     </div>

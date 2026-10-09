@@ -1096,15 +1096,83 @@ carregarEstabelecimentos(): void {
     return (this.transacoes || []).slice(0, 10);
   }
 
+  get despesasPorCategoria(): { categoria: string, valor: number, percentual: number, cor: string }[] {
+    const despesas = (this.transacoes || []).filter(t => t.tipo === 'despesa');
+    const totalGeral = despesas.reduce((acc, t) => acc + (Number(t.valor) || 0), 0);
+    if (totalGeral === 0) return [];
+
+    const mapaCategorias: { [key: string]: number } = {};
+    despesas.forEach(t => {
+      const cat = (t.categoria && t.categoria.trim()) ? t.categoria.trim() : 'Outros';
+      mapaCategorias[cat] = (mapaCategorias[cat] || 0) + (Number(t.valor) || 0);
+    });
+
+    const coresMap: { [key: string]: string } = {
+      'Mercado': '#2563eb',       // Azul
+      'Alimentação': '#3b82f6',    // Azul claro
+      'Moradia': '#10b981',       // Verde
+      'Transporte': '#f97316',    // Laranja
+      'Lazer': '#ec4899',         // Rosa
+      'Saúde': '#8b5cf6',         // Roxo
+      'Educação': '#06b6d4',      // Ciano
+      'Pessoal': '#f59e0b',       // Âmbar
+      'Salário': '#84cc16',       // Verde lima
+      'Outros': '#64748b'         // Cinza
+    };
+
+    const listaCoresFallback = ['#2563eb', '#10b981', '#f97316', '#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#84cc16', '#6366f1', '#64748b'];
+
+    const resultado = Object.keys(mapaCategorias).map((cat, index) => {
+      const val = mapaCategorias[cat];
+      const pct = (val / totalGeral) * 100;
+      const cor = coresMap[cat] || listaCoresFallback[index % listaCoresFallback.length];
+      return {
+        categoria: cat,
+        valor: val,
+        percentual: Math.round(pct * 10) / 10,
+        cor
+      };
+    });
+
+    return resultado.sort((a, b) => b.valor - a.valor);
+  }
+
+  get donutGradient(): string {
+    const cats = this.despesasPorCategoria;
+    if (!cats || cats.length === 0) {
+      return 'conic-gradient(#334155 0% 100%)';
+    }
+
+    let acum = 0;
+    const partes: string[] = [];
+    cats.forEach(item => {
+      const inicio = acum;
+      acum += item.percentual;
+      const fim = acum;
+      partes.push();
+    });
+
+    if (acum < 100 && partes.length > 0) {
+      const ultima = cats[cats.length - 1];
+      const penultimoAcum = acum - ultima.percentual;
+      partes[partes.length - 1] = ;
+    }
+
+    return ;
+  }
+
   get saldoTotal(): number {
-    return 18612.93;
+    return (this.transacoes || []).reduce((acc, t) => {
+      const val = Number(t.valor) || 0;
+      return t.tipo === 'receita' ? acc + val : acc - val;
+    }, 0);
   }
 
   get receitasMes(): number {
-    return this.transacoes.filter(t => t.tipo === 'receita').reduce((a, b) => a + (Number(b.valor) || 0), 0);
+    return (this.transacoes || []).filter(t => t.tipo === 'receita').reduce((a, b) => a + (Number(b.valor) || 0), 0);
   }
 
   get despesasMes(): number {
-    return this.transacoes.filter(t => t.tipo === 'despesa').reduce((a, b) => a + (Number(b.valor) || 0), 0);
+    return (this.transacoes || []).filter(t => t.tipo === 'despesa').reduce((a, b) => a + (Number(b.valor) || 0), 0);
   }
 }
