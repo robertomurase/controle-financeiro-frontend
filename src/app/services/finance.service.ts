@@ -105,7 +105,7 @@ export class FinanceService {
 
   
   getDetalhesTransacao(id: number): Observable<any> {
-    return this.http.get<any>();
+    return this.http.get<any>(`${this.apiUrl}/transacoes/${id}/detalhes`);
   }
 
   getEstabelecimentos(): Observable<EstabelecimentoMapeado[]> {
