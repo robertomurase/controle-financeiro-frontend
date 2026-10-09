@@ -7,7 +7,7 @@
       </svg>
       <div>
         <span class="brand-title">Controle Financeiro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v59 - back v28</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v60 - back v28</span>
       </div>
     </div>
     <div class="header-right-mobile">
@@ -741,39 +741,27 @@
           <thead>
             <tr>
               <th>PRODUTO</th>
-              <th>ESTABELECIMENTO</th>
-              <th>DATA NFC-E</th>
-              <th>DATA CADASTRO</th>
-              <th>QTD</th>
+              <th>ÚLTIMA COMPRA</th>
               <th>UN</th>
               <th>VALOR UNIT.</th>
-              <th>TOTAL</th>
               <th>AÇÕES</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let p of produtosFiltrados" class="product-row" (click)="abrirModalEvolucaoPreco(p)">
               <td><strong>{{ p.nome_produto }}</strong></td>
-              <td>
-                <span [class.badge-manual]="p.estabelecimento === 'Cadastro Manual' || p.codigo === 'MANUAL'">
-                  {{ p.estabelecimento || 'Cadastro Manual' }}
-                </span>
-              </td>
-              <td>{{ p.data_emissao || p.data_nfce || '-' }}</td>
-              <td>{{ p.data_cadastro || p.data || '-' }}</td>
-              <td><strong>{{ (p.quantidade !== null && p.quantidade !== undefined) ? p.quantidade : 1 }}</strong></td>
+              <td>{{ formatarDataBr(p.data_emissao || p.data_cadastro || p.data) }}</td>
               <td>{{ p.unidade || 'UN' }}</td>
-              <td>{{ formatarMoeda(p.valor_unitario || p.preco_medio) }}</td>
-              <td><strong style="color: #38bdf8;">{{ formatarMoeda(p.valor_total || p.gasto_total) }}</strong></td>
+              <td><strong style="color: #38bdf8;">{{ formatarMoeda(p.valor_unitario || p.preco_medio) }}</strong></td>
               <td>
                 <div class="action-btn-group">
-                  <button class="btn-action-icon btn-chart" title="Evolução de Preços" (click)="$event.stopPropagation(); abrirModalEvolucaoPreco(p)" aria-label="Evolução">
+                  <button class="btn-action-icon btn-chart" title="Evolução de Preços" (click)=".stopPropagation(); abrirModalEvolucaoPreco(p)" aria-label="Evolução">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                       <polyline points="17 6 23 6 23 12"></polyline>
                     </svg>
                   </button>
-                  <button class="btn-action-icon btn-delete" title="Excluir Produto" (click)="$event.stopPropagation(); excluirItemProduto(p)" aria-label="Excluir">
+                  <button class="btn-action-icon btn-delete" title="Excluir Produto" (click)=".stopPropagation(); excluirItemProduto(p)" aria-label="Excluir">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <polyline points="3 6 5 6 21 6"></polyline>
                       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>

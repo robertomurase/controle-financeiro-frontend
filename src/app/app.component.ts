@@ -136,6 +136,16 @@ export class AppComponent implements OnInit, OnDestroy {
       .trim();
   }
 
+  formatarDataBr(dataStr: string | null | undefined): string {
+    if (!dataStr) return '-';
+    const limpa = String(dataStr).split('T')[0].trim();
+    const partes = limpa.split('-');
+    if (partes.length === 3) {
+      return ;
+    }
+    return limpa || '-';
+  }
+
   formatarMoeda(val: number | null | undefined): string {
     const num = Number(val) || 0;
     return num.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
