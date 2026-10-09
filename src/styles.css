@@ -1113,3 +1113,14 @@ body.light-theme .val-neutro {
   background: rgba(56, 189, 248, 0.15);
   border-color: rgba(2, 132, 199, 0.3);
 }
+
+
+.btn-view {
+  background: rgba(56, 189, 248, 0.15) !important;
+  color: #38bdf8 !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+}
+.btn-view:hover {
+  background: rgba(56, 189, 248, 0.3) !important;
+  color: #7dd3fc !important;
+}

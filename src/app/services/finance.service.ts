@@ -103,6 +103,11 @@ export class FinanceService {
     return this.http.delete(`${this.apiUrl}/produtos/${encodeURIComponent(nome)}`);
   }
 
+  
+  getDetalhesTransacao(id: number): Observable<any> {
+    return this.http.get<any>();
+  }
+
   getEstabelecimentos(): Observable<EstabelecimentoMapeado[]> {
     return this.http.get<EstabelecimentoMapeado[]>(`${this.apiUrl}/estabelecimentos`);
   }

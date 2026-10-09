@@ -12,7 +12,12 @@ declare var Html5Qrcode: any;
   templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit, OnDestroy {
-  activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'entradas' | 'saidas' | 'produtos' | 'estabelecimentos' = 'dashboard';
+  
+  // Modal de Detalhes da NFC-e / Saída
+  modalDetalhesNfceAberto: boolean = false;
+  carregandoDetalhesNfce: boolean = false;
+  detalhesNfceSelecionada: any = null;
+activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'entradas' | 'saidas' | 'produtos' | 'estabelecimentos' = 'dashboard';
   menuAberto: boolean = false;
   settingsMenuAberto: boolean = false;
   modoClaro: boolean = false;
@@ -605,6 +610,49 @@ carregarEstabelecimentos(): void {
         this.produtos = [];
       }
     });
+  }
+
+  
+  // --- MODAL DE DETALHES DA SAÍDA / NFC-E ---
+  abrirModalDetalhesNfce(t: Transacao): void {
+    if (!t || !t.id) return;
+    this.modalDetalhesNfceAberto = true;
+    this.carregandoDetalhesNfce = true;
+    this.detalhesNfceSelecionada = null;
+
+    this.financeService.getDetalhesTransacao(t.id).subscribe({
+      next: (dados) => {
+        this.carregandoDetalhesNfce = false;
+        this.detalhesNfceSelecionada = dados;
+      },
+      error: (err) => {
+        this.carregandoDetalhesNfce = false;
+        console.error('Erro ao carregar detalhes:', err);
+        this.detalhesNfceSelecionada = {
+          transacaoId: t.id,
+          isNfce: !!t.isNfce,
+          estabelecimento: t.estabelecimento || t.descricao || 'Cadastro Manual',
+          dataEmissao: t.data,
+          subtotal: Number(t.valor) || 0,
+          desconto: 0,
+          valorTotal: Number(t.valor) || 0,
+          itens: [
+            {
+              nomeProduto: this.limparNomeProduto(t.descricao),
+              quantidade: 1,
+              unidade: 'UN',
+              valorUnitario: Number(t.valor) || 0,
+              valorTotal: Number(t.valor) || 0
+            }
+          ]
+        };
+      }
+    });
+  }
+
+  fecharModalDetalhesNfce(): void {
+    this.modalDetalhesNfceAberto = false;
+    this.detalhesNfceSelecionada = null;
   }
 
   // --- MODAL DE EDIÇÃO DE TRANSAÇÃO ---

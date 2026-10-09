@@ -7,7 +7,7 @@
       </svg>
       <div>
         <span class="brand-title">Controle Financeiro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v63 - back v28</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v64 - back v29</span>
       </div>
     </div>
     <div class="header-right-mobile">
@@ -680,7 +680,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let t of saidasFiltradas">
+            <tr *ngFor="let t of saidasFiltradas" class="product-row" (click)="abrirModalDetalhesNfce(t)">
               <td>{{ t.data }}</td>
               <td><strong>{{ t.estabelecimento || t.descricao || 'Cadastro Manual' }}</strong></td>
               <td>{{ t.descricao }}</td>
@@ -692,6 +692,12 @@
               <td class="col-valor"><span class="val-neg">- {{ formatarMoeda(t.valor) }}</span></td>
               <td>
                 <div class="action-btn-group">
+                  <button class="btn-action-icon btn-view" title="Visualizar Detalhes do Cupom / NFC-e" (click)="$event.stopPropagation(); abrirModalDetalhesNfce(t)" aria-label="Visualizar">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  </button>
                   <button class="btn-action-icon btn-edit" title="Editar" (click)="$event.stopPropagation(); abrirModalEdicao(t)" aria-label="Editar">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -981,6 +987,121 @@
       <button class="btn-cancel" (click)="fecharModalEdicaoProdMapeado()">Cancelar</button>
       <button class="btn-save" (click)="salvarEdicaoProdMapeado()">💾 Salvar Alterações</button>
     </div>
+  </div>
+</div>
+
+
+
+<!-- Modal de Detalhes da Saída / Cupom NFC-e -->
+<div *ngIf="modalDetalhesNfceAberto" class="modal-backdrop" (click)="fecharModalDetalhesNfce()">
+  <div class="modal-content" style="max-width: 720px; width: 92%; padding: 24px;" (click)="$event.stopPropagation()">
+    
+    <div class="modal-header" style="border-bottom: 1px solid #1e293b; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 1.4rem;">🧾</span>
+        <div>
+          <h2 style="font-size: 1.2rem; font-weight: 700; color: #f8fafc; margin: 0;">
+            Detalhes do Cupom Fiscal / NFC-e
+          </h2>
+          <span style="font-size: 0.8rem; color: #64748b;">
+            Consulta detalhada de itens e descontos aplicados
+          </span>
+        </div>
+      </div>
+      <button class="search-clear-btn" (click)="fecharModalDetalhesNfce()" style="font-size: 1.5rem; color: #94a3b8; background: transparent; border: none; cursor: pointer;">×</button>
+    </div>
+
+    <!-- Indicador de Carregamento -->
+    <div *ngIf="carregandoDetalhesNfce" style="padding: 40px; text-align: center; color: #38bdf8;">
+      <div style="font-size: 1.1rem; font-weight: 600;">⌛ Carregando itens do cupom fiscal...</div>
+    </div>
+
+    <!-- Conteúdo dos Detalhes -->
+    <div *ngIf="!carregandoDetalhesNfce && detalhesNfceSelecionada" class="modal-body">
+      
+      <!-- Box de Cabeçalho do Cupom -->
+      <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px;">
+        <div>
+          <span style="font-size: 0.72rem; color: #64748b; display: block; font-weight: 700;">ESTABELECIMENTO</span>
+          <strong style="color: #f8fafc; font-size: 1rem;">{{ detalhesNfceSelecionada.estabelecimento }}</strong>
+        </div>
+        <div>
+          <span style="font-size: 0.72rem; color: #64748b; display: block; font-weight: 700;">DATA DE EMISSÃO</span>
+          <strong style="color: #f8fafc;">{{ formatarDataBr(detalhesNfceSelecionada.dataEmissao) }}</strong>
+        </div>
+        <div>
+          <span style="font-size: 0.72rem; color: #64748b; display: block; font-weight: 700;">ORIGEM</span>
+          <span [class.badge-nfce]="detalhesNfceSelecionada.isNfce" [class.badge-manual]="!detalhesNfceSelecionada.isNfce">
+            {{ detalhesNfceSelecionada.isNfce ? 'Cupom NFC-e' : 'Lançamento Manual' }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Tabela Detalhada de Produtos -->
+      <div style="margin-bottom: 20px;">
+        <h3 style="font-size: 0.95rem; color: #cbd5e1; margin-bottom: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+          🛒 Lista de Produtos ({{ detalhesNfceSelecionada.itens?.length || 0 }} itens)
+        </h3>
+
+        <div class="table-responsive" style="max-height: 280px; overflow-y: auto; border: 1px solid #1e293b; border-radius: 8px;">
+          <table class="modal-table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+              <tr style="background: #0f172a; text-align: left;">
+                <th style="padding: 10px 12px; color: #64748b; font-size: 0.72rem;">PRODUTO</th>
+                <th style="padding: 10px 12px; color: #64748b; font-size: 0.72rem; text-align: center;">QTD</th>
+                <th style="padding: 10px 12px; color: #64748b; font-size: 0.72rem; text-align: center;">UN</th>
+                <th style="padding: 10px 12px; color: #64748b; font-size: 0.72rem; text-align: right;">VALOR UNIT.</th>
+                <th style="padding: 10px 12px; color: #64748b; font-size: 0.72rem; text-align: right;">VALOR TOTAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of detalhesNfceSelecionada.itens" style="border-bottom: 1px solid #1e293b;">
+                <td style="padding: 10px 12px; color: #f8fafc; font-weight: 600;">
+                  {{ item.nomeProduto }}
+                  <span *ngIf="item.codigo && item.codigo !== 'MANUAL' && item.codigo !== 'SEFAZ'" style="display: block; font-size: 0.7rem; color: #64748b;">Cód: {{ item.codigo }}</span>
+                </td>
+                <td style="padding: 10px 12px; text-align: center; color: #38bdf8; font-weight: 700;">{{ item.quantidade }}</td>
+                <td style="padding: 10px 12px; text-align: center; color: #94a3b8; font-size: 0.8rem;">{{ item.unidade || 'UN' }}</td>
+                <td style="padding: 10px 12px; text-align: right; color: #cbd5e1;">{{ formatarMoeda(item.valorUnitario) }}</td>
+                <td style="padding: 10px 12px; text-align: right; font-weight: 700; color: #38bdf8;">{{ formatarMoeda(item.valorTotal) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Resumo Financeiro & Descontos -->
+      <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; color: #94a3b8;">
+          <span>Subtotal dos Produtos:</span>
+          <span style="font-weight: 600; color: #e2e8f0;">{{ formatarMoeda(detalhesNfceSelecionada.subtotal) }}</span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem; color: #f97316; padding: 6px 12px; background: rgba(249, 115, 22, 0.1); border-radius: 6px; border: 1px solid rgba(249, 115, 22, 0.2);">
+          <span style="font-weight: 700; display: flex; align-items: center; gap: 6px;">🏷️ Desconto do Cupom:</span>
+          <strong style="font-size: 1.05rem;">- {{ formatarMoeda(detalhesNfceSelecionada.desconto || 0) }}</strong>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; color: #f8fafc; border-top: 1px solid #1e293b; padding-top: 10px; margin-top: 4px;">
+          <span style="font-weight: 800;">TOTAL PAGO:</span>
+          <strong style="color: #22c55e; font-size: 1.3rem;">{{ formatarMoeda(detalhesNfceSelecionada.valorTotal) }}</strong>
+        </div>
+      </div>
+
+      <!-- Chave de Acesso se NFC-e -->
+      <div *ngIf="detalhesNfceSelecionada.chaveAcesso" style="margin-top: 16px; font-size: 0.75rem; color: #64748b; text-align: center; word-break: break-all;">
+        🔑 Chave de Acesso SEFAZ: <span style="color: #94a3b8; font-family: monospace;">{{ detalhesNfceSelecionada.chaveAcesso }}</span>
+      </div>
+
+    </div>
+
+    <!-- Modal Footer -->
+    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #1e293b; display: flex; justify-content: flex-end;">
+      <button class="btn-primary" style="padding: 10px 24px; background: #334155; color: #f8fafc; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;" (click)="fecharModalDetalhesNfce()">
+        Fechar
+      </button>
+    </div>
+
   </div>
 </div>
 
