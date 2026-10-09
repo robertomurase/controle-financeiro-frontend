@@ -1037,3 +1037,79 @@ input:focus, select:focus {
     flex: none !important;
   }
 }
+
+
+/* --- Generous Spacing and Styling for Values (Positive & Negative) --- */
+.col-valor {
+  text-align: right !important;
+  white-space: nowrap !important;
+  min-width: 145px !important;
+  padding-left: 20px !important;
+  padding-right: 24px !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.3px;
+}
+
+th.col-valor {
+  text-align: right !important;
+  min-width: 145px !important;
+  padding-left: 20px !important;
+  padding-right: 24px !important;
+}
+
+.val-pos {
+  color: #22c55e !important;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  white-space: nowrap;
+}
+
+.val-neg {
+  color: #ef4444 !important;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  white-space: nowrap;
+}
+
+.val-neutro {
+  color: #38bdf8 !important;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  white-space: nowrap;
+}
+
+body.light-theme .val-pos {
+  color: #15803d !important;
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(21, 128, 61, 0.3);
+}
+
+body.light-theme .val-neg {
+  color: #b91c1c !important;
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(185, 28, 28, 0.3);
+}
+
+body.light-theme .val-neutro {
+  color: #0284c7 !important;
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(2, 132, 199, 0.3);
+}

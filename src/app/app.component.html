@@ -7,7 +7,7 @@
       </svg>
       <div>
         <span class="brand-title">Controle Financeiro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v62 - back v28</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v63 - back v28</span>
       </div>
     </div>
     <div class="header-right-mobile">
@@ -83,10 +83,12 @@
 
     <button class="nav-item" [class.active]="activeTab === 'estabelecimentos'" (click)="setTab('estabelecimentos')">
       <svg class="nav-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        <path d="M16 3l4 4-4 4"></path>
+        <path d="M20 7H4"></path>
+        <path d="M8 21l-4-4 4-4"></path>
+        <path d="M4 17h16"></path>
       </svg>
-      <span>DE-PARA</span>
+      <span>De-Para</span>
     </button>
 
     <!-- Dropdown de Configuração -->
@@ -239,7 +241,7 @@
               <th>CATEGORIA</th>
               <th>CONTA</th>
               <th>TIPO</th>
-              <th>VALOR</th>
+              <th class="col-valor">VALOR</th>
             </tr>
           </thead>
           <tbody>
@@ -255,8 +257,10 @@
               <td>
                 <span class="badge-tipo" [ngClass]="t.tipo">{{ t.tipo | titlecase }}</span>
               </td>
-              <td [style.color]="t.tipo === 'despesa' ? '#dc2626' : '#16a34a'" style="font-weight: 700;">
-                {{ t.tipo === 'despesa' ? '-' : '+' }} {{ formatarMoeda(t.valor) }}
+              <td class="col-valor">
+                <span [class.val-neg]="t.tipo === 'despesa'" [class.val-pos]="t.tipo === 'receita'">
+                  {{ t.tipo === 'despesa' ? '-' : '+' }} {{ formatarMoeda(t.valor) }}
+                </span>
               </td>
             </tr>
           </tbody>
@@ -369,14 +373,14 @@
               <strong style="color: #38bdf8; font-size: 1.05rem;">{{ novaQuantidade || 1 }} UN</strong>
             </div>
             <div>
-              <span style="font-size: 0.75rem; color: #64748b; display: block;">VALOR UNITÁRIO</span>
-              <strong style="color: #f8fafc;">{{ formatarMoeda(novoValor || 0) }}</strong>
+              <span style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 4px;">VALOR UNITÁRIO</span>
+              <span class="val-neutro">{{ formatarMoeda(novoValor || 0) }}</span>
             </div>
             <div>
-              <span style="font-size: 0.75rem; color: #64748b; display: block;">VALOR TOTAL DO ITEM</span>
-              <strong style="color: #22c55e; font-size: 1.15rem;">
-                {{ formatarMoeda((novoValor || 0) * (novaQuantidade || 1)) }}
-              </strong>
+              <span style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 4px;">VALOR TOTAL DO ITEM</span>
+              <span class="val-neg" style="font-size: 1.1rem;">
+                - {{ formatarMoeda((novoValor || 0) * (novaQuantidade || 1)) }}
+              </span>
             </div>
           </ng-container>
 
@@ -386,10 +390,13 @@
               <strong style="color: #38bdf8;">{{ novaCategoria }}</strong>
             </div>
             <div>
-              <span style="font-size: 0.75rem; color: #64748b; display: block;">VALOR TOTAL</span>
-              <strong style="color: #22c55e; font-size: 1.15rem;">
-                {{ formatarMoeda(novoValor || 0) }}
-              </strong>
+              <span style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 4px;">VALOR TOTAL</span>
+              <span *ngIf="novaCategoria === 'Salário' || novoTipo === 'receita'" class="val-pos" style="font-size: 1.1rem;">
+                + {{ formatarMoeda(novoValor || 0) }}
+              </span>
+              <span *ngIf="novaCategoria !== 'Salário' && novoTipo === 'despesa'" class="val-neg" style="font-size: 1.1rem;">
+                - {{ formatarMoeda(novoValor || 0) }}
+              </span>
             </div>
           </ng-container>
         </div>
@@ -480,8 +487,8 @@
             <strong style="color: #38bdf8; font-size: 1.05rem;">{{ dadosNotaPreview.itens?.length || 0 }} PRODUTOS</strong>
           </div>
           <div>
-            <span style="font-size: 0.75rem; color: #64748b; display: block;">VALOR TOTAL DA NOTA</span>
-            <strong style="color: #22c55e; font-size: 1.2rem;">{{ formatarMoeda(dadosNotaPreview.valorTotal) }}</strong>
+            <span style="font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 4px;">VALOR TOTAL DA NOTA</span>
+            <span class="val-neg" style="font-size: 1.15rem;">- {{ formatarMoeda(dadosNotaPreview.valorTotal) }}</span>
           </div>
         </div>
 
@@ -496,8 +503,8 @@
                 <th>PRODUTO</th>
                 <th>QTD</th>
                 <th>UN</th>
-                <th>VALOR UNIT.</th>
-                <th>TOTAL ITEM</th>
+                <th class="col-valor">VALOR UNIT.</th>
+                <th class="col-valor">TOTAL ITEM</th>
               </tr>
             </thead>
             <tbody>
@@ -505,8 +512,8 @@
                 <td><strong>{{ item.nomeProduto }}</strong></td>
                 <td>{{ item.quantidade }}</td>
                 <td>{{ item.unidade || 'UN' }}</td>
-                <td>{{ formatarMoeda(item.valorUnitario) }}</td>
-                <td><strong style="color: #38bdf8;">{{ formatarMoeda(item.valorTotal) }}</strong></td>
+                <td class="col-valor"><span class="val-neutro">{{ formatarMoeda(item.valorUnitario) }}</span></td>
+                <td class="col-valor"><span class="val-neutro">{{ formatarMoeda(item.valorTotal) }}</span></td>
               </tr>
             </tbody>
           </table>
@@ -575,7 +582,7 @@
               <th>CATEGORIA</th>
               <th>DESCRIÇÃO / ORIGEM</th>
               <th>CONTA</th>
-              <th>VALOR (R$)</th>
+              <th class="col-valor">VALOR (R$)</th>
               <th>AÇÕES</th>
             </tr>
           </thead>
@@ -585,7 +592,7 @@
               <td><span class="badge-tipo receita">{{ t.categoria }}</span></td>
               <td><strong>{{ t.descricao }}</strong></td>
               <td>{{ t.conta || 'Conta Corrente' }}</td>
-              <td><strong style="color: #22c55e;">+ {{ formatarMoeda(t.valor) }}</strong></td>
+              <td class="col-valor"><span class="val-pos">+ {{ formatarMoeda(t.valor) }}</span></td>
               <td>
                 <div class="action-btn-group">
                   <button class="btn-action-icon btn-edit" title="Editar" (click)="$event.stopPropagation(); abrirModalEdicao(t)" aria-label="Editar">
@@ -668,7 +675,7 @@
               <th>DESCRIÇÃO</th>
               <th>CATEGORIA</th>
               <th>ORIGEM</th>
-              <th>VALOR (R$)</th>
+              <th class="col-valor">VALOR (R$)</th>
               <th>AÇÕES</th>
             </tr>
           </thead>
@@ -682,7 +689,7 @@
                 <span *ngIf="t.isNfce" class="badge-nfce">NFC-e</span>
                 <span *ngIf="!t.isNfce" class="badge-manual">Manual</span>
               </td>
-              <td><strong style="color: #dc2626;">- {{ formatarMoeda(t.valor) }}</strong></td>
+              <td class="col-valor"><span class="val-neg">- {{ formatarMoeda(t.valor) }}</span></td>
               <td>
                 <div class="action-btn-group">
                   <button class="btn-action-icon btn-edit" title="Editar" (click)="$event.stopPropagation(); abrirModalEdicao(t)" aria-label="Editar">
@@ -743,7 +750,7 @@
               <th>PRODUTO</th>
               <th>ÚLTIMA COMPRA</th>
               <th>UN</th>
-              <th>VALOR UNIT.</th>
+              <th class="col-valor">VALOR UNIT.</th>
               <th>AÇÕES</th>
             </tr>
           </thead>
@@ -752,7 +759,7 @@
               <td><strong>{{ p.nome_produto }}</strong></td>
               <td>{{ formatarDataBr(p.data_emissao || p.data_cadastro || p.data) }}</td>
               <td>{{ p.unidade || 'UN' }}</td>
-              <td><strong style="color: #38bdf8;">{{ formatarMoeda(p.valor_unitario || p.preco_medio) }}</strong></td>
+              <td class="col-valor"><span class="val-neutro">{{ formatarMoeda(p.valor_unitario || p.preco_medio) }}</span></td>
               <td>
                 <div class="action-btn-group">
                   <button class="btn-action-icon btn-chart" title="Evolução de Preços" (click)="$event.stopPropagation(); abrirModalEvolucaoPreco(p)" aria-label="Evolução">
@@ -782,7 +789,7 @@
   <!-- VISÃO: TELA "ESTABELECIMENTOS" -->
   <div *ngIf="activeTab === 'estabelecimentos'">
     <div class="page-header" style="margin-bottom: 24px;">
-      <h1 class="page-title">DE-PARA (Regras de Mapeamento)</h1>
+      <h1 class="page-title">De-Para (Regras de Mapeamento)</h1>
       <p class="page-subtitle">Padronize nomes extensos de estabelecimentos e produtos para simplificar a busca, tabelas e gráficos</p>
     </div>
 
@@ -1144,8 +1151,8 @@
               <th>DATA</th>
               <th>ESTABELECIMENTO</th>
               <th>QTD</th>
-              <th>VALOR UNIT.</th>
-              <th>TOTAL</th>
+              <th class="col-valor">VALOR UNIT.</th>
+              <th class="col-valor">TOTAL</th>
             </tr>
           </thead>
           <tbody>
@@ -1153,8 +1160,8 @@
               <td>{{ item.data_emissao || item.data_cadastro || item.data || '-' }}</td>
               <td><strong>{{ item.estabelecimento || 'Cadastro Manual' }}</strong></td>
               <td>{{ item.quantidade || 1 }} UN</td>
-              <td>{{ formatarMoeda(item.valor_unitario || item.preco_medio) }}</td>
-              <td><strong style="color: #38bdf8;">{{ formatarMoeda(item.valor_total || item.gasto_total) }}</strong></td>
+              <td class="col-valor"><span class="val-neutro">{{ formatarMoeda(item.valor_unitario || item.preco_medio) }}</span></td>
+              <td class="col-valor"><span class="val-neutro">{{ formatarMoeda(item.valor_total || item.gasto_total) }}</span></td>
             </tr>
           </tbody>
         </table>
