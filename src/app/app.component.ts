@@ -141,7 +141,7 @@ export class AppComponent implements OnInit, OnDestroy {
     const limpa = String(dataStr).split('T')[0].trim();
     const partes = limpa.split('-');
     if (partes.length === 3) {
-      return ;
+      return partes[2] + '/' + partes[1] + '/' + partes[0];
     }
     return limpa || '-';
   }
