@@ -7,7 +7,7 @@
       </svg>
       <div>
         <span class="brand-title">Controle Financeiro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v65 - back v29</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v66 - back v30</span>
       </div>
     </div>
     <div class="header-right-mobile">
@@ -992,28 +992,41 @@
 
 
 
-<!-- Modal de Detalhes da Saída / Cupom NFC-e -->
+<!-- Modal de Detalhes da NFC-e / Cupom Fiscal -->
 <div *ngIf="modalDetalhesNfceAberto" class="modal-backdrop" (click)="fecharModalDetalhesNfce()">
-  <div class="modal-content" style="max-width: 720px; width: 92%; padding: 24px;" (click)="$event.stopPropagation()">
+  <div class="modal-content" style="max-width: 720px; width: 92%;" (click)="$event.stopPropagation()">
     
-    <div class="modal-header" style="border-bottom: 1px solid #1e293b; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
-      <div style="display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 1.4rem;">🧾</span>
-        <div>
-          <h2 style="font-size: 1.2rem; font-weight: 700; color: #f8fafc; margin: 0;">
-            Detalhes do Cupom Fiscal / NFC-e
-          </h2>
-          <span style="font-size: 0.8rem; color: #64748b;">
-            Consulta detalhada de itens e descontos aplicados
-          </span>
+    <div class="modal-header">
+      <div class="modal-title-group">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+          <div>
+            <h3 style="margin: 0; font-size: 1.15rem; color: #38bdf8; font-weight: 700;">Detalhes do Cupom Fiscal / NFC-e</h3>
+            <p class="modal-subtitle" style="margin-top: 2px;">Consulta detalhada de itens e descontos aplicados</p>
+          </div>
         </div>
       </div>
-      <button class="search-clear-btn" (click)="fecharModalDetalhesNfce()" style="font-size: 1.5rem; color: #94a3b8; background: transparent; border: none; cursor: pointer;">×</button>
+      <button class="modal-close-btn" (click)="fecharModalDetalhesNfce()">×</button>
     </div>
 
     <!-- Indicador de Carregamento -->
-    <div *ngIf="carregandoDetalhesNfce" style="padding: 40px; text-align: center; color: #38bdf8;">
-      <div style="font-size: 1.1rem; font-weight: 600;">⌛ Carregando itens do cupom fiscal...</div>
+    <div *ngIf="carregandoDetalhesNfce" style="padding: 40px; text-align: center; color: #38bdf8; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;">
+        <line x1="12" y1="2" x2="12" y2="6"></line>
+        <line x1="12" y1="18" x2="12" y2="22"></line>
+        <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line>
+        <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line>
+        <line x1="2" y1="12" x2="6" y2="12"></line>
+        <line x1="18" y1="12" x2="22" y2="12"></line>
+        <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line>
+        <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line>
+      </svg>
+      <div style="font-size: 1rem; font-weight: 600;">Carregando itens do cupom fiscal...</div>
     </div>
 
     <!-- Conteúdo dos Detalhes -->
@@ -1023,7 +1036,7 @@
       <div style="background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px;">
         <div>
           <span style="font-size: 0.72rem; color: #64748b; display: block; font-weight: 700;">ESTABELECIMENTO</span>
-          <strong style="color: #f8fafc; font-size: 1rem;">{{ detalhesNfceSelecionada.estabelecimento }}</strong>
+          <strong style="color: #f8fafc; font-size: 1rem;">{{ obterNomeEstabelecimentoSimplificado(detalhesNfceSelecionada.estabelecimento) }}</strong>
         </div>
         <div>
           <span style="font-size: 0.72rem; color: #64748b; display: block; font-weight: 700;">DATA DE EMISSÃO</span>
@@ -1040,7 +1053,12 @@
       <!-- Tabela Detalhada de Produtos -->
       <div style="margin-bottom: 20px;">
         <h3 style="font-size: 0.95rem; color: #cbd5e1; margin-bottom: 12px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-          🛒 Lista de Produtos ({{ detalhesNfceSelecionada.itens?.length || 0 }} itens)
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="21" r="1"></circle>
+            <circle cx="20" cy="21" r="1"></circle>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+          </svg>
+          Lista de Produtos ({{ detalhesNfceSelecionada.itens?.length || 0 }} itens)
         </h3>
 
         <div class="table-responsive" style="max-height: 280px; overflow-y: auto; border: 1px solid #1e293b; border-radius: 8px;">
@@ -1050,8 +1068,8 @@
                 <th style="padding: 10px 12px; color: #64748b; font-size: 0.72rem;">PRODUTO</th>
                 <th style="padding: 10px 12px; color: #64748b; font-size: 0.72rem; text-align: center;">QTD</th>
                 <th style="padding: 10px 12px; color: #64748b; font-size: 0.72rem; text-align: center;">UN</th>
-                <th style="padding: 10px 12px; color: #64748b; font-size: 0.72rem; text-align: right;">VALOR UNIT.</th>
-                <th style="padding: 10px 12px; color: #64748b; font-size: 0.72rem; text-align: right;">VALOR TOTAL</th>
+                <th style="padding: 10px 12px; color: #64748b; font-size: 0.72rem; text-align: right;" class="col-valor">VALOR UNIT.</th>
+                <th style="padding: 10px 12px; color: #64748b; font-size: 0.72rem; text-align: right;" class="col-valor">VALOR TOTAL</th>
               </tr>
             </thead>
             <tbody>
@@ -1062,8 +1080,8 @@
                 </td>
                 <td style="padding: 10px 12px; text-align: center; color: #38bdf8; font-weight: 700;">{{ item.quantidade }}</td>
                 <td style="padding: 10px 12px; text-align: center; color: #94a3b8; font-size: 0.8rem;">{{ item.unidade || 'UN' }}</td>
-                <td style="padding: 10px 12px; text-align: right; color: #cbd5e1;">{{ formatarMoeda(item.valorUnitario) }}</td>
-                <td style="padding: 10px 12px; text-align: right; font-weight: 700; color: #38bdf8;">{{ formatarMoeda(item.valorTotal) }}</td>
+                <td style="padding: 10px 12px; text-align: right;" class="col-valor"><span class="val-neutro">{{ formatarMoeda(item.valorUnitario) }}</span></td>
+                <td style="padding: 10px 12px; text-align: right;" class="col-valor"><span class="val-neutro">{{ formatarMoeda(item.valorTotal) }}</span></td>
               </tr>
             </tbody>
           </table>
@@ -1077,8 +1095,14 @@
           <span style="font-weight: 600; color: #e2e8f0;">{{ formatarMoeda(detalhesNfceSelecionada.subtotal) }}</span>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem; color: #f97316; padding: 6px 12px; background: rgba(249, 115, 22, 0.1); border-radius: 6px; border: 1px solid rgba(249, 115, 22, 0.2);">
-          <span style="font-weight: 700; display: flex; align-items: center; gap: 6px;">🏷️ Desconto do Cupom:</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.95rem; color: #f97316; padding: 8px 14px; background: rgba(249, 115, 22, 0.1); border-radius: 8px; border: 1px solid rgba(249, 115, 22, 0.25);">
+          <span style="font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+              <line x1="7" y1="7" x2="7.01" y2="7"></line>
+            </svg>
+            Desconto do Cupom:
+          </span>
           <strong style="font-size: 1.05rem;">- {{ formatarMoeda(detalhesNfceSelecionada.desconto || 0) }}</strong>
         </div>
 
@@ -1089,22 +1113,25 @@
       </div>
 
       <!-- Chave de Acesso se NFC-e -->
-      <div *ngIf="detalhesNfceSelecionada.chaveAcesso" style="margin-top: 16px; font-size: 0.75rem; color: #64748b; text-align: center; word-break: break-all;">
-        🔑 Chave de Acesso SEFAZ: <span style="color: #94a3b8; font-family: monospace;">{{ detalhesNfceSelecionada.chaveAcesso }}</span>
+      <div *ngIf="detalhesNfceSelecionada.chaveAcesso" style="margin-top: 16px; font-size: 0.75rem; color: #64748b; text-align: center; word-break: break-all; display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 2l-2 2m-1.5 1.5L16 7l-2 2m-2 2l-2 2m-1 1l-2.5 2.5a2.5 2.5 0 1 1-3.5-3.5L8 11.5m3-3.5l1.5-1.5"></path>
+          <circle cx="15.5" cy="8.5" r="2.5"></circle>
+        </svg>
+        <span>Chave de Acesso SEFAZ: <span style="color: #94a3b8; font-family: monospace;">{{ detalhesNfceSelecionada.chaveAcesso }}</span></span>
       </div>
 
     </div>
 
     <!-- Modal Footer -->
-    <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #1e293b; display: flex; justify-content: flex-end;">
-      <button class="btn-primary" style="padding: 10px 24px; background: #334155; color: #f8fafc; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;" (click)="fecharModalDetalhesNfce()">
+    <div class="modal-footer">
+      <button class="btn-primary" (click)="fecharModalDetalhesNfce()">
         Fechar
       </button>
     </div>
 
   </div>
 </div>
-
 </main>
 
 <!-- Modal de Edição de Transação -->

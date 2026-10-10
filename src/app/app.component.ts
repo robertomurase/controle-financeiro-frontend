@@ -623,6 +623,9 @@ carregarEstabelecimentos(): void {
     this.financeService.getDetalhesTransacao(t.id).subscribe({
       next: (dados) => {
         this.carregandoDetalhesNfce = false;
+        if (dados) {
+          dados.estabelecimento = this.obterNomeEstabelecimentoSimplificado(dados.estabelecimento || t.estabelecimento || t.descricao);
+        }
         this.detalhesNfceSelecionada = dados;
       },
       error: (err) => {
@@ -631,7 +634,7 @@ carregarEstabelecimentos(): void {
         this.detalhesNfceSelecionada = {
           transacaoId: t.id,
           isNfce: !!t.isNfce,
-          estabelecimento: t.estabelecimento || t.descricao || 'Cadastro Manual',
+          estabelecimento: this.obterNomeEstabelecimentoSimplificado(t.estabelecimento || t.descricao),
           dataEmissao: t.data,
           subtotal: Number(t.valor) || 0,
           desconto: 0,
