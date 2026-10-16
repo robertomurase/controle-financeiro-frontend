@@ -7,7 +7,7 @@
       </svg>
       <div>
         <span class="brand-title">Controle Financeiro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v68 - back v31</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v69 - back v31</span>
       </div>
     </div>
     <div class="header-right-mobile">
@@ -1156,7 +1156,7 @@
 
 <!-- Modal de Instruções de Instalação PWA -->
 <div *ngIf="modalAjudaPwaAberto" class="modal-backdrop" (click)="fecharModalAjudaPwa()">
-  <div class="modal-content" style="max-width: 580px; width: 92%; padding: 24px;" (click)=".stopPropagation()">
+  <div class="modal-content" style="max-width: 580px; width: 92%; padding: 24px;" (click)="$event.stopPropagation()">
     
     <div class="modal-header" style="border-bottom: 1px solid #1e293b; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
       <div style="display: flex; align-items: center; gap: 10px;">
