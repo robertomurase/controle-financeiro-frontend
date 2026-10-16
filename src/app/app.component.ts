@@ -12,6 +12,34 @@ declare var Html5Qrcode: any;
   templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit, OnDestroy {
+  // --- PWA INSTALLATION ---
+  deferredPrompt: any = null;
+  exibirBannerPwa: boolean = false;
+  modalAjudaPwaAberto: boolean = false;
+
+  instalarPwa(): void {
+    if (this.deferredPrompt) {
+      this.deferredPrompt.prompt();
+      this.deferredPrompt.userChoice.then((choiceResult: any) => {
+        if (choiceResult && choiceResult.outcome === 'accepted') {
+          console.log('Usuário aceitou a instalação do PWA');
+        }
+        this.deferredPrompt = null;
+        this.exibirBannerPwa = false;
+      });
+    } else {
+      this.modalAjudaPwaAberto = true;
+    }
+  }
+
+  fecharBannerPwa(): void {
+    this.exibirBannerPwa = false;
+  }
+
+  fecharModalAjudaPwa(): void {
+    this.modalAjudaPwaAberto = false;
+  }
+
   
   // Modal de Detalhes da NFC-e / Saída
   modalDetalhesNfceAberto: boolean = false;
@@ -108,6 +136,14 @@ activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'entradas' | 'saidas' | 'produt
   constructor(private financeService: FinanceService) {}
 
   ngOnInit(): void {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeinstallprompt', (e: any) => {
+        e.preventDefault();
+        this.deferredPrompt = e;
+        this.exibirBannerPwa = true;
+      });
+    }
+
     this.carregarEstabelecimentos();
     this.carregarMapeamentosProdutos();
     this.carregarTransacoes();
