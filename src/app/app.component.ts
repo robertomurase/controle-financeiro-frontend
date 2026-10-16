@@ -1084,7 +1084,7 @@ carregarEstabelecimentos(): void {
           this.mensagemNfce = '⚠️ AVISO: Esta nota fiscal já foi salva anteriormente no sistema!';
           this.statusNfceSucesso = false;
         } else {
-          this.mensagemNfce = ;
+          this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
           this.statusNfceSucesso = true;
         }
       },
@@ -1110,14 +1110,14 @@ carregarEstabelecimentos(): void {
               this.mensagemNfce = '⚠️ AVISO: Esta nota fiscal já foi salva anteriormente no sistema!';
               this.statusNfceSucesso = false;
             } else {
-              this.mensagemNfce = ;
+              this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
               this.statusNfceSucesso = true;
             }
           },
           error: (err2) => {
             this.carregandoNfce = false;
             const msgErro = err2?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
-            this.mensagemNfce = ;
+            this.mensagemNfce = `❌ ${msgErro}`;
             this.statusNfceSucesso = false;
           }
         });
@@ -1152,7 +1152,7 @@ carregarEstabelecimentos(): void {
       error: (err) => {
         this.carregandoNfce = false;
         const msgErro = err?.error?.error || 'Erro ao salvar a nota fiscal.';
-        this.mensagemNfce = ;
+        this.mensagemNfce = `❌ ${msgErro}`;
         this.statusNfceSucesso = false;
         if (err?.error?.jaCadastrada && this.dadosNotaPreview) {
           this.dadosNotaPreview.jaCadastrada = true;
