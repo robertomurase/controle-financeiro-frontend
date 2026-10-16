@@ -1066,7 +1066,9 @@ carregarEstabelecimentos(): void {
     this.financeService.extrairNfce(this.urlNfce).subscribe({
       next: (res) => {
         this.carregandoNfce = false;
+        const isJaCadastrada = !!(res?.jaCadastrada || res?.dadosNota?.jaCadastrada);
         if (res?.dadosNota) {
+          res.dadosNota.jaCadastrada = isJaCadastrada;
           res.dadosNota.estabelecimento = this.obterNomeEstabelecimentoSimplificado(res.dadosNota.estabelecimento);
           if (res.dadosNota.itens) {
             res.dadosNota.itens = res.dadosNota.itens.map((i: any) => ({
@@ -1075,16 +1077,24 @@ carregarEstabelecimentos(): void {
             }));
           }
         }
-        const totalItens = res?.dadosNota?.itens?.length || 0;
-        this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
-        this.statusNfceSucesso = true;
         this.dadosNotaPreview = res?.dadosNota || null;
+        const totalItens = res?.dadosNota?.itens?.length || 0;
+
+        if (isJaCadastrada) {
+          this.mensagemNfce = '⚠️ AVISO: Esta nota fiscal já foi salva anteriormente no sistema!';
+          this.statusNfceSucesso = false;
+        } else {
+          this.mensagemNfce = ;
+          this.statusNfceSucesso = true;
+        }
       },
       error: () => {
         this.financeService.consultarNfce(this.urlNfce).subscribe({
           next: (res) => {
             this.carregandoNfce = false;
+            const isJaCadastrada = !!(res?.jaCadastrada || res?.dadosNota?.jaCadastrada);
             if (res?.dadosNota) {
+              res.dadosNota.jaCadastrada = isJaCadastrada;
               res.dadosNota.estabelecimento = this.obterNomeEstabelecimentoSimplificado(res.dadosNota.estabelecimento);
               if (res.dadosNota.itens) {
                 res.dadosNota.itens = res.dadosNota.itens.map((i: any) => ({
@@ -1093,15 +1103,21 @@ carregarEstabelecimentos(): void {
                 }));
               }
             }
-            const totalItens = res?.dadosNota?.itens?.length || 0;
-            this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
-            this.statusNfceSucesso = true;
             this.dadosNotaPreview = res?.dadosNota || null;
+            const totalItens = res?.dadosNota?.itens?.length || 0;
+
+            if (isJaCadastrada) {
+              this.mensagemNfce = '⚠️ AVISO: Esta nota fiscal já foi salva anteriormente no sistema!';
+              this.statusNfceSucesso = false;
+            } else {
+              this.mensagemNfce = ;
+              this.statusNfceSucesso = true;
+            }
           },
           error: (err2) => {
             this.carregandoNfce = false;
             const msgErro = err2?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
-            this.mensagemNfce = `❌ ${msgErro}`;
+            this.mensagemNfce = ;
             this.statusNfceSucesso = false;
           }
         });
@@ -1112,6 +1128,11 @@ carregarEstabelecimentos(): void {
   confirmarEGravarNfce(): void {
     if (!this.dadosNotaPreview) {
       alert('Nenhum dado de nota para salvar.');
+      return;
+    }
+
+    if (this.dadosNotaPreview.jaCadastrada) {
+      alert('⚠️ Esta nota fiscal já foi salva anteriormente e não pode ser duplicada.');
       return;
     }
 
@@ -1131,8 +1152,11 @@ carregarEstabelecimentos(): void {
       error: (err) => {
         this.carregandoNfce = false;
         const msgErro = err?.error?.error || 'Erro ao salvar a nota fiscal.';
-        this.mensagemNfce = `❌ ${msgErro}`;
+        this.mensagemNfce = ;
         this.statusNfceSucesso = false;
+        if (err?.error?.jaCadastrada && this.dadosNotaPreview) {
+          this.dadosNotaPreview.jaCadastrada = true;
+        }
       }
     });
   }
