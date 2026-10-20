@@ -12,6 +12,7 @@ export interface Transacao {
   tipo: 'receita' | 'despesa';
   data: string;
   isNfce?: boolean;
+  hash_transacao?: string;
 }
 
 export interface EstabelecimentoMapeado {
