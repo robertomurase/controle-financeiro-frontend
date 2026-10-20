@@ -628,6 +628,7 @@ carregarEstabelecimentos(): void {
       next: (dados) => {
         this.transacoes = (dados || []).map(t => ({
           ...t,
+          isNfce: !!(t.isNfce || (t as any).hash_transacao?.startsWith('nfce_') || (t as any).hash_transacao?.startsWith('carrinho_')),
           descricao: this.limparNomeProduto(t.descricao),
           estabelecimento: this.obterNomeEstabelecimentoSimplificado(t.estabelecimento || t.descricao)
         }));

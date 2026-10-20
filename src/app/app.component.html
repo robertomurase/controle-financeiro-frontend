@@ -7,7 +7,7 @@
       </svg>
       <div>
         <span class="brand-title">Controle Financeiro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v73 - back v34</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v75 - back v37</span>
       </div>
     </div>
     <div class="header-right-mobile">
@@ -938,7 +938,7 @@
               <td>{{ t.descricao }}</td>
               <td><span class="badge-tipo despesa">{{ t.categoria }}</span></td>
               <td>
-                <span *ngIf="t.isNfce" class="badge-nfce">NFC-e</span>
+                <span *ngIf="t.isNfce" class="badge-nfce">{{ ((t.hash_transacao && t.hash_transacao.startsWith('carrinho_')) || (t.descricao && t.descricao.includes('Carrinho'))) ? 'Carrinho' : 'NFC-e' }}</span>
                 <span *ngIf="!t.isNfce" class="badge-manual">Manual</span>
               </td>
               <td class="col-valor"><span class="val-neg">- {{ formatarMoeda(t.valor) }}</span></td>
