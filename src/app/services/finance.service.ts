@@ -139,4 +139,12 @@ export class FinanceService {
   deleteMapeamentoProduto(id: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/mapeamento-produtos/${id}`);
   }
+
+  getProdutoPorCodigo(codigo: string): Observable<any> {
+    return this.http.get<any>();
+  }
+
+  finalizarCarrinho(dadosCarrinho: any): Observable<any> {
+    return this.http.post(, dadosCarrinho);
+  }
 }
