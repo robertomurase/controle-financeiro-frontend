@@ -254,7 +254,7 @@ activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'said
     }
   }
 
-  setTab(tab: 'dashboard' | 'transacoes' | 'nfce' | 'entradas' | 'saidas' | 'produtos' | 'estabelecimentos'): void {
+  setTab(tab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'saidas' | 'produtos' | 'estabelecimentos'): void {
     this.pararScanner();
     this.pararScannerBarcode();
     this.activeTab = tab;
@@ -1372,7 +1372,7 @@ carregarEstabelecimentos(): void {
             { facingMode: 'environment' },
             config,
             (decodedText: string) => {
-              this.statusBarcodeMsg = ;
+              this.statusBarcodeMsg = `✅ Código ${decodedText} lido com sucesso!`;
               this.statusBarcodeOk = true;
               this.consultarProdutoPorCodigo(decodedText);
             },
@@ -1420,17 +1420,17 @@ carregarEstabelecimentos(): void {
           this.novoItemCarrinho.unidade = res.unidade || 'UN';
           this.novoItemCarrinho.valorUnitario = res.ultimoPreco || 0;
           this.historicoItemCarrinho = res;
-          this.statusBarcodeMsg = ;
+          this.statusBarcodeMsg = `ὐe Produto encontrado: ${res.nomeProduto} (ÚLTIMO PREÇO: R$ ${(res.ultimoPreco || 0).toFixed(2)})`;
           this.statusBarcodeOk = true;
         } else {
           this.historicoItemCarrinho = null;
-          this.statusBarcodeMsg = ;
+          this.statusBarcodeMsg = `ℹ️ Código ${codigo} registrado. Preencha o nome e valor do produto.`;
           this.statusBarcodeOk = true;
         }
       },
       error: () => {
         this.historicoItemCarrinho = null;
-        this.statusBarcodeMsg = ;
+        this.statusBarcodeMsg = `ℹ️ Código ${codigo} lido. Digite o nome e valor do item.`;
         this.statusBarcodeOk = true;
       }
     });

@@ -141,10 +141,10 @@ export class FinanceService {
   }
 
   getProdutoPorCodigo(codigo: string): Observable<any> {
-    return this.http.get<any>();
+    return this.http.get<any>(`${this.apiUrl}/produtos/codigo/${encodeURIComponent(codigo)}`);
   }
 
   finalizarCarrinho(dadosCarrinho: any): Observable<any> {
-    return this.http.post(, dadosCarrinho);
+    return this.http.post(`${this.apiUrl}/carrinho/finalizar`, dadosCarrinho);
   }
 }
