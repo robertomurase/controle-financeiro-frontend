@@ -12,7 +12,6 @@ export interface Transacao {
   tipo: 'receita' | 'despesa';
   data: string;
   isNfce?: boolean;
-  hash_transacao?: string;
 }
 
 export interface EstabelecimentoMapeado {
@@ -78,10 +77,6 @@ export class FinanceService {
     return this.http.post(`${this.apiUrl}/nfce/extrair`, { url: urlNfce });
   }
 
-  extrairNfceHtml(html: string, url?: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/nfce/extrair-html`, { html, url });
-  }
-
   salvarNfce(dadosNota: any): Observable<any> {
     return this.http.post(`${this.apiUrl}/nfce/salvar`, { dadosNota });
   }
@@ -108,6 +103,7 @@ export class FinanceService {
     return this.http.delete(`${this.apiUrl}/produtos/${encodeURIComponent(nome)}`);
   }
 
+  
   getDetalhesTransacao(id: number): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/transacoes/${id}/detalhes`);
   }

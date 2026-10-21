@@ -12,15 +12,6 @@ declare var Html5Qrcode: any;
   templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit, OnDestroy {
-  sanitizarUrlQrCode(url: string): string {
-    if (!url) return '';
-    let clean = url.trim().replace(/^["']|["']$/g, '').replace(/&amp;/g, '&');
-    if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
-      clean = 'https://' + clean;
-    }
-    return clean.replace(/\|/g, '%7C');
-  }
-
   // --- PWA INSTALLATION ---
   deferredPrompt: any = null;
   exibirBannerPwa: boolean = false;
@@ -131,11 +122,10 @@ activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'said
 
   // Leitor QR Code
   urlNfce: string = '';
-  htmlNfceManual: string = '';
   carregandoNfce: boolean = false;
   mensagemNfce: string = '';
   statusNfceSucesso: boolean = true;
-  scannerModo: 'camera' | 'arquivo' | 'manual' | 'html' = 'camera';
+  scannerModo: 'camera' | 'arquivo' | 'manual' = 'camera';
   scannerAtivo: boolean = false;
   html5QrCode: any = null;
   dadosNotaPreview: any = null;
@@ -638,7 +628,6 @@ carregarEstabelecimentos(): void {
       next: (dados) => {
         this.transacoes = (dados || []).map(t => ({
           ...t,
-          isNfce: !!(t.isNfce || (t as any).hash_transacao?.startsWith('nfce_') || (t as any).hash_transacao?.startsWith('carrinho_')),
           descricao: this.limparNomeProduto(t.descricao),
           estabelecimento: this.obterNomeEstabelecimentoSimplificado(t.estabelecimento || t.descricao)
         }));
@@ -948,7 +937,7 @@ carregarEstabelecimentos(): void {
   }
 
   // --- NFC-E LEITOR E PRÉ-VISUALIZAÇÃO ---
-  setModoScanner(modo: 'camera' | 'arquivo' | 'manual' | 'html'): void {
+  setModoScanner(modo: 'camera' | 'arquivo' | 'manual'): void {
     this.pararScanner();
     this.scannerModo = modo;
     this.mensagemNfce = '';
@@ -1069,127 +1058,67 @@ carregarEstabelecimentos(): void {
     }
   }
 
-  
-  tratarResultadoNfce(res: any): void {
-    this.carregandoNfce = false;
-    const isJaCadastrada = !!(res?.jaCadastrada || res?.dadosNota?.jaCadastrada);
-    if (res?.dadosNota) {
-      res.dadosNota.jaCadastrada = isJaCadastrada;
-      res.dadosNota.estabelecimento = this.obterNomeEstabelecimentoSimplificado(res.dadosNota.estabelecimento);
-      if (res.dadosNota.itens) {
-        res.dadosNota.itens = res.dadosNota.itens.map((i: any) => ({
-          ...i,
-          nomeProduto: this.limparNomeProduto(i.nomeProduto)
-        }));
-      }
-    }
-    this.dadosNotaPreview = res?.dadosNota || null;
-    const totalItens = res?.dadosNota?.itens?.length || 0;
-
-    if (isJaCadastrada) {
-      this.mensagemNfce = '⚠️ AVISO: Esta nota fiscal já foi salva anteriormente no sistema!';
-      this.statusNfceSucesso = false;
-    } else {
-      this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
-      this.statusNfceSucesso = true;
-    }
-  }
-
-
-  aoAlterarValorTotalPreview(): void {
-    if (this.dadosNotaPreview) {
-      const val = Number(this.dadosNotaPreview.valorTotal) || 0;
-      if (this.dadosNotaPreview.itens && this.dadosNotaPreview.itens.length === 1 && this.dadosNotaPreview.itens[0].codigo === 'SEFAZ') {
-        this.dadosNotaPreview.itens[0].valorUnitario = val;
-        this.dadosNotaPreview.itens[0].valorTotal = val;
-      }
-    }
-  }
-
-  descartarPreviewNfce(): void {
-    this.dadosNotaPreview = null;
-    this.mensagemNfce = '';
-    this.htmlNfceManual = '';
-  }
-
-  confirmarEGravarNfce(): void {
-    if (!this.dadosNotaPreview) return;
-    this.carregandoNfce = true;
-    this.mensagemNfce = 'Salvando nota fiscal no banco...';
-
-    this.financeService.salvarNfce(this.dadosNotaPreview).subscribe({
-      next: () => {
-        this.carregandoNfce = false;
-        alert('🎉 Nota Fiscal salva com sucesso em Saídas e na Lista de Produtos!');
-        this.dadosNotaPreview = null;
-        this.mensagemNfce = '';
-        this.urlNfce = '';
-        this.htmlNfceManual = '';
-        this.carregarTransacoes();
-        this.carregarProdutos();
-        this.setTab('saidas');
-      },
-      error: (err: any) => {
-        this.carregandoNfce = false;
-        alert(err?.error?.error || 'Erro ao salvar a Nota Fiscal.');
-      }
-    });
-  }
-
   extrairNfce(): void {
-    if (this.scannerModo === 'html') {
-      if (!this.htmlNfceManual || !this.htmlNfceManual.trim()) {
-        alert('Cole o conteúdo HTML do cupom fiscal!');
-        return;
-      }
-      this.carregandoNfce = true;
-      this.mensagemNfce = 'Processando HTML da nota fiscal...';
-      this.statusNfceSucesso = true;
-
-      this.financeService.extrairNfceHtml(this.htmlNfceManual, this.urlNfce).subscribe({
-        next: (res: any) => this.tratarResultadoNfce(res),
-        error: (err: any) => {
-          this.carregandoNfce = false;
-          this.mensagemNfce = `❌ ${err?.error?.error || 'Erro ao processar o HTML da nota'}`;
-          this.statusNfceSucesso = false;
-        }
-      });
-      return;
-    }
-
     if (!this.urlNfce) {
       alert('Cole ou escaneie o QR Code da NFC-e!');
       return;
     }
 
-    this.urlNfce = this.sanitizarUrlQrCode(this.urlNfce);
-
     this.carregandoNfce = true;
-    this.mensagemNfce = 'Consultando nota fiscal junto à SEFAZ...';
+    this.mensagemNfce = 'Processando nota fiscal com a SEFAZ...';
     this.statusNfceSucesso = true;
 
     this.financeService.extrairNfce(this.urlNfce).subscribe({
-      next: (res: any) => this.tratarResultadoNfce(res),
-      error: () => {
-        this.financeService.consultarNfce(this.urlNfce).subscribe({
-          next: (res: any) => this.tratarResultadoNfce(res),
-          error: (err2: any) => {
-            this.carregandoNfce = false;
-            const msgErro = err2?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
-            this.mensagemNfce = `❌ ${msgErro}`;
-            this.statusNfceSucesso = false;
+      next: (res) => {
+        this.carregandoNfce = false;
+        const isJaCadastrada = !!(res?.jaCadastrada || res?.dadosNota?.jaCadastrada);
+        if (res?.dadosNota) {
+          res.dadosNota.jaCadastrada = isJaCadastrada;
+          res.dadosNota.estabelecimento = this.obterNomeEstabelecimentoSimplificado(res.dadosNota.estabelecimento);
+          if (res.dadosNota.itens) {
+            res.dadosNota.itens = res.dadosNota.itens.map((i: any) => ({
+              ...i,
+              nomeProduto: this.limparNomeProduto(i.nomeProduto)
+            }));
           }
-        });
-      }
-    });
-  }
+        }
+        this.dadosNotaPreview = res?.dadosNota || null;
+        const totalItens = res?.dadosNota?.itens?.length || 0;
 
-    extrairNfceBackendFallback(): void {
-    this.financeService.extrairNfce(this.urlNfce).subscribe({
-      next: (res) => this.tratarResultadoNfce(res),
+        if (isJaCadastrada) {
+          this.mensagemNfce = '⚠️ AVISO: Esta nota fiscal já foi salva anteriormente no sistema!';
+          this.statusNfceSucesso = false;
+        } else {
+          this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
+          this.statusNfceSucesso = true;
+        }
+      },
       error: () => {
         this.financeService.consultarNfce(this.urlNfce).subscribe({
-          next: (res) => this.tratarResultadoNfce(res),
+          next: (res) => {
+            this.carregandoNfce = false;
+            const isJaCadastrada = !!(res?.jaCadastrada || res?.dadosNota?.jaCadastrada);
+            if (res?.dadosNota) {
+              res.dadosNota.jaCadastrada = isJaCadastrada;
+              res.dadosNota.estabelecimento = this.obterNomeEstabelecimentoSimplificado(res.dadosNota.estabelecimento);
+              if (res.dadosNota.itens) {
+                res.dadosNota.itens = res.dadosNota.itens.map((i: any) => ({
+                  ...i,
+                  nomeProduto: this.limparNomeProduto(i.nomeProduto)
+                }));
+              }
+            }
+            this.dadosNotaPreview = res?.dadosNota || null;
+            const totalItens = res?.dadosNota?.itens?.length || 0;
+
+            if (isJaCadastrada) {
+              this.mensagemNfce = '⚠️ AVISO: Esta nota fiscal já foi salva anteriormente no sistema!';
+              this.statusNfceSucesso = false;
+            } else {
+              this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
+              this.statusNfceSucesso = true;
+            }
+          },
           error: (err2) => {
             this.carregandoNfce = false;
             const msgErro = err2?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
@@ -1201,7 +1130,48 @@ carregarEstabelecimentos(): void {
     });
   }
 
-    limparBusca(): void {
+  confirmarEGravarNfce(): void {
+    if (!this.dadosNotaPreview) {
+      alert('Nenhum dado de nota para salvar.');
+      return;
+    }
+
+    if (this.dadosNotaPreview.jaCadastrada) {
+      alert('⚠️ Esta nota fiscal já foi salva anteriormente e não pode ser duplicada.');
+      return;
+    }
+
+    this.carregandoNfce = true;
+    this.mensagemNfce = '💾 Salvando transação em Saídas e cadastrando produtos...';
+
+    this.financeService.salvarNfce(this.dadosNotaPreview).subscribe({
+      next: () => {
+        this.carregandoNfce = false;
+        this.statusNfceSucesso = true;
+        this.dadosNotaPreview = null;
+        this.urlNfce = '';
+        this.carregarTransacoes();
+        this.carregarProdutos();
+        alert('✅ NFC-e e produtos salvos com sucesso!');
+      },
+      error: (err) => {
+        this.carregandoNfce = false;
+        const msgErro = err?.error?.error || 'Erro ao salvar a nota fiscal.';
+        this.mensagemNfce = `❌ ${msgErro}`;
+        this.statusNfceSucesso = false;
+        if (err?.error?.jaCadastrada && this.dadosNotaPreview) {
+          this.dadosNotaPreview.jaCadastrada = true;
+        }
+      }
+    });
+  }
+
+  descartarPreviewNfce(): void {
+    this.dadosNotaPreview = null;
+    this.mensagemNfce = '';
+  }
+
+  limparBusca(): void {
     this.buscaProduto = '';
   }
 
