@@ -45,7 +45,7 @@ export class AppComponent implements OnInit, OnDestroy {
   modalDetalhesNfceAberto: boolean = false;
   carregandoDetalhesNfce: boolean = false;
   detalhesNfceSelecionada: any = null;
-activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'saidas' | 'produtos' | 'estabelecimentos' = 'dashboard';
+activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'entradas' | 'saidas' | 'produtos' | 'estabelecimentos' = 'dashboard';
   menuAberto: boolean = false;
   settingsMenuAberto: boolean = false;
   modoClaro: boolean = false;
@@ -166,7 +166,6 @@ activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'said
 
   ngOnDestroy(): void {
     this.pararScanner();
-    this.pararScannerBarcode();
   }
 
   limparNomeProduto(nome: string): string {
@@ -254,17 +253,13 @@ activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'said
     }
   }
 
-  setTab(tab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'saidas' | 'produtos' | 'estabelecimentos'): void {
+  setTab(tab: 'dashboard' | 'transacoes' | 'nfce' | 'entradas' | 'saidas' | 'produtos' | 'estabelecimentos'): void {
     this.pararScanner();
-    this.pararScannerBarcode();
     this.activeTab = tab;
     this.fecharMenu();
     this.fecharSettingsMenu();
     if (tab === 'nfce' && this.scannerModo === 'camera') {
       setTimeout(() => this.iniciarScanner(), 200);
-    }
-    if (tab === 'carrinho' && this.modoAddCarrinho === 'barcode') {
-      setTimeout(() => this.iniciarScannerBarcode(), 200);
     }
   }
 
@@ -1301,232 +1296,4 @@ carregarEstabelecimentos(): void {
   get despesasMes(): number {
     return (this.transacoes || []).filter(t => t.tipo === 'despesa').reduce((a, b) => a + (Number(b.valor) || 0), 0);
   }
-
-  // --- CARRINHO EM TEMPO REAL ---
-  limiteOrcamentoCarrinho: number = 0;
-  estabelecimentoCarrinho: string = 'Supermercado';
-  modoAddCarrinho: 'barcode' | 'manual' = 'barcode';
-  scannerBarcodeAtivo: boolean = false;
-  html5BarcodeScanner: any = null;
-  statusBarcodeMsg: string = '';
-  statusBarcodeOk: boolean = true;
-  itensCarrinho: any[] = [];
-  novoItemCarrinho: any = {
-    nomeProduto: '',
-    quantidade: 1,
-    unidade: 'UN',
-    valorUnitario: 0,
-    codigo: ''
-  };
-  historicoItemCarrinho: any = null;
-  carregandoCarrinho: boolean = false;
-
-  get subtotalCarrinho(): number {
-    if (!this.itensCarrinho) return 0;
-    return this.itensCarrinho.reduce((acc, item) => acc + (Number(item.valorTotal) || 0), 0);
-  }
-
-  get saldoOrcamentoCarrinho(): number {
-    const limite = Number(this.limiteOrcamentoCarrinho) || 0;
-    return limite - this.subtotalCarrinho;
-  }
-
-  get percentualOrcamentoCarrinho(): number {
-    const limite = Number(this.limiteOrcamentoCarrinho) || 0;
-    if (limite <= 0) return 0;
-    return (this.subtotalCarrinho / limite) * 100;
-  }
-
-  setModoAddCarrinho(modo: 'barcode' | 'manual'): void {
-    this.modoAddCarrinho = modo;
-    if (modo === 'barcode') {
-      setTimeout(() => this.iniciarScannerBarcode(), 200);
-    } else {
-      this.pararScannerBarcode();
-    }
-  }
-
-  iniciarScannerBarcode(): void {
-    if (typeof window === 'undefined') return;
-
-    if (this.scannerBarcodeAtivo) {
-      this.pararScannerBarcode();
-    }
-
-    this.statusBarcodeMsg = '📷 Ativando leitor de código de barras...';
-    this.statusBarcodeOk = true;
-
-    setTimeout(() => {
-      const el = document.getElementById('barcode-viewport');
-      if (el && (window as any).Html5Qrcode) {
-        try {
-          this.html5BarcodeScanner = new (window as any).Html5Qrcode('barcode-viewport');
-          this.scannerBarcodeAtivo = true;
-
-          const config = {
-            fps: 10,
-            qrbox: { width: 280, height: 180 }
-          };
-
-          this.html5BarcodeScanner.start(
-            { facingMode: 'environment' },
-            config,
-            (decodedText: string) => {
-              this.statusBarcodeMsg = `✅ Código ${decodedText} lido com sucesso!`;
-              this.statusBarcodeOk = true;
-              this.consultarProdutoPorCodigo(decodedText);
-            },
-            () => {}
-          ).catch(() => {
-            this.statusBarcodeMsg = '❌ Não foi possível abrir a câmera para código de barras.';
-            this.statusBarcodeOk = false;
-            this.scannerBarcodeAtivo = false;
-          });
-        } catch (e) {
-          this.statusBarcodeMsg = '❌ Erro ao inicializar o leitor de código de barras.';
-          this.statusBarcodeOk = false;
-        }
-      }
-    }, 200);
-  }
-
-  pararScannerBarcode(): void {
-    if (this.html5BarcodeScanner) {
-      try {
-        if (this.html5BarcodeScanner.isScanning) {
-          this.html5BarcodeScanner.stop().then(() => {
-            try { this.html5BarcodeScanner.clear(); } catch (e) {}
-            this.html5BarcodeScanner = null;
-          }).catch(() => { this.html5BarcodeScanner = null; });
-        } else {
-          try { this.html5BarcodeScanner.clear(); } catch (e) {}
-          this.html5BarcodeScanner = null;
-        }
-      } catch (e) {
-        this.html5BarcodeScanner = null;
-      }
-    }
-    this.scannerBarcodeAtivo = false;
-  }
-
-  consultarProdutoPorCodigo(codigo: string): void {
-    if (!codigo) return;
-    this.novoItemCarrinho.codigo = codigo;
-
-    this.financeService.getProdutoPorCodigo(codigo).subscribe({
-      next: (res) => {
-        if (res && res.encontrado) {
-          this.novoItemCarrinho.nomeProduto = res.nomeProduto;
-          this.novoItemCarrinho.unidade = res.unidade || 'UN';
-          this.novoItemCarrinho.valorUnitario = res.ultimoPreco || 0;
-          this.historicoItemCarrinho = res;
-          this.statusBarcodeMsg = `ὐe Produto encontrado: ${res.nomeProduto} (ÚLTIMO PREÇO: R$ ${(res.ultimoPreco || 0).toFixed(2)})`;
-          this.statusBarcodeOk = true;
-        } else {
-          this.historicoItemCarrinho = null;
-          this.statusBarcodeMsg = `ℹ️ Código ${codigo} registrado. Preencha o nome e valor do produto.`;
-          this.statusBarcodeOk = true;
-        }
-      },
-      error: () => {
-        this.historicoItemCarrinho = null;
-        this.statusBarcodeMsg = `ℹ️ Código ${codigo} lido. Digite o nome e valor do item.`;
-        this.statusBarcodeOk = true;
-      }
-    });
-  }
-
-  adicionarItemAoCarrinho(): void {
-    if (!this.novoItemCarrinho.nomeProduto || !this.novoItemCarrinho.nomeProduto.trim()) {
-      alert('Informe o nome ou descrição do produto!');
-      return;
-    }
-
-    const valUnit = Number(this.novoItemCarrinho.valorUnitario) || 0;
-    if (valUnit <= 0) {
-      alert('Informe um preço unitário válido maior que zero!');
-      return;
-    }
-
-    const qtd = Number(this.novoItemCarrinho.quantidade) || 1;
-    const nomeLimpo = this.limparNomeProduto(this.novoItemCarrinho.nomeProduto);
-
-    const item = {
-      nomeProduto: nomeLimpo,
-      codigo: this.novoItemCarrinho.codigo || 'EAN',
-      quantidade: qtd,
-      unidade: this.novoItemCarrinho.unidade || 'UN',
-      valorUnitario: valUnit,
-      valorTotal: Number((qtd * valUnit).toFixed(2))
-    };
-
-    this.itensCarrinho.push(item);
-
-    // Reset formulário
-    this.novoItemCarrinho = {
-      nomeProduto: '',
-      quantidade: 1,
-      unidade: 'UN',
-      valorUnitario: 0,
-      codigo: ''
-    };
-    this.historicoItemCarrinho = null;
-    this.statusBarcodeMsg = '✅ Item adicionado ao carrinho!';
-    this.statusBarcodeOk = true;
-  }
-
-  alterarQtdCarrinho(index: number, delta: number): void {
-    if (index >= 0 && index < this.itensCarrinho.length) {
-      const item = this.itensCarrinho[index];
-      const novaQtd = Math.max(0.1, Number((item.quantidade + delta).toFixed(2)));
-      item.quantidade = novaQtd;
-      item.valorTotal = Number((novaQtd * item.valorUnitario).toFixed(2));
-    }
-  }
-
-  removerItemCarrinho(index: number): void {
-    if (index >= 0 && index < this.itensCarrinho.length) {
-      this.itensCarrinho.splice(index, 1);
-    }
-  }
-
-  limparCarrinho(): void {
-    if (confirm('Tem certeza que deseja esvaziar o carrinho?')) {
-      this.itensCarrinho = [];
-      this.historicoItemCarrinho = null;
-    }
-  }
-
-  finalizarEGravarCarrinho(): void {
-    if (!this.itensCarrinho || this.itensCarrinho.length === 0) {
-      alert('Seu carrinho está vazio!');
-      return;
-    }
-
-    this.carregandoCarrinho = true;
-
-    const payload = {
-      estabelecimento: this.estabelecimentoCarrinho || 'Supermercado',
-      valorTotal: this.subtotalCarrinho,
-      itens: this.itensCarrinho,
-      conta: 'Conta Corrente'
-    };
-
-    this.financeService.finalizarCarrinho(payload).subscribe({
-      next: () => {
-        this.carregandoCarrinho = false;
-        alert('🎉 Compra do carrinho finalizada e salva em Saídas com sucesso!');
-        this.itensCarrinho = [];
-        this.historicoItemCarrinho = null;
-        this.carregarTransacoes();
-        this.carregarProdutos();
-        this.setTab('saidas');
-      },
-      error: (err) => {
-        this.carregandoCarrinho = false;
-        alert(err?.error?.error || 'Erro ao finalizar compra do carrinho.');
-      }
-    });
-  }
-
 }
