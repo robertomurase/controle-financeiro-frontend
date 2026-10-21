@@ -1138,8 +1138,8 @@ carregarEstabelecimentos(): void {
       this.statusNfceSucesso = true;
 
       this.financeService.extrairNfceHtml(this.htmlNfceManual, this.urlNfce).subscribe({
-        next: (res) => this.tratarResultadoNfce(res),
-        error: (err) => {
+        next: (res: any) => this.tratarResultadoNfce(res),
+        error: (err: any) => {
           this.carregandoNfce = false;
           this.mensagemNfce = `❌ ${err?.error?.error || 'Erro ao processar o HTML da nota'}`;
           this.statusNfceSucesso = false;
@@ -1154,26 +1154,26 @@ carregarEstabelecimentos(): void {
     }
 
     this.carregandoNfce = true;
-    this.mensagemNfce = 'Consultando nota fiscal com a SEFAZ...';
+    this.mensagemNfce = 'Consultando nota fiscal junto à SEFAZ...';
     this.statusNfceSucesso = true;
 
-    const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(this.urlNfce);
-    fetch(proxyUrl)
-      .then(r => r.text())
-      .then(htmlText => {
-        if (htmlText && htmlText.includes('tabResult')) {
-          this.financeService.extrairNfceHtml(htmlText, this.urlNfce).subscribe({
-            next: (res) => this.tratarResultadoNfce(res),
-            error: () => this.extrairNfceBackendFallback()
-          });
-        } else {
-          this.extrairNfceBackendFallback();
-        }
-      })
-      .catch(() => this.extrairNfceBackendFallback());
+    this.financeService.extrairNfce(this.urlNfce).subscribe({
+      next: (res: any) => this.tratarResultadoNfce(res),
+      error: () => {
+        this.financeService.consultarNfce(this.urlNfce).subscribe({
+          next: (res: any) => this.tratarResultadoNfce(res),
+          error: (err2: any) => {
+            this.carregandoNfce = false;
+            const msgErro = err2?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
+            this.mensagemNfce = `❌ ${msgErro}`;
+            this.statusNfceSucesso = false;
+          }
+        });
+      }
+    });
   }
 
-  extrairNfceBackendFallback(): void {
+    extrairNfceBackendFallback(): void {
     this.financeService.extrairNfce(this.urlNfce).subscribe({
       next: (res) => this.tratarResultadoNfce(res),
       error: () => {
