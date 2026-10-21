@@ -7,7 +7,7 @@
       </svg>
       <div>
         <span class="brand-title">Controle Financeiro</span>
-        <span class="brand-subtitle">Gestão Inteligente - front v77 - back v38</span>
+        <span class="brand-subtitle">Gestão Inteligente - front v78 - back v39</span>
       </div>
     </div>
     <div class="header-right-mobile">
@@ -453,6 +453,7 @@
         <button class="toggle-btn" [class.active]="scannerModo === 'camera'" (click)="setModoScanner('camera')">Escanear com Câmera</button>
         <button class="toggle-btn" [class.active]="scannerModo === 'arquivo'" (click)="setModoScanner('arquivo')">Enviar Foto</button>
         <button class="toggle-btn" [class.active]="scannerModo === 'manual'" (click)="setModoScanner('manual')">Colar Link</button>
+        <button class="toggle-btn" [class.active]="scannerModo === 'html'" (click)="setModoScanner('html')">📄 Enviar HTML</button>
       </div>
 
       <div *ngIf="scannerModo === 'camera'" class="camera-scanner-container">
