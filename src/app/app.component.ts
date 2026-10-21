@@ -1167,6 +1167,15 @@ carregarEstabelecimentos(): void {
     });
   }
 
+  aoAlterarValorTotalPreview(): void {
+    if (!this.dadosNotaPreview) return;
+    const val = Number(this.dadosNotaPreview.valorTotal) || 0;
+    if (this.dadosNotaPreview.itens && this.dadosNotaPreview.itens.length === 1 && this.dadosNotaPreview.itens[0].codigo === 'SEFAZ') {
+      this.dadosNotaPreview.itens[0].valorUnitario = val;
+      this.dadosNotaPreview.itens[0].valorTotal = val;
+    }
+  }
+
   descartarPreviewNfce(): void {
     this.dadosNotaPreview = null;
     this.mensagemNfce = '';
