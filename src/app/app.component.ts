@@ -126,7 +126,8 @@ activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'said
   carregandoNfce: boolean = false;
   mensagemNfce: string = '';
   statusNfceSucesso: boolean = true;
-  scannerModo: 'camera' | 'arquivo' | 'manual' = 'camera';
+  scannerModo: 'camera' | 'arquivo' | 'manual' | 'html' = 'camera';
+  htmlNfceManual: string = '';
   scannerAtivo: boolean = false;
   html5QrCode: any = null;
   dadosNotaPreview: any = null;
@@ -939,7 +940,7 @@ carregarEstabelecimentos(): void {
   }
 
   // --- NFC-E LEITOR E PRÉ-VISUALIZAÇÃO ---
-  setModoScanner(modo: 'camera' | 'arquivo' | 'manual'): void {
+  setModoScanner(modo: 'camera' | 'arquivo' | 'manual' | 'html'): void {
     this.pararScanner();
     this.scannerModo = modo;
     this.mensagemNfce = '';
@@ -1086,7 +1087,48 @@ carregarEstabelecimentos(): void {
     }
   }
 
-extrairNfce(): void {
+
+  aoAlterarValorTotalPreview(): void {
+    if (this.dadosNotaPreview) {
+      const val = Number(this.dadosNotaPreview.valorTotal) || 0;
+      if (this.dadosNotaPreview.itens && this.dadosNotaPreview.itens.length === 1 && this.dadosNotaPreview.itens[0].codigo === 'SEFAZ') {
+        this.dadosNotaPreview.itens[0].valorUnitario = val;
+        this.dadosNotaPreview.itens[0].valorTotal = val;
+      }
+    }
+  }
+
+  descartarPreviewNfce(): void {
+    this.dadosNotaPreview = null;
+    this.mensagemNfce = '';
+    this.htmlNfceManual = '';
+  }
+
+  confirmarEGravarNfce(): void {
+    if (!this.dadosNotaPreview) return;
+    this.carregandoNfce = true;
+    this.mensagemNfce = 'Salvando nota fiscal no banco...';
+
+    this.financeService.salvarNfce(this.dadosNotaPreview).subscribe({
+      next: () => {
+        this.carregandoNfce = false;
+        alert('🎉 Nota Fiscal salva com sucesso em Saídas e na Lista de Produtos!');
+        this.dadosNotaPreview = null;
+        this.mensagemNfce = '';
+        this.urlNfce = '';
+        this.htmlNfceManual = '';
+        this.carregarTransacoes();
+        this.carregarProdutos();
+        this.setTab('saidas');
+      },
+      error: (err: any) => {
+        this.carregandoNfce = false;
+        alert(err?.error?.error || 'Erro ao salvar a Nota Fiscal.');
+      }
+    });
+  }
+
+  extrairNfce(): void {
     if (this.scannerModo === 'html') {
       if (!this.htmlNfceManual || !this.htmlNfceManual.trim()) {
         alert('Cole o conteúdo HTML do cupom fiscal!');

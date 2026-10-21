@@ -59,98 +59,96 @@ export class FinanceService {
   }
 
   getTransacoes(): Observable<Transacao[]> {
-    return this.http.get<Transacao[]>(`${this.apiUrl}/transacoes`);
+    return this.http.get<Transacao[]>();
   }
 
   addTransacao(transacao: Transacao): Observable<any> {
-    return this.http.post(`${this.apiUrl}/transacoes`, transacao);
+    return this.http.post(, transacao);
   }
 
   updateTransacao(id: number, transacao: Partial<Transacao>): Observable<any> {
-    return this.http.put(`${this.apiUrl}/transacoes/${id}`, transacao);
+    return this.http.put(, transacao);
   }
 
   deleteTransacao(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/transacoes/${id}`);
+    return this.http.delete();
   }
 
   extrairNfce(urlNfce: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}
+    return this.http.post(, { url: urlNfce });
+  }
 
   extrairNfceHtml(html: string, url?: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/nfce/extrair-html`, { html, url });
-  }
-/nfce/extrair`, { url: urlNfce });
+    return this.http.post(, { html, url });
   }
 
   salvarNfce(dadosNota: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/nfce/salvar`, { dadosNota });
+    return this.http.post(, { dadosNota });
   }
 
   consultarNfce(urlNfce: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/nfce/consultar`, { url: urlNfce });
+    return this.http.post(, { url: urlNfce });
   }
 
   getProdutos(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/produtos`);
+    return this.http.get<any[]>();
   }
 
   deleteProdutoItem(id: number, origem?: string, nome?: string): Observable<any> {
     if (id && origem) {
-      return this.http.delete(`${this.apiUrl}/produtos/item/${id}?origem=${origem}`);
+      return this.http.delete();
     }
     if (nome) {
-      return this.http.delete(`${this.apiUrl}/produtos/${encodeURIComponent(nome)}`);
+      return this.http.delete();
     }
-    return this.http.delete(`${this.apiUrl}/produtos/${id}`);
+    return this.http.delete();
   }
 
   deleteProdutoPorNome(nome: string): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/produtos/${encodeURIComponent(nome)}`);
+    return this.http.delete();
   }
 
-  
   getDetalhesTransacao(id: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/transacoes/${id}/detalhes`);
+    return this.http.get<any>();
   }
 
   getEstabelecimentos(): Observable<EstabelecimentoMapeado[]> {
-    return this.http.get<EstabelecimentoMapeado[]>(`${this.apiUrl}/estabelecimentos`);
+    return this.http.get<EstabelecimentoMapeado[]>();
   }
 
   addEstabelecimento(est: { razaoSocial: string, nomeSimplificado: string }): Observable<any> {
-    return this.http.post(`${this.apiUrl}/estabelecimentos`, est);
+    return this.http.post(, est);
   }
 
   updateEstabelecimento(id: number, est: { razaoSocial: string, nomeSimplificado: string }): Observable<any> {
-    return this.http.put(`${this.apiUrl}/estabelecimentos/${id}`, est);
+    return this.http.put(, est);
   }
 
   deleteEstabelecimento(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/estabelecimentos/${id}`);
+    return this.http.delete();
   }
 
   getMapeamentosProdutos(): Observable<ProdutoMapeado[]> {
-    return this.http.get<ProdutoMapeado[]>(`${this.apiUrl}/mapeamento-produtos`);
+    return this.http.get<ProdutoMapeado[]>();
   }
 
   addMapeamentoProduto(prod: { nomeOriginal: string, nomeSimplificado: string }): Observable<any> {
-    return this.http.post(`${this.apiUrl}/mapeamento-produtos`, prod);
+    return this.http.post(, prod);
   }
 
   updateMapeamentoProduto(id: number, prod: { nomeOriginal: string, nomeSimplificado: string }): Observable<any> {
-    return this.http.put(`${this.apiUrl}/mapeamento-produtos/${id}`, prod);
+    return this.http.put(, prod);
   }
 
   deleteMapeamentoProduto(id: number): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/mapeamento-produtos/${id}`);
+    return this.http.delete();
   }
 
   getProdutoPorCodigo(codigo: string): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/produtos/codigo/${encodeURIComponent(codigo)}`);
+    return this.http.get<any>();
   }
 
   finalizarCarrinho(dadosCarrinho: any): Observable<any> {
-    return this.http.post(`${this.apiUrl}/carrinho/finalizar`, dadosCarrinho);
+    return this.http.post(, dadosCarrinho);
   }
 }
