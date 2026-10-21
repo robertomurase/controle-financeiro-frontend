@@ -12,6 +12,15 @@ declare var Html5Qrcode: any;
   templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit, OnDestroy {
+  sanitizarUrlQrCode(url: string): string {
+    if (!url) return '';
+    let clean = url.trim().replace(/^["']|["']$/g, '').replace(/&amp;/g, '&');
+    if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+      clean = 'https://' + clean;
+    }
+    return clean.replace(/\|/g, '%7C');
+  }
+
   // --- PWA INSTALLATION ---
   deferredPrompt: any = null;
   exibirBannerPwa: boolean = false;
@@ -45,7 +54,7 @@ export class AppComponent implements OnInit, OnDestroy {
   modalDetalhesNfceAberto: boolean = false;
   carregandoDetalhesNfce: boolean = false;
   detalhesNfceSelecionada: any = null;
-activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'entradas' | 'saidas' | 'produtos' | 'estabelecimentos' = 'dashboard';
+activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'saidas' | 'produtos' | 'estabelecimentos' = 'dashboard';
   menuAberto: boolean = false;
   settingsMenuAberto: boolean = false;
   modoClaro: boolean = false;
@@ -122,10 +131,11 @@ activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'entradas' | 'saidas' | 'produt
 
   // Leitor QR Code
   urlNfce: string = '';
+  htmlNfceManual: string = '';
   carregandoNfce: boolean = false;
   mensagemNfce: string = '';
   statusNfceSucesso: boolean = true;
-  scannerModo: 'camera' | 'arquivo' | 'manual' = 'camera';
+  scannerModo: 'camera' | 'arquivo' | 'manual' | 'html' = 'camera';
   scannerAtivo: boolean = false;
   html5QrCode: any = null;
   dadosNotaPreview: any = null;
@@ -166,6 +176,7 @@ activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'entradas' | 'saidas' | 'produt
 
   ngOnDestroy(): void {
     this.pararScanner();
+    this.pararScannerBarcode();
   }
 
   limparNomeProduto(nome: string): string {
@@ -253,13 +264,17 @@ activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'entradas' | 'saidas' | 'produt
     }
   }
 
-  setTab(tab: 'dashboard' | 'transacoes' | 'nfce' | 'entradas' | 'saidas' | 'produtos' | 'estabelecimentos'): void {
+  setTab(tab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'saidas' | 'produtos' | 'estabelecimentos'): void {
     this.pararScanner();
+    this.pararScannerBarcode();
     this.activeTab = tab;
     this.fecharMenu();
     this.fecharSettingsMenu();
     if (tab === 'nfce' && this.scannerModo === 'camera') {
       setTimeout(() => this.iniciarScanner(), 200);
+    }
+    if (tab === 'carrinho' && this.modoAddCarrinho === 'barcode') {
+      setTimeout(() => this.iniciarScannerBarcode(), 200);
     }
   }
 
@@ -623,6 +638,7 @@ carregarEstabelecimentos(): void {
       next: (dados) => {
         this.transacoes = (dados || []).map(t => ({
           ...t,
+          isNfce: !!(t.isNfce || (t as any).hash_transacao?.startsWith('nfce_') || (t as any).hash_transacao?.startsWith('carrinho_')),
           descricao: this.limparNomeProduto(t.descricao),
           estabelecimento: this.obterNomeEstabelecimentoSimplificado(t.estabelecimento || t.descricao)
         }));
@@ -932,7 +948,7 @@ carregarEstabelecimentos(): void {
   }
 
   // --- NFC-E LEITOR E PRÉ-VISUALIZAÇÃO ---
-  setModoScanner(modo: 'camera' | 'arquivo' | 'manual'): void {
+  setModoScanner(modo: 'camera' | 'arquivo' | 'manual' | 'html'): void {
     this.pararScanner();
     this.scannerModo = modo;
     this.mensagemNfce = '';
@@ -1053,67 +1069,127 @@ carregarEstabelecimentos(): void {
     }
   }
 
+  
+  tratarResultadoNfce(res: any): void {
+    this.carregandoNfce = false;
+    const isJaCadastrada = !!(res?.jaCadastrada || res?.dadosNota?.jaCadastrada);
+    if (res?.dadosNota) {
+      res.dadosNota.jaCadastrada = isJaCadastrada;
+      res.dadosNota.estabelecimento = this.obterNomeEstabelecimentoSimplificado(res.dadosNota.estabelecimento);
+      if (res.dadosNota.itens) {
+        res.dadosNota.itens = res.dadosNota.itens.map((i: any) => ({
+          ...i,
+          nomeProduto: this.limparNomeProduto(i.nomeProduto)
+        }));
+      }
+    }
+    this.dadosNotaPreview = res?.dadosNota || null;
+    const totalItens = res?.dadosNota?.itens?.length || 0;
+
+    if (isJaCadastrada) {
+      this.mensagemNfce = '⚠️ AVISO: Esta nota fiscal já foi salva anteriormente no sistema!';
+      this.statusNfceSucesso = false;
+    } else {
+      this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
+      this.statusNfceSucesso = true;
+    }
+  }
+
+
+  aoAlterarValorTotalPreview(): void {
+    if (this.dadosNotaPreview) {
+      const val = Number(this.dadosNotaPreview.valorTotal) || 0;
+      if (this.dadosNotaPreview.itens && this.dadosNotaPreview.itens.length === 1 && this.dadosNotaPreview.itens[0].codigo === 'SEFAZ') {
+        this.dadosNotaPreview.itens[0].valorUnitario = val;
+        this.dadosNotaPreview.itens[0].valorTotal = val;
+      }
+    }
+  }
+
+  descartarPreviewNfce(): void {
+    this.dadosNotaPreview = null;
+    this.mensagemNfce = '';
+    this.htmlNfceManual = '';
+  }
+
+  confirmarEGravarNfce(): void {
+    if (!this.dadosNotaPreview) return;
+    this.carregandoNfce = true;
+    this.mensagemNfce = 'Salvando nota fiscal no banco...';
+
+    this.financeService.salvarNfce(this.dadosNotaPreview).subscribe({
+      next: () => {
+        this.carregandoNfce = false;
+        alert('🎉 Nota Fiscal salva com sucesso em Saídas e na Lista de Produtos!');
+        this.dadosNotaPreview = null;
+        this.mensagemNfce = '';
+        this.urlNfce = '';
+        this.htmlNfceManual = '';
+        this.carregarTransacoes();
+        this.carregarProdutos();
+        this.setTab('saidas');
+      },
+      error: (err: any) => {
+        this.carregandoNfce = false;
+        alert(err?.error?.error || 'Erro ao salvar a Nota Fiscal.');
+      }
+    });
+  }
+
   extrairNfce(): void {
+    if (this.scannerModo === 'html') {
+      if (!this.htmlNfceManual || !this.htmlNfceManual.trim()) {
+        alert('Cole o conteúdo HTML do cupom fiscal!');
+        return;
+      }
+      this.carregandoNfce = true;
+      this.mensagemNfce = 'Processando HTML da nota fiscal...';
+      this.statusNfceSucesso = true;
+
+      this.financeService.extrairNfceHtml(this.htmlNfceManual, this.urlNfce).subscribe({
+        next: (res: any) => this.tratarResultadoNfce(res),
+        error: (err: any) => {
+          this.carregandoNfce = false;
+          this.mensagemNfce = `❌ ${err?.error?.error || 'Erro ao processar o HTML da nota'}`;
+          this.statusNfceSucesso = false;
+        }
+      });
+      return;
+    }
+
     if (!this.urlNfce) {
       alert('Cole ou escaneie o QR Code da NFC-e!');
       return;
     }
 
+    this.urlNfce = this.sanitizarUrlQrCode(this.urlNfce);
+
     this.carregandoNfce = true;
-    this.mensagemNfce = 'Processando nota fiscal com a SEFAZ...';
+    this.mensagemNfce = 'Consultando nota fiscal junto à SEFAZ...';
     this.statusNfceSucesso = true;
 
     this.financeService.extrairNfce(this.urlNfce).subscribe({
-      next: (res) => {
-        this.carregandoNfce = false;
-        const isJaCadastrada = !!(res?.jaCadastrada || res?.dadosNota?.jaCadastrada);
-        if (res?.dadosNota) {
-          res.dadosNota.jaCadastrada = isJaCadastrada;
-          res.dadosNota.estabelecimento = this.obterNomeEstabelecimentoSimplificado(res.dadosNota.estabelecimento);
-          if (res.dadosNota.itens) {
-            res.dadosNota.itens = res.dadosNota.itens.map((i: any) => ({
-              ...i,
-              nomeProduto: this.limparNomeProduto(i.nomeProduto)
-            }));
-          }
-        }
-        this.dadosNotaPreview = res?.dadosNota || null;
-        const totalItens = res?.dadosNota?.itens?.length || 0;
-
-        if (isJaCadastrada) {
-          this.mensagemNfce = '⚠️ AVISO: Esta nota fiscal já foi salva anteriormente no sistema!';
-          this.statusNfceSucesso = false;
-        } else {
-          this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
-          this.statusNfceSucesso = true;
-        }
-      },
+      next: (res: any) => this.tratarResultadoNfce(res),
       error: () => {
         this.financeService.consultarNfce(this.urlNfce).subscribe({
-          next: (res) => {
+          next: (res: any) => this.tratarResultadoNfce(res),
+          error: (err2: any) => {
             this.carregandoNfce = false;
-            const isJaCadastrada = !!(res?.jaCadastrada || res?.dadosNota?.jaCadastrada);
-            if (res?.dadosNota) {
-              res.dadosNota.jaCadastrada = isJaCadastrada;
-              res.dadosNota.estabelecimento = this.obterNomeEstabelecimentoSimplificado(res.dadosNota.estabelecimento);
-              if (res.dadosNota.itens) {
-                res.dadosNota.itens = res.dadosNota.itens.map((i: any) => ({
-                  ...i,
-                  nomeProduto: this.limparNomeProduto(i.nomeProduto)
-                }));
-              }
-            }
-            this.dadosNotaPreview = res?.dadosNota || null;
-            const totalItens = res?.dadosNota?.itens?.length || 0;
+            const msgErro = err2?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
+            this.mensagemNfce = `❌ ${msgErro}`;
+            this.statusNfceSucesso = false;
+          }
+        });
+      }
+    });
+  }
 
-            if (isJaCadastrada) {
-              this.mensagemNfce = '⚠️ AVISO: Esta nota fiscal já foi salva anteriormente no sistema!';
-              this.statusNfceSucesso = false;
-            } else {
-              this.mensagemNfce = `✅ Dados da nota extraídos (${totalItens} itens). Confira abaixo e confirme para salvar.`;
-              this.statusNfceSucesso = true;
-            }
-          },
+    extrairNfceBackendFallback(): void {
+    this.financeService.extrairNfce(this.urlNfce).subscribe({
+      next: (res) => this.tratarResultadoNfce(res),
+      error: () => {
+        this.financeService.consultarNfce(this.urlNfce).subscribe({
+          next: (res) => this.tratarResultadoNfce(res),
           error: (err2) => {
             this.carregandoNfce = false;
             const msgErro = err2?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
@@ -1125,48 +1201,7 @@ carregarEstabelecimentos(): void {
     });
   }
 
-  confirmarEGravarNfce(): void {
-    if (!this.dadosNotaPreview) {
-      alert('Nenhum dado de nota para salvar.');
-      return;
-    }
-
-    if (this.dadosNotaPreview.jaCadastrada) {
-      alert('⚠️ Esta nota fiscal já foi salva anteriormente e não pode ser duplicada.');
-      return;
-    }
-
-    this.carregandoNfce = true;
-    this.mensagemNfce = '💾 Salvando transação em Saídas e cadastrando produtos...';
-
-    this.financeService.salvarNfce(this.dadosNotaPreview).subscribe({
-      next: () => {
-        this.carregandoNfce = false;
-        this.statusNfceSucesso = true;
-        this.dadosNotaPreview = null;
-        this.urlNfce = '';
-        this.carregarTransacoes();
-        this.carregarProdutos();
-        alert('✅ NFC-e e produtos salvos com sucesso!');
-      },
-      error: (err) => {
-        this.carregandoNfce = false;
-        const msgErro = err?.error?.error || 'Erro ao salvar a nota fiscal.';
-        this.mensagemNfce = `❌ ${msgErro}`;
-        this.statusNfceSucesso = false;
-        if (err?.error?.jaCadastrada && this.dadosNotaPreview) {
-          this.dadosNotaPreview.jaCadastrada = true;
-        }
-      }
-    });
-  }
-
-  descartarPreviewNfce(): void {
-    this.dadosNotaPreview = null;
-    this.mensagemNfce = '';
-  }
-
-  limparBusca(): void {
+    limparBusca(): void {
     this.buscaProduto = '';
   }
 
@@ -1296,4 +1331,232 @@ carregarEstabelecimentos(): void {
   get despesasMes(): number {
     return (this.transacoes || []).filter(t => t.tipo === 'despesa').reduce((a, b) => a + (Number(b.valor) || 0), 0);
   }
+
+  // --- CARRINHO EM TEMPO REAL ---
+  limiteOrcamentoCarrinho: number = 0;
+  estabelecimentoCarrinho: string = 'Supermercado';
+  modoAddCarrinho: 'barcode' | 'manual' = 'barcode';
+  scannerBarcodeAtivo: boolean = false;
+  html5BarcodeScanner: any = null;
+  statusBarcodeMsg: string = '';
+  statusBarcodeOk: boolean = true;
+  itensCarrinho: any[] = [];
+  novoItemCarrinho: any = {
+    nomeProduto: '',
+    quantidade: 1,
+    unidade: 'UN',
+    valorUnitario: 0,
+    codigo: ''
+  };
+  historicoItemCarrinho: any = null;
+  carregandoCarrinho: boolean = false;
+
+  get subtotalCarrinho(): number {
+    if (!this.itensCarrinho) return 0;
+    return this.itensCarrinho.reduce((acc, item) => acc + (Number(item.valorTotal) || 0), 0);
+  }
+
+  get saldoOrcamentoCarrinho(): number {
+    const limite = Number(this.limiteOrcamentoCarrinho) || 0;
+    return limite - this.subtotalCarrinho;
+  }
+
+  get percentualOrcamentoCarrinho(): number {
+    const limite = Number(this.limiteOrcamentoCarrinho) || 0;
+    if (limite <= 0) return 0;
+    return (this.subtotalCarrinho / limite) * 100;
+  }
+
+  setModoAddCarrinho(modo: 'barcode' | 'manual'): void {
+    this.modoAddCarrinho = modo;
+    if (modo === 'barcode') {
+      setTimeout(() => this.iniciarScannerBarcode(), 200);
+    } else {
+      this.pararScannerBarcode();
+    }
+  }
+
+  iniciarScannerBarcode(): void {
+    if (typeof window === 'undefined') return;
+
+    if (this.scannerBarcodeAtivo) {
+      this.pararScannerBarcode();
+    }
+
+    this.statusBarcodeMsg = '📷 Ativando leitor de código de barras...';
+    this.statusBarcodeOk = true;
+
+    setTimeout(() => {
+      const el = document.getElementById('barcode-viewport');
+      if (el && (window as any).Html5Qrcode) {
+        try {
+          this.html5BarcodeScanner = new (window as any).Html5Qrcode('barcode-viewport');
+          this.scannerBarcodeAtivo = true;
+
+          const config = {
+            fps: 10,
+            qrbox: { width: 280, height: 180 }
+          };
+
+          this.html5BarcodeScanner.start(
+            { facingMode: 'environment' },
+            config,
+            (decodedText: string) => {
+              this.statusBarcodeMsg = `✅ Código ${decodedText} lido com sucesso!`;
+              this.statusBarcodeOk = true;
+              this.consultarProdutoPorCodigo(decodedText);
+            },
+            () => {}
+          ).catch(() => {
+            this.statusBarcodeMsg = '❌ Não foi possível abrir a câmera para código de barras.';
+            this.statusBarcodeOk = false;
+            this.scannerBarcodeAtivo = false;
+          });
+        } catch (e) {
+          this.statusBarcodeMsg = '❌ Erro ao inicializar o leitor de código de barras.';
+          this.statusBarcodeOk = false;
+        }
+      }
+    }, 200);
+  }
+
+  pararScannerBarcode(): void {
+    if (this.html5BarcodeScanner) {
+      try {
+        if (this.html5BarcodeScanner.isScanning) {
+          this.html5BarcodeScanner.stop().then(() => {
+            try { this.html5BarcodeScanner.clear(); } catch (e) {}
+            this.html5BarcodeScanner = null;
+          }).catch(() => { this.html5BarcodeScanner = null; });
+        } else {
+          try { this.html5BarcodeScanner.clear(); } catch (e) {}
+          this.html5BarcodeScanner = null;
+        }
+      } catch (e) {
+        this.html5BarcodeScanner = null;
+      }
+    }
+    this.scannerBarcodeAtivo = false;
+  }
+
+  consultarProdutoPorCodigo(codigo: string): void {
+    if (!codigo) return;
+    this.novoItemCarrinho.codigo = codigo;
+
+    this.financeService.getProdutoPorCodigo(codigo).subscribe({
+      next: (res) => {
+        if (res && res.encontrado) {
+          this.novoItemCarrinho.nomeProduto = res.nomeProduto;
+          this.novoItemCarrinho.unidade = res.unidade || 'UN';
+          this.novoItemCarrinho.valorUnitario = res.ultimoPreco || 0;
+          this.historicoItemCarrinho = res;
+          this.statusBarcodeMsg = `ὐe Produto encontrado: ${res.nomeProduto} (ÚLTIMO PREÇO: R$ ${(res.ultimoPreco || 0).toFixed(2)})`;
+          this.statusBarcodeOk = true;
+        } else {
+          this.historicoItemCarrinho = null;
+          this.statusBarcodeMsg = `ℹ️ Código ${codigo} registrado. Preencha o nome e valor do produto.`;
+          this.statusBarcodeOk = true;
+        }
+      },
+      error: () => {
+        this.historicoItemCarrinho = null;
+        this.statusBarcodeMsg = `ℹ️ Código ${codigo} lido. Digite o nome e valor do item.`;
+        this.statusBarcodeOk = true;
+      }
+    });
+  }
+
+  adicionarItemAoCarrinho(): void {
+    if (!this.novoItemCarrinho.nomeProduto || !this.novoItemCarrinho.nomeProduto.trim()) {
+      alert('Informe o nome ou descrição do produto!');
+      return;
+    }
+
+    const valUnit = Number(this.novoItemCarrinho.valorUnitario) || 0;
+    if (valUnit <= 0) {
+      alert('Informe um preço unitário válido maior que zero!');
+      return;
+    }
+
+    const qtd = Number(this.novoItemCarrinho.quantidade) || 1;
+    const nomeLimpo = this.limparNomeProduto(this.novoItemCarrinho.nomeProduto);
+
+    const item = {
+      nomeProduto: nomeLimpo,
+      codigo: this.novoItemCarrinho.codigo || 'EAN',
+      quantidade: qtd,
+      unidade: this.novoItemCarrinho.unidade || 'UN',
+      valorUnitario: valUnit,
+      valorTotal: Number((qtd * valUnit).toFixed(2))
+    };
+
+    this.itensCarrinho.push(item);
+
+    // Reset formulário
+    this.novoItemCarrinho = {
+      nomeProduto: '',
+      quantidade: 1,
+      unidade: 'UN',
+      valorUnitario: 0,
+      codigo: ''
+    };
+    this.historicoItemCarrinho = null;
+    this.statusBarcodeMsg = '✅ Item adicionado ao carrinho!';
+    this.statusBarcodeOk = true;
+  }
+
+  alterarQtdCarrinho(index: number, delta: number): void {
+    if (index >= 0 && index < this.itensCarrinho.length) {
+      const item = this.itensCarrinho[index];
+      const novaQtd = Math.max(0.1, Number((item.quantidade + delta).toFixed(2)));
+      item.quantidade = novaQtd;
+      item.valorTotal = Number((novaQtd * item.valorUnitario).toFixed(2));
+    }
+  }
+
+  removerItemCarrinho(index: number): void {
+    if (index >= 0 && index < this.itensCarrinho.length) {
+      this.itensCarrinho.splice(index, 1);
+    }
+  }
+
+  limparCarrinho(): void {
+    if (confirm('Tem certeza que deseja esvaziar o carrinho?')) {
+      this.itensCarrinho = [];
+      this.historicoItemCarrinho = null;
+    }
+  }
+
+  finalizarEGravarCarrinho(): void {
+    if (!this.itensCarrinho || this.itensCarrinho.length === 0) {
+      alert('Seu carrinho está vazio!');
+      return;
+    }
+
+    this.carregandoCarrinho = true;
+
+    const payload = {
+      estabelecimento: this.estabelecimentoCarrinho || 'Supermercado',
+      valorTotal: this.subtotalCarrinho,
+      itens: this.itensCarrinho,
+      conta: 'Conta Corrente'
+    };
+
+    this.financeService.finalizarCarrinho(payload).subscribe({
+      next: () => {
+        this.carregandoCarrinho = false;
+        alert('🎉 Compra do carrinho finalizada e salva em Saídas com sucesso!');
+        this.itensCarrinho = [];
+        this.historicoItemCarrinho = null;
+        this.carregarTransacoes();
+        this.carregarProdutos();
+        this.setTab('saidas');
+      },
+      error: (err) => {
+        this.carregandoCarrinho = false;
+        alert(err?.error?.error || 'Erro ao finalizar compra do carrinho.');
+      }
+    });
+  }
+
 }
