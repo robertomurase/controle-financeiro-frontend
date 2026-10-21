@@ -12,6 +12,15 @@ declare var Html5Qrcode: any;
   templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit, OnDestroy {
+  sanitizarUrlQrCode(url: string): string {
+    if (!url) return '';
+    let clean = url.trim().replace(/^["']|["']$/g, '').replace(/&amp;/g, '&');
+    if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+      clean = 'https://' + clean;
+    }
+    return clean.replace(/\|/g, '%7C');
+  }
+
   // --- PWA INSTALLATION ---
   deferredPrompt: any = null;
   exibirBannerPwa: boolean = false;
@@ -1152,6 +1161,8 @@ carregarEstabelecimentos(): void {
       alert('Cole ou escaneie o QR Code da NFC-e!');
       return;
     }
+
+    this.urlNfce = this.sanitizarUrlQrCode(this.urlNfce);
 
     this.carregandoNfce = true;
     this.mensagemNfce = 'Consultando nota fiscal junto à SEFAZ...';
