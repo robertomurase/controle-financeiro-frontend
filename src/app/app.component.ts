@@ -127,7 +127,6 @@ activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'said
   mensagemNfce: string = '';
   statusNfceSucesso: boolean = true;
   scannerModo: 'camera' | 'arquivo' | 'manual' | 'html' = 'camera';
-  htmlNfceManual: string = '';
   scannerAtivo: boolean = false;
   html5QrCode: any = null;
   dadosNotaPreview: any = null;
