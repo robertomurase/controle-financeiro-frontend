@@ -1070,6 +1070,38 @@ carregarEstabelecimentos(): void {
   }
 
   
+  
+  abrirUrlSefaz(): void {
+    if (!this.urlNfce || !this.urlNfce.trim()) {
+      alert('Cole ou escaneie o QR Code primeiro!');
+      return;
+    }
+    let url = this.urlNfce.trim().replace(/^["']|["']$/g, '').replace(/&amp;/g, '&');
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
+    window.open(url, '_blank');
+  }
+
+  extrairNfceTextoCopiado(): void {
+    if (!this.htmlNfceManual || !this.htmlNfceManual.trim()) {
+      alert('Cole o texto ou HTML copiado da página da SEFAZ!');
+      return;
+    }
+    this.carregandoNfce = true;
+    this.mensagemNfce = 'Processando texto do cupom fiscal...';
+    this.statusNfceSucesso = true;
+
+    this.financeService.extrairNfceHtml(this.htmlNfceManual, this.urlNfce || '').subscribe({
+      next: (res: any) => this.tratarResultadoNfce(res),
+      error: (err: any) => {
+        this.carregandoNfce = false;
+        this.mensagemNfce = `❌ ${err?.error?.error || 'Erro ao processar o texto da nota'}`;
+        this.statusNfceSucesso = false;
+      }
+    });
+  }
+
   tratarResultadoNfce(res: any): void {
     this.carregandoNfce = false;
     const isJaCadastrada = !!(res?.jaCadastrada || res?.dadosNota?.jaCadastrada);
