@@ -12,6 +12,41 @@ declare var Html5Qrcode: any;
   templateUrl: './app.component.html'
 })
 export class AppComponent implements OnInit, OnDestroy {
+  
+  round2(num: number | null | undefined): number {
+    if (!num || isNaN(Number(num))) return 0.0;
+    return Number((Math.round((Number(num) + Number.EPSILON) * 100) / 100).toFixed(2));
+  }
+
+  isAddressText(str: string): boolean {
+    if (!str) return false;
+    const upper = str.toUpperCase().trim();
+    const keywords = [
+      'AVENIDA', 'AV.', 'AV ', 'RUA ', 'R. ', 'RODOVIA', 'ROD.', 'ALAMEDA', 'AL.',
+      'PRAÇA', 'PRACA', 'BAIRRO', 'LOJA ', 'LOJA,', 'LOJA 01', 'MUNICIPIO', 'DEMARCHI',
+      'SAO BERNARDO', 'SAO PAULO', 'SANTO ANDRE', 'CAMPINAS', 'GUARULHOS', 'CEP ', 'Nº'
+    ];
+    if (keywords.some(k => upper.includes(k))) return true;
+    if (/\b(SP|RJ|MG|RS|PR|SC|GO|DF|ES|BA|PE|CE|PA|AM)\b/.test(upper) && upper.includes(',')) return true;
+    return false;
+  }
+
+  normalizarUnidade(unidade: string, nomeProduto: string): string {
+    const unUpper = (unidade || '').trim().toUpperCase();
+    const prodUpper = (nomeProduto || '').trim().toUpperCase();
+
+    const combustivelKeywords = ['GASOLINA', 'ETANOL', 'DIESEL', 'COMBUSTIVEL', 'COMBUSTÍVEL', 'GNV', 'ALCOOL', 'ÁLCOOL', 'ARLA'];
+    const isFuel = combustivelKeywords.some(k => prodUpper.includes(k)) || ['L', 'LT', 'LTR', 'LITRO', 'LITROS'].includes(unUpper);
+
+    if (isFuel) {
+      return 'Litro';
+    }
+    if (['KG', 'KILO', 'QUILO'].includes(unUpper)) return 'KG';
+    if (['CX', 'CAIXA'].includes(unUpper)) return 'CX';
+    if (['PCT', 'PACOTE'].includes(unUpper)) return 'PCT';
+    return unUpper || 'UN';
+  }
+
   sanitizarUrlQrCode(url: string): string {
     if (!url) return '';
     let clean = url.trim().replace(/^["']|["']$/g, '').replace(/&amp;/g, '&');
@@ -1141,7 +1176,8 @@ carregarEstabelecimentos(): void {
 
   aoAlterarValorTotalPreview(): void {
     if (this.dadosNotaPreview) {
-      const val = Number(this.dadosNotaPreview.valorTotal) || 0;
+      this.dadosNotaPreview.valorTotal = this.round2(this.dadosNotaPreview.valorTotal);
+      const val = this.dadosNotaPreview.valorTotal;
       if (this.dadosNotaPreview.itens && this.dadosNotaPreview.itens.length === 1 && this.dadosNotaPreview.itens[0].codigo === 'SEFAZ') {
         this.dadosNotaPreview.itens[0].valorUnitario = val;
         this.dadosNotaPreview.itens[0].valorTotal = val;
