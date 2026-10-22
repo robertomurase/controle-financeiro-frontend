@@ -1071,10 +1071,13 @@ carregarEstabelecimentos(): void {
 
   
   
-  abrirUrlSefaz(): void {
+    abrirUrlSefaz(): void {
     if (!this.urlNfce || !this.urlNfce.trim()) {
-      alert('Cole ou escaneie o QR Code primeiro!');
-      return;
+      const urlManual = prompt('Cole aqui o link/URL do QR Code da Nota Fiscal na SEFAZ:');
+      if (!urlManual || !urlManual.trim()) {
+        return;
+      }
+      this.urlNfce = urlManual.trim();
     }
     let url = this.urlNfce.trim().replace(/^["']|["']$/g, '').replace(/&amp;/g, '&');
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
@@ -1102,21 +1105,24 @@ carregarEstabelecimentos(): void {
     });
   }
 
-  tratarResultadoNfce(res: any): void {
+    tratarResultadoNfce(res: any): void {
     this.carregandoNfce = false;
     const isJaCadastrada = !!(res?.jaCadastrada || res?.dadosNota?.jaCadastrada);
-    if (res?.dadosNota) {
-      res.dadosNota.jaCadastrada = isJaCadastrada;
-      res.dadosNota.estabelecimento = this.obterNomeEstabelecimentoSimplificado(res.dadosNota.estabelecimento);
-      if (res.dadosNota.itens) {
-        res.dadosNota.itens = res.dadosNota.itens.map((i: any) => ({
+    let dados = res?.dadosNota || res;
+    if (dados) {
+      dados.jaCadastrada = isJaCadastrada;
+      if (dados.estabelecimento) {
+        dados.estabelecimento = this.obterNomeEstabelecimentoSimplificado(dados.estabelecimento);
+      }
+      if (dados.itens && Array.isArray(dados.itens)) {
+        dados.itens = dados.itens.map((i: any) => ({
           ...i,
-          nomeProduto: this.limparNomeProduto(i.nomeProduto)
+          nomeProduto: this.limparNomeProduto(i.nomeProduto || i.nome_produto || i.descricao || '')
         }));
       }
     }
-    this.dadosNotaPreview = res?.dadosNota || null;
-    const totalItens = res?.dadosNota?.itens?.length || 0;
+    this.dadosNotaPreview = dados || null;
+    const totalItens = dados?.itens?.length || 0;
 
     if (isJaCadastrada) {
       this.mensagemNfce = '⚠️ AVISO: Esta nota fiscal já foi salva anteriormente no sistema!';

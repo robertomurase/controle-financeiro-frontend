@@ -449,21 +449,24 @@
         </p>
       </div>
 
-      <div class="scanner-toggle-buttons">
-        <button class="toggle-btn" [class.active]="scannerModo === 'camera'" (click)="setModoScanner('camera')">Escanear com Câmera</button>
-        <button class="toggle-btn" [class.active]="scannerModo === 'arquivo'" (click)="setModoScanner('arquivo')">Enviar Foto</button>
-        <button class="toggle-btn" [class.active]="scannerModo === 'manual'" (click)="setModoScanner('manual')">Colar Link</button>
-        <button class="toggle-btn" [class.active]="scannerModo === 'html'" (click)="setModoScanner('html')">📄 Enviar HTML</button>
+            <div class="scanner-toggle-buttons">
+        <button class="toggle-btn" [class.active]="scannerModo === 'camera'" (click)="setModoScanner('camera')">📷 Escanear com Câmera</button>
+        <button class="toggle-btn" [class.active]="scannerModo === 'arquivo'" (click)="setModoScanner('arquivo')">🖼️ Enviar Foto</button>
+        <button class="toggle-btn" [class.active]="scannerModo === 'manual'" (click)="setModoScanner('manual')">🔗 Colar Link</button>
+        <button class="toggle-btn" [class.active]="scannerModo === 'html'" (click)="setModoScanner('html')">📄 Enviar Texto / HTML</button>
       </div>
 
+      <!-- Modo Câmera -->
       <div *ngIf="scannerModo === 'camera'" class="camera-scanner-container">
         <div id="qr-reader" class="qr-viewport"></div>
-        <div class="scanner-controls" style="margin-top: 12px;">
-          <button *ngIf="!scannerAtivo" class="btn-primary" (click)="iniciarScanner()">Ligar Câmera</button>
-          <button *ngIf="scannerAtivo" class="btn-danger" (click)="pararScanner()">Desligar Câmera</button>
+        <div class="scanner-controls" style="margin-top: 12px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+          <button *ngIf="!scannerAtivo" class="btn-primary" (click)="iniciarScanner()">📷 Ligar Câmera</button>
+          <button *ngIf="scannerAtivo" class="btn-danger" (click)="pararScanner()">⏹️ Desligar Câmera</button>
+          <button class="btn-primary" style="background: #0284c7;" (click)="abrirUrlSefaz()">🌐 Abrir Nota na SEFAZ</button>
         </div>
       </div>
 
+      <!-- Modo Enviar Foto -->
       <div *ngIf="scannerModo === 'arquivo'" class="file-upload-container" style="margin-top: 16px;">
         <div class="upload-dropzone">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.5">
@@ -476,10 +479,14 @@
           </p>
 
           <input type="file" accept="image/*" (change)="processarFotoQrCode($event)" id="qr-file-input" class="file-input" style="display: none;" />
-          <button class="btn-primary" (click)="triggerFileInput()">📷 Escolher Foto do QR Code</button>
+          <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn-primary" (click)="triggerFileInput()">📷 Escolher Foto do QR Code</button>
+            <button class="btn-primary" style="background: #0284c7;" (click)="abrirUrlSefaz()">🌐 Abrir Nota na SEFAZ</button>
+          </div>
         </div>
       </div>
 
+      <!-- Modo Colar Link -->
       <div *ngIf="scannerModo === 'manual'" class="manual-container">
         <div class="form-row">
           <input type="text" [(ngModel)]="urlNfce" placeholder="Cole aqui o link do QR Code (ex: https://...)" />
@@ -487,37 +494,46 @@
             {{ carregandoNfce ? 'Consultando SEFAZ...' : 'Ler Cupom Fiscal' }}
           </button>
         </div>
-
-        <!-- BOTÃO PARA ABRIR NOTA NA SEFAZ E ASSISTENTE DE LEITURA -->
-        <div style="margin-top: 14px;">
-          <button class="btn-sefaz-open" (click)="abrirUrlSefaz()" style="width: 100%; background: #0284c7; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 700; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);">
-            🌐 1. Abrir Nota Fiscal no Site da SEFAZ
-          </button>
-
-          <div style="margin-top: 10px; background: #1e293b; padding: 12px 14px; border-radius: 8px; border: 1px solid #38bdf8;">
-            <div style="color: #38bdf8; font-weight: 700; font-size: 0.85rem; margin-bottom: 6px;">
-              💡 Se a SEFAZ pedir CAPTCHA ou bloquear a leitura automática:
-            </div>
-            <ol style="margin: 0; padding-left: 18px; color: #cbd5e1; font-size: 0.82rem; line-height: 1.5;">
-              <li>Clique no botão azul acima <strong>"Abrir Nota Fiscal no Site da SEFAZ"</strong>.</li>
-              <li>Na página do governo que abrir, selecione todo o texto (Ctrl+A no PC ou Selecionar Tudo no celular) e <strong>Copie</strong>.</li>
-              <li>Clique na aba ao lado <strong>"📄 Enviar HTML"</strong>, cole o texto e clique em <strong>"Extrair Dados do Texto"</strong>.</li>
-            </ol>
-          </div>
-        </div>
       </div>
 
-      <!-- ABA ENVIAR HTML / TEXTO COPIADO DA SEFAZ -->
+      <!-- Modo Enviar Texto / HTML -->
       <div *ngIf="scannerModo === 'html'" class="html-container" style="margin-top: 16px;">
-        <button *ngIf="urlNfce" (click)="abrirUrlSefaz()" style="margin-bottom: 12px; width: 100%; background: #0284c7; color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
-          🌐 Abrir Nota na SEFAZ em Nova Aba
-        </button>
         <label style="display: block; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 8px; font-weight: 600;">
           Cole aqui todo o texto ou HTML copiado da página da SEFAZ:
         </label>
         <textarea [(ngModel)]="htmlNfceManual" rows="6" class="form-control" style="width: 100%; background: #0f172a; color: #f8fafc; border: 1px solid #334155; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 0.85rem;" placeholder="Selecione tudo no site da SEFAZ (Ctrl+A / Selecionar Tudo), copie e cole o texto aqui..."></textarea>
         <button class="btn-primary" style="width: 100%; margin-top: 12px; padding: 12px; font-size: 0.95rem; font-weight: 700;" (click)="extrairNfceTextoCopiado()" [disabled]="carregandoNfce">
           ⚡ Extrair Dados do Texto / HTML Copiado
+        </button>
+      </div>
+
+      <!-- CAIXA DE ASSISTÊNCIA GLOBAL SEFAZ (Presente em todos os modos) -->
+      <div class="sefaz-helper-card" style="margin-top: 18px; background: #1e293b; padding: 16px; border-radius: 12px; border: 1px solid #38bdf8; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+          <div style="color: #38bdf8; font-weight: 700; font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🌐</span>
+            <span>Assistente da SEFAZ (Abrir Nota e Extrair Texto)</span>
+          </div>
+          <button class="btn-primary" style="background: #0284c7; padding: 8px 16px; font-size: 0.88rem; font-weight: 700; border-radius: 8px;" (click)="abrirUrlSefaz()">
+            🌐 1. Abrir Nota na SEFAZ
+          </button>
+        </div>
+
+        <div style="background: #0f172a; padding: 12px 14px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 12px;">
+          <div style="color: #38bdf8; font-weight: 700; font-size: 0.82rem; margin-bottom: 4px;">
+            💡 Se a SEFAZ pedir CAPTCHA ou se a câmera não conseguir extrair os produtos:
+          </div>
+          <ol style="margin: 0; padding-left: 18px; color: #cbd5e1; font-size: 0.8rem; line-height: 1.5;">
+            <li>Clique no botão azul <strong>"1. Abrir Nota na SEFAZ"</strong> para abrir o cupom oficial no navegador.</li>
+            <li>Na tela da SEFAZ, selecione todo o texto (Ctrl+A ou "Selecionar Tudo") e clique em <strong>Copiar</strong>.</li>
+            <li>Cole o texto no campo abaixo e clique em <strong>"2. Extrair Dados do Texto Copiado"</strong>.</li>
+          </ol>
+        </div>
+
+        <textarea [(ngModel)]="htmlNfceManual" rows="4" class="form-control" style="width: 100%; background: #0f172a; color: #f8fafc; border: 1px solid #334155; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 0.85rem;" placeholder="Cole aqui todo o texto copiado da página da SEFAZ..."></textarea>
+        
+        <button class="btn-primary" style="width: 100%; margin-top: 10px; padding: 12px; font-size: 0.95rem; font-weight: 700; border-radius: 8px;" (click)="extrairNfceTextoCopiado()" [disabled]="carregandoNfce">
+          ⚡ 2. Extrair Dados do Texto Copiado
         </button>
       </div>
 
