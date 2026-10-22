@@ -956,6 +956,11 @@ carregarEstabelecimentos(): void {
       setTimeout(() => this.iniciarScanner(), 200);
     } else if (modo === 'arquivo') {
       setTimeout(() => this.triggerFileInput(), 150);
+    } else if (modo === 'html') {
+      setTimeout(() => {
+        const textarea = document.querySelector('.sefaz-helper-card textarea') as HTMLTextAreaElement;
+        if (textarea) textarea.focus();
+      }, 150);
     }
   }
 

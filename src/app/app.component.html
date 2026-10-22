@@ -462,7 +462,7 @@
         <div class="scanner-controls" style="margin-top: 12px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
           <button *ngIf="!scannerAtivo" class="btn-primary" (click)="iniciarScanner()">📷 Ligar Câmera</button>
           <button *ngIf="scannerAtivo" class="btn-danger" (click)="pararScanner()">⏹️ Desligar Câmera</button>
-          <button class="btn-primary" style="background: #0284c7;" (click)="abrirUrlSefaz()">🌐 Abrir Nota na SEFAZ</button>
+          
         </div>
       </div>
 
@@ -481,7 +481,7 @@
           <input type="file" accept="image/*" (change)="processarFotoQrCode($event)" id="qr-file-input" class="file-input" style="display: none;" />
           <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
             <button class="btn-primary" (click)="triggerFileInput()">📷 Escolher Foto do QR Code</button>
-            <button class="btn-primary" style="background: #0284c7;" (click)="abrirUrlSefaz()">🌐 Abrir Nota na SEFAZ</button>
+            
           </div>
         </div>
       </div>
@@ -496,16 +496,7 @@
         </div>
       </div>
 
-      <!-- Modo Enviar Texto / HTML -->
-      <div *ngIf="scannerModo === 'html'" class="html-container" style="margin-top: 16px;">
-        <label style="display: block; font-size: 0.85rem; color: #cbd5e1; margin-bottom: 8px; font-weight: 600;">
-          Cole aqui todo o texto ou HTML copiado da página da SEFAZ:
-        </label>
-        <textarea [(ngModel)]="htmlNfceManual" rows="6" class="form-control" style="width: 100%; background: #0f172a; color: #f8fafc; border: 1px solid #334155; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 0.85rem;" placeholder="Selecione tudo no site da SEFAZ (Ctrl+A / Selecionar Tudo), copie e cole o texto aqui..."></textarea>
-        <button class="btn-primary" style="width: 100%; margin-top: 12px; padding: 12px; font-size: 0.95rem; font-weight: 700;" (click)="extrairNfceTextoCopiado()" [disabled]="carregandoNfce">
-          ⚡ Extrair Dados do Texto / HTML Copiado
-        </button>
-      </div>
+
 
       <!-- CAIXA DE ASSISTÊNCIA GLOBAL SEFAZ (Presente em todos os modos) -->
       <div class="sefaz-helper-card" style="margin-top: 18px; background: #1e293b; padding: 16px; border-radius: 12px; border: 1px solid #38bdf8; box-shadow: 0 4px 12px rgba(0,0,0,0.25);">
