@@ -1368,15 +1368,55 @@ carregarEstabelecimentos(): void {
       i++;
     }
 
-    if (valorTotal === 0 && itens.length > 0) {
-      valorTotal = this.round2(itens.reduce((acc, it) => acc + (it.valorTotal || 0), 0));
+    let desconto = 0.0;
+    let subtotal = 0.0;
+    for (let idx = 0; idx < lines.length; idx++) {
+      const lu = lines[idx].toUpperCase();
+      if (['DESCONTO', 'DESCONTOS', 'ABATIMENTO', 'TOTAL DOS DESCONTOS', 'DESC.'].some(d => lu.includes(d)) && !lu.includes('SEM DESCONTO')) {
+        const m = lines[idx].match(/(?:R\$\s*)?([\d]+[.,][\d]{2})/);
+        if (m) {
+          desconto = this.round2(Number(m[1].replace(/\./g, '').replace(',', '.')));
+        } else if (idx + 1 < lines.length) {
+          const mNext = lines[idx + 1].match(/(?:R\$\s*)?([\d]+[.,][\d]{2})/);
+          if (mNext) {
+            desconto = this.round2(Number(mNext[1].replace(/\./g, '').replace(',', '.')));
+          }
+        }
+      }
+      if (['SUBTOTAL', 'TOTAL BRUTO', 'TOTAL DOS ITENS', 'VALOR DOS ITENS', 'VALOR TOTAL BRUTO'].some(s => lu.includes(s))) {
+        const m = lines[idx].match(/(?:R\$\s*)?([\d]+[.,][\d]{2})/);
+        if (m) {
+          subtotal = this.round2(Number(m[1].replace(/\./g, '').replace(',', '.')));
+        } else if (idx + 1 < lines.length) {
+          const mNext = lines[idx + 1].match(/(?:R\$\s*)?([\d]+[.,][\d]{2})/);
+          if (mNext) {
+            subtotal = this.round2(Number(mNext[1].replace(/\./g, '').replace(',', '.')));
+          }
+        }
+      }
+    }
+
+    const somaItens = this.round2(itens.reduce((acc, it) => acc + (it.valorTotal || 0), 0));
+    if (subtotal === 0.0 && somaItens > 0) {
+      subtotal = somaItens;
+    }
+    if (valorTotal === 0.0) {
+      if (subtotal > 0 && desconto > 0) {
+        valorTotal = this.round2(Math.max(0, subtotal - desconto));
+      } else if (subtotal > 0) {
+        valorTotal = subtotal;
+      }
+    } else if (desconto === 0.0 && subtotal > valorTotal) {
+      desconto = this.round2(subtotal - valorTotal);
     }
 
     return {
       chaveAcesso,
       estabelecimento,
       dataEmissao,
-      valorTotal,
+      subtotal: this.round2(subtotal),
+      desconto: this.round2(desconto),
+      valorTotal: this.round2(valorTotal),
       itens
     };
   }
@@ -1435,6 +1475,15 @@ carregarEstabelecimentos(): void {
           nomeProduto: this.limparNomeProduto(i.nomeProduto || i.nome_produto || i.descricao || '')
         }));
       }
+
+      const somaItens = this.round2((dados.itens || []).reduce((acc: number, it: any) => acc + (Number(it.valorTotal) || 0), 0));
+      dados.subtotal = dados.subtotal ? this.round2(Number(dados.subtotal)) : (somaItens > 0 ? somaItens : this.round2(Number(dados.valorTotal) || 0));
+      dados.desconto = dados.desconto ? this.round2(Number(dados.desconto)) : 0;
+      dados.valorTotal = dados.valorTotal ? this.round2(Number(dados.valorTotal)) : this.round2(Math.max(0, dados.subtotal - dados.desconto));
+
+      if (dados.desconto === 0 && dados.subtotal > dados.valorTotal) {
+        dados.desconto = this.round2(dados.subtotal - dados.valorTotal);
+      }
     }
     this.dadosNotaPreview = dados || null;
     const totalItens = dados?.itens?.length || 0;
@@ -1448,14 +1497,51 @@ carregarEstabelecimentos(): void {
     }
   }
 
-    aoAlterarValorTotalPreview(): void {
+  aoAlterarValorTotalPreview(): void {
     if (this.dadosNotaPreview) {
       this.dadosNotaPreview.valorTotal = this.round2(this.dadosNotaPreview.valorTotal);
+      const sub = Number(this.dadosNotaPreview.subtotal) || this.round2(
+        (this.dadosNotaPreview.itens || []).reduce((acc: number, it: any) => acc + (Number(it.valorTotal) || 0), 0)
+      );
+      this.dadosNotaPreview.subtotal = sub;
+      if (sub > this.dadosNotaPreview.valorTotal) {
+        this.dadosNotaPreview.desconto = this.round2(sub - this.dadosNotaPreview.valorTotal);
+      } else {
+        this.dadosNotaPreview.desconto = 0;
+      }
       const val = this.dadosNotaPreview.valorTotal;
       if (this.dadosNotaPreview.itens && this.dadosNotaPreview.itens.length === 1 && this.dadosNotaPreview.itens[0].codigo === 'SEFAZ') {
         this.dadosNotaPreview.itens[0].valorUnitario = val;
         this.dadosNotaPreview.itens[0].valorTotal = val;
       }
+    }
+  }
+
+  aoAlterarDescontoPreview(): void {
+    if (this.dadosNotaPreview) {
+      const sub = Number(this.dadosNotaPreview.subtotal) || this.round2(
+        (this.dadosNotaPreview.itens || []).reduce((acc: number, it: any) => acc + (Number(it.valorTotal) || 0), 0)
+      );
+      this.dadosNotaPreview.subtotal = sub;
+      const desc = Number(this.dadosNotaPreview.desconto) || 0;
+      this.dadosNotaPreview.desconto = this.round2(desc);
+      this.dadosNotaPreview.valorTotal = this.round2(Math.max(0, sub - this.dadosNotaPreview.desconto));
+    }
+  }
+
+  aoAlterarItemPreview(item: any): void {
+    if (!item) return;
+    item.quantidade = Number(item.quantidade) || 1;
+    item.valorUnitario = this.round2(Number(item.valorUnitario) || 0);
+    item.valorTotal = this.round2(item.quantidade * item.valorUnitario);
+
+    if (this.dadosNotaPreview) {
+      const sub = this.round2(
+        (this.dadosNotaPreview.itens || []).reduce((acc: number, it: any) => acc + (Number(it.valorTotal) || 0), 0)
+      );
+      this.dadosNotaPreview.subtotal = sub;
+      const desc = Number(this.dadosNotaPreview.desconto) || 0;
+      this.dadosNotaPreview.valorTotal = this.round2(Math.max(0, sub - desc));
     }
   }
 
