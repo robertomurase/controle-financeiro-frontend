@@ -1193,10 +1193,16 @@ carregarEstabelecimentos(): void {
 
   confirmarEGravarNfce(): void {
     if (!this.dadosNotaPreview) return;
+
+    if (this.dadosNotaPreview.jaCadastrada) {
+      const confirmar = confirm('Esta nota fiscal já consta registrada no histórico. Deseja salvá-la novamente?');
+      if (!confirmar) return;
+    }
+
     this.carregandoNfce = true;
     this.mensagemNfce = 'Salvando nota fiscal no banco...';
 
-    this.financeService.salvarNfce(this.dadosNotaPreview).subscribe({
+    this.financeService.salvarNfce(this.dadosNotaPreview, !!this.dadosNotaPreview.jaCadastrada).subscribe({
       next: () => {
         this.carregandoNfce = false;
         alert('🎉 Nota Fiscal salva com sucesso em Saídas e na Lista de Produtos!');
