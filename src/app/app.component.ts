@@ -1381,7 +1381,74 @@ carregarEstabelecimentos(): void {
     };
   }
 
-  aoAlterarValorTotalPreview(): void {
+
+  extrairNfceTextoCopiado(): void {
+    if (!this.htmlNfceManual || !this.htmlNfceManual.trim()) {
+      alert('Cole o texto ou HTML copiado da página da SEFAZ!');
+      return;
+    }
+    this.carregandoNfce = true;
+    this.mensagemNfce = 'Processando texto do cupom fiscal...';
+    this.statusNfceSucesso = true;
+
+    // 1. EXTRAÇÃO LOCAL IMEDIATA NO NAVEGADOR: Garante que os itens apareçam instantaneamente na tela!
+    const dadosLocais = this.extrairDadosTextoLocalmente(this.htmlNfceManual);
+    if (dadosLocais && dadosLocais.itens && dadosLocais.itens.length > 0) {
+      this.tratarResultadoNfce({ dadosNota: dadosLocais });
+      setTimeout(() => {
+        const el = document.querySelector('.staging-preview-box');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+    }
+
+    // 2. Consulta no backend para validação cadastral e enriquecimento
+    this.financeService.extrairNfceHtml(this.htmlNfceManual, this.urlNfce || '').subscribe({
+      next: (res: any) => {
+        this.tratarResultadoNfce(res);
+        setTimeout(() => {
+          const el = document.querySelector('.staging-preview-box');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
+      },
+      error: (err: any) => {
+        this.carregandoNfce = false;
+        if (!this.dadosNotaPreview || !this.dadosNotaPreview.itens || this.dadosNotaPreview.itens.length === 0) {
+          this.mensagemNfce = ;
+          this.statusNfceSucesso = false;
+        }
+      }
+    });
+  }
+
+  tratarResultadoNfce(res: any): void {
+    this.carregandoNfce = false;
+    const isJaCadastrada = !!(res?.jaCadastrada || res?.dadosNota?.jaCadastrada);
+    let dados = res?.dadosNota || res;
+    if (dados) {
+      dados.jaCadastrada = isJaCadastrada;
+      if (dados.estabelecimento) {
+        dados.estabelecimento = this.obterNomeEstabelecimentoSimplificado(dados.estabelecimento);
+      }
+      if (dados.itens && Array.isArray(dados.itens)) {
+        dados.itens = dados.itens.map((i: any) => ({
+          ...i,
+          nomeProduto: this.limparNomeProduto(i.nomeProduto || i.nome_produto || i.descricao || '')
+        }));
+      }
+    }
+    this.dadosNotaPreview = dados || null;
+    const totalItens = dados?.itens?.length || 0;
+
+    if (isJaCadastrada) {
+      this.mensagemNfce = '⚠️ AVISO: Esta nota fiscal já foi salva anteriormente no sistema!';
+      this.statusNfceSucesso = false;
+    } else {
+      this.mensagemNfce = ;
+      this.statusNfceSucesso = true;
+    }
+  }
+
+    aoAlterarValorTotalPreview(): void {
     if (this.dadosNotaPreview) {
       this.dadosNotaPreview.valorTotal = this.round2(this.dadosNotaPreview.valorTotal);
       const val = this.dadosNotaPreview.valorTotal;
