@@ -1413,7 +1413,7 @@ carregarEstabelecimentos(): void {
       error: (err: any) => {
         this.carregandoNfce = false;
         if (!this.dadosNotaPreview || !this.dadosNotaPreview.itens || this.dadosNotaPreview.itens.length === 0) {
-          this.mensagemNfce = ;
+          this.mensagemNfce = '❌ ' + (err?.error?.error || 'Erro ao processar o texto da nota');
           this.statusNfceSucesso = false;
         }
       }
@@ -1443,7 +1443,7 @@ carregarEstabelecimentos(): void {
       this.mensagemNfce = '⚠️ AVISO: Esta nota fiscal já foi salva anteriormente no sistema!';
       this.statusNfceSucesso = false;
     } else {
-      this.mensagemNfce = ;
+      this.mensagemNfce = '✅ Dados da nota extraídos (' + totalItens + ' itens). Confira abaixo e confirme para salvar.';
       this.statusNfceSucesso = true;
     }
   }
