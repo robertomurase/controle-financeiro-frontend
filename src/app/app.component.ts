@@ -1126,6 +1126,185 @@ carregarEstabelecimentos(): void {
     window.open(url, '_blank');
   }
 
+  
+  isEstablishmentText(s: string): boolean {
+    if (!s) return false;
+    const u = s.toUpperCase().trim();
+    const keywords = ['LTDA', 'S.A.', 'S/A', 'EIRELI', ' ME', ' EPP', 'CNPJ', 'POSTO DE', 'AUTO POSTO', 'COMERCIO DE', 'SUPERMERCADO', 'ATACADAO', 'HIPERMERCADO'];
+    return keywords.some(k => u.includes(k));
+  }
+
+  extrairDadosTextoLocalmente(texto: string): any {
+    if (!texto) return null;
+    const lines = texto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+    let estabelecimento = 'SEFAZ';
+    for (const l of lines) {
+      const u = l.toUpperCase();
+      if (['LTDA', 'S.A.', 'S/A', 'EIRELI', 'POSTO', 'SUPERMERCADO', 'ATACADAO', 'COMERCIO', 'MERCADO', 'BEM BARATO'].some(k => u.includes(k))) {
+        if (!['SECRETARIA', 'DOCUMENTO AUXILIAR', 'NFC-E', 'DANFE', 'CHAVE'].some(k => u.includes(k))) {
+          estabelecimento = this.obterNomeEstabelecimentoSimplificado(l);
+          break;
+        }
+      }
+    }
+
+    const matchChave = texto.match(/\b(\d{44})\b/) || texto.match(/chave=(\d{44})/i);
+    const chaveAcesso = matchChave ? matchChave[1] : `NFCe_${Date.now()}`;
+
+    let dataEmissao = new Date().toISOString();
+    const matchData = texto.match(/Emissão:?\s*([0-9]{2}\/[0-9]{2}\/[0-9]{4})/i) || texto.match(/([0-9]{2}\/[0-9]{2}\/[0-9]{4})/);
+    if (matchData) {
+      const rawD = matchData[1] || matchData[0];
+      const p = rawD.split('/');
+      if (p.length === 3) {
+        dataEmissao = `${p[2]}-${p[1]}-${p[0]}T12:00:00.000Z`;
+      }
+    }
+
+    const matchTotal = texto.match(/(?:Valor a pagar|Valor Total|Total da Nota|Total R\$):?\s*R?\$?\s*([\d.,]+)/i);
+    let valorTotal = matchTotal ? this.round2(Number(matchTotal[1].replace(/\./g, '').replace(',', '.'))) : 0.0;
+
+    const itens: any[] = [];
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      const lineUpper = line.toUpperCase();
+
+      if (
+        ['DOCUMENTO AUXILIAR', 'SECRETARIA DA FAZENDA', 'NFC-E', 'DANFE', 'CHAVE DE ACESSO',
+         'PROTOCOLO', 'VALOR A PAGAR', 'FORMA DE PAGAMENTO', 'DINHEIRO', 'CARTAO', 'CARTÃO',
+         'PAGAMENTO', 'SUBTOTAL', 'TOTAL GERAL', 'QTD. TOTAL', 'VALOR TOTAL DA NOTA'
+        ].some(h => lineUpper.includes(h)) ||
+        this.isAddressText(line) ||
+        this.isEstablishmentText(line)
+      ) {
+        i++;
+        continue;
+      }
+
+      // Pattern 1: SAT SP format
+      const m_sat = line.match(/^(?:\d+)?\s*(?:\d+)?\s*(.+?)\s+([\d.,]+)\s*([A-Z]{1,4})\s*[xX*]\s*([\d.,]+)(?:\s*\(.*?\)\*?)?\s+([\d.,]+)$/);
+      if (m_sat) {
+        const desc = m_sat[1];
+        const qtd = m_sat[2];
+        const un = m_sat[3];
+        const vl_un = m_sat[4];
+        const vl_tot = m_sat[5];
+        if (!this.isAddressText(desc) && !this.isEstablishmentText(desc)) {
+          const pNome = this.obterNomeProdutoMapeado(this.limparNomeProduto(desc));
+          const q = Number(qtd.replace(/\./g, '').replace(',', '.')) || 1.0;
+          const vu = this.round2(Number(vl_un.replace(/\./g, '').replace(',', '.')));
+          const vt = this.round2(Number(vl_tot.replace(/\./g, '').replace(',', '.')));
+          itens.push({
+            nomeProduto: pNome,
+            codigo: 'SAT',
+            quantidade: q,
+            unidade: this.normalizarUnidade(un, pNome),
+            valorUnitario: vu,
+            valorTotal: vt
+          });
+          i++;
+          continue;
+        }
+      }
+
+      // Pattern 2: Single-line NFC-e
+      if (lineUpper.includes('QTDE') || lineUpper.includes('VL.') || lineUpper.includes('VL UNIT') || lineUpper.includes('VL TOTAL')) {
+        const m_nfce = line.match(/(.+?)(?:\(Cód(?:igo)?:?\s*(\d+)\))?\s+Qtde\.?:?\s*([\d.,]+)\s*([A-Z]{1,4})?\s*(?:Vl\.?\s*Unit\.?:?\s*([\d.,]+))?\s*(?:Vl\.?\s*Total:?\s*([\d.,]+))/i);
+        if (m_nfce) {
+          const desc = m_nfce[1];
+          const cod = m_nfce[2];
+          const qtd = m_nfce[3];
+          const un = m_nfce[4];
+          const vl_un = m_nfce[5];
+          const vl_tot = m_nfce[6];
+          if (desc && !this.isAddressText(desc) && !this.isEstablishmentText(desc)) {
+            const pNome = this.obterNomeProdutoMapeado(this.limparNomeProduto(desc));
+            const q = Number(qtd.replace(/\./g, '').replace(',', '.')) || 1.0;
+            const vu = vl_un ? this.round2(Number(vl_un.replace(/\./g, '').replace(',', '.'))) : 0.0;
+            const vt = vl_tot ? this.round2(Number(vl_tot.replace(/\./g, '').replace(',', '.'))) : this.round2(q * vu);
+            itens.push({
+              nomeProduto: pNome,
+              codigo: cod || 'NFCE',
+              quantidade: q,
+              unidade: this.normalizarUnidade(un, pNome),
+              valorUnitario: vu,
+              valorTotal: vt
+            });
+            i++;
+            continue;
+          }
+        }
+      }
+
+      // Pattern 3: Multi-line / Mobile paste
+      const window = lines.slice(i, Math.min(i + 12, lines.length));
+      const windowText = window.join(' \n ');
+      const windowUpper = windowText.toUpperCase();
+
+      if ((windowUpper.includes('QTDE') || windowUpper.includes('QTD')) && (windowUpper.includes('VL') || windowUpper.includes('VALOR') || windowUpper.includes('UNIT'))) {
+        const desc = line;
+        if (!this.isAddressText(desc) && !this.isEstablishmentText(desc) && !['CNPJ', 'EMISSÃO', 'CONSUMIDOR', 'TOTAL', 'SUBTOTAL', 'CHAVE', 'VALOR'].some(k => desc.toUpperCase().includes(k))) {
+          const m_cod = windowText.match(/\(Cód(?:igo)?:?\s*(\d+)\)|Código:?\s*(\d+)/i);
+          const cod = m_cod ? (m_cod[1] || m_cod[2]) : undefined;
+
+          const m_qtd = windowText.match(/Qtde?\.?:?\s*\n?\s*([\d.,]+)/i);
+          const q = m_qtd ? (Number(m_qtd[1].replace(/\./g, '').replace(',', '.')) || 1.0) : 1.0;
+
+          const m_un = windowText.match(/\bUN:?\s*\n?\s*([A-Z]{1,4})\b|\b(UN|KG|CX|PC|L|LT|DZ|FD|M|G|ML)\b/i);
+          const un = m_un ? (m_un[1] || m_un[2]).toUpperCase() : 'UN';
+
+          const m_vun = windowText.match(/Vl\.?\s*Unit\.?:?\s*\n?\s*([\d.,]+)/i);
+          let vu = m_vun ? this.round2(Number(m_vun[1].replace(/\./g, '').replace(',', '.'))) : 0.0;
+
+          const m_vtot = windowText.match(/(?:Vl\.?\s*Total|Valor\s*Total):?\s*\n?\s*([\d.,]+)/i);
+          let vt = m_vtot ? this.round2(Number(m_vtot[1].replace(/\./g, '').replace(',', '.'))) : 0.0;
+
+          if (vt === 0.0 && q > 0 && vu > 0) vt = this.round2(q * vu);
+          else if (vu === 0.0 && q > 0 && vt > 0) vu = this.round2(vt / q);
+
+          if (vt > 0 || vu > 0) {
+            const pNome = this.obterNomeProdutoMapeado(this.limparNomeProduto(desc));
+            itens.push({
+              nomeProduto: pNome,
+              codigo: cod,
+              quantidade: q,
+              unidade: this.normalizarUnidade(un, pNome),
+              valorUnitario: vu,
+              valorTotal: vt
+            });
+
+            let lastOffset = 2;
+            for (let off = 0; off < window.length; off++) {
+              if (['TOTAL', 'VL. TOTAL', 'VL TOTAL'].some(marker => window[off].toUpperCase().includes(marker))) {
+                lastOffset = off + (window.length > off + 1 && /^[\d.,]+$/.test(window[off + 1].trim()) ? 2 : 1);
+                break;
+              }
+            }
+            i += Math.max(lastOffset, 2);
+            continue;
+          }
+        }
+      }
+
+      i++;
+    }
+
+    if (valorTotal === 0 && itens.length > 0) {
+      valorTotal = this.round2(itens.reduce((acc, it) => acc + (it.valorTotal || 0), 0));
+    }
+
+    return {
+      chaveAcesso,
+      estabelecimento,
+      dataEmissao,
+      valorTotal,
+      itens,
+      jaCadastrada: false
+    };
+  }
+
   extrairNfceTextoCopiado(): void {
     if (!this.htmlNfceManual || !this.htmlNfceManual.trim()) {
       alert('Cole o texto ou HTML copiado da página da SEFAZ!');
@@ -1135,12 +1314,31 @@ carregarEstabelecimentos(): void {
     this.mensagemNfce = 'Processando texto do cupom fiscal...';
     this.statusNfceSucesso = true;
 
+    // 1. EXTRAÇÃO LOCAL IMEDIATA NO NAVEGADOR: Garante que os itens apareçam instantaneamente na tela!
+    const dadosLocais = this.extrairDadosTextoLocalmente(this.htmlNfceManual);
+    if (dadosLocais && dadosLocais.itens && dadosLocais.itens.length > 0) {
+      this.tratarResultadoNfce({ dadosNota: dadosLocais });
+      setTimeout(() => {
+        const el = document.querySelector('.staging-preview-box');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+    }
+
+    // 2. Consulta no backend para validação cadastral e enriquecimento
     this.financeService.extrairNfceHtml(this.htmlNfceManual, this.urlNfce || '').subscribe({
-      next: (res: any) => this.tratarResultadoNfce(res),
+      next: (res: any) => {
+        this.tratarResultadoNfce(res);
+        setTimeout(() => {
+          const el = document.querySelector('.staging-preview-box');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
+      },
       error: (err: any) => {
         this.carregandoNfce = false;
-        this.mensagemNfce = `❌ ${err?.error?.error || 'Erro ao processar o texto da nota'}`;
-        this.statusNfceSucesso = false;
+        if (!this.dadosNotaPreview || !this.dadosNotaPreview.itens || this.dadosNotaPreview.itens.length === 0) {
+          this.mensagemNfce = `❌ ${err?.error?.error || 'Erro ao processar o texto da nota'}`;
+          this.statusNfceSucesso = false;
+        }
       }
     });
   }
