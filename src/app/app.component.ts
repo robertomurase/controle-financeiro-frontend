@@ -1113,17 +1113,62 @@ carregarEstabelecimentos(): void {
   
     abrirUrlSefaz(): void {
     if (!this.urlNfce || !this.urlNfce.trim()) {
-      const urlManual = prompt('Cole aqui o link/URL do QR Code da Nota Fiscal na SEFAZ:');
+      const urlManual = prompt('Cole aqui o link ou chave de 44 dígitos da Nota Fiscal / Cupom:');
       if (!urlManual || !urlManual.trim()) {
         return;
       }
       this.urlNfce = urlManual.trim();
     }
+
     let url = this.urlNfce.trim().replace(/^["']|["']$/g, '').replace(/&amp;/g, '&');
+
+    const matchChave = url.match(/\b(\d{44})\b/);
+    const chave = matchChave ? matchChave[1] : '';
+
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      url = 'https://' + url;
+      if (chave) {
+        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+          navigator.clipboard.writeText(chave).catch(() => {});
+        }
+        url = 'https://satsp.fazenda.sp.gov.br/COMSAT/Public/ConsultaPublica/ConsultaPublicaCfe.aspx';
+        alert('Chave de acesso (' + chave + ') copiada! Cole na página do governo.');
+      } else {
+        url = 'https://' + url;
+      }
     }
-    window.open(url, '_blank');
+
+    url = url.replace(/\|/g, '%7C');
+
+    try {
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (e) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  }
+
+  abrirPortalConsultaSefaz(): void {
+    const matchChave = (this.urlNfce || '').match(/\b(\d{44})\b/);
+    if (matchChave && typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(matchChave[1]).catch(() => {});
+      alert('Chave de Acesso (' + matchChave[1] + ') copiada! Cole na página da SEFAZ.');
+    }
+    try {
+      const a = document.createElement('a');
+      a.href = 'https://satsp.fazenda.sp.gov.br/COMSAT/Public/ConsultaPublica/ConsultaPublicaCfe.aspx';
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (e) {
+      window.open('https://satsp.fazenda.sp.gov.br/COMSAT/Public/ConsultaPublica/ConsultaPublicaCfe.aspx', '_blank', 'noopener,noreferrer');
+    }
   }
 
   
