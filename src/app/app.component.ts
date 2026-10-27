@@ -226,9 +226,16 @@ activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'said
   formatarDataBr(dataStr: string | null | undefined): string {
     if (!dataStr) return '-';
     const limpa = String(dataStr).split('T')[0].trim();
-    const partes = limpa.split('-');
-    if (partes.length === 3) {
-      return partes[2] + '/' + partes[1] + '/' + partes[0];
+    if (limpa.includes('-')) {
+      const partes = limpa.split('-');
+      if (partes.length === 3) {
+        return `${partes[2].padStart(2, '0')}/${partes[1].padStart(2, '0')}/${partes[0]}`;
+      }
+    } else if (limpa.includes('/')) {
+      const partes = limpa.split('/');
+      if (partes.length === 3 && partes[0].length === 4) {
+        return `${partes[2].padStart(2, '0')}/${partes[1].padStart(2, '0')}/${partes[0]}`;
+      }
     }
     return limpa || '-';
   }
@@ -242,6 +249,7 @@ activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'said
     if (!nomeOriginal) return 'Cadastro Manual';
     const orig = nomeOriginal.trim().toLowerCase();
     if (!orig) return 'Cadastro Manual';
+    if (orig === 'estabelecimento não identificado') return 'Mercado / SEFAZ';
 
     const exact = (this.estabelecimentosMapeados || []).find(e =>
       e.razao_social && e.razao_social.trim().toLowerCase() === orig
@@ -1192,14 +1200,58 @@ carregarEstabelecimentos(): void {
     const lines = texto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
     let estabelecimento = 'SEFAZ';
-    for (const l of lines) {
-      const u = l.toUpperCase();
-      if (['LTDA', 'S.A.', 'S/A', 'EIRELI', 'POSTO', 'SUPERMERCADO', 'ATACADAO', 'COMERCIO', 'MERCADO', 'BEM BARATO'].some(k => u.includes(k))) {
-        if (!['SECRETARIA', 'DOCUMENTO AUXILIAR', 'NFC-E', 'DANFE', 'CHAVE'].some(k => u.includes(k))) {
-          estabelecimento = this.obterNomeEstabelecimentoSimplificado(l);
-          break;
+    // 1. Procura por rótulo oficial no texto
+    const mLabel = texto.match(/(?:Nome\s*\/?\s*Raz[aã]o\s*Social|Raz[aã]o\s*Social|Nome\s*Fantasia|Emitente|Estabelecimento):\s*([^\n\r]+)/i);
+    if (mLabel && mLabel[1] && mLabel[1].trim()) {
+      estabelecimento = this.obterNomeEstabelecimentoSimplificado(mLabel[1].trim());
+    }
+
+    if (estabelecimento === 'SEFAZ') {
+      // 2. Procura pela linha anterior ou posterior ao CNPJ
+      for (let idx = 0; idx < lines.length; idx++) {
+        if (lines[idx].toUpperCase().includes('CNPJ')) {
+          for (let pIdx = idx - 1; pIdx >= Math.max(0, idx - 4); pIdx--) {
+            const prev = lines[pIdx];
+            const pu = prev.toUpperCase();
+            if (
+              !pu.includes('SECRETARIA') &&
+              !pu.includes('FAZENDA') &&
+              !pu.includes('NFC-E') &&
+              !pu.includes('DANFE') &&
+              !pu.includes('DOCUMENTO AUXILIAR') &&
+              !pu.includes('CONSULTA') &&
+              !pu.includes('PORTAL') &&
+              prev.length > 3
+            ) {
+              estabelecimento = this.obterNomeEstabelecimentoSimplificado(prev);
+              break;
+            }
+          }
+          if (estabelecimento !== 'SEFAZ') break;
         }
       }
+    }
+
+    if (estabelecimento === 'SEFAZ') {
+      // 3. Procura por palavras-chave empresariais
+      const kwEst = [
+        'LTDA', 'S.A.', 'S/A', 'EIRELI', ' ME', ' EPP', 'POSTO', 'AUTO POSTO', 'COMERCIO', 'COMÉRCIO',
+        'SUPERMERCADO', 'SUPERMERCADOS', 'ATACADAO', 'ATACADÃO', 'HIPERMERCADO', 'MERCADO', 'BEM BARATO',
+        'DROGARIA', 'FARMACIA', 'FARMÁCIA', 'RESTAURANTE', 'PADARIA', 'PANIFICADORA', 'DISTRIBUIDORA', 'LOJA'
+      ];
+      for (const l of lines) {
+        const u = l.toUpperCase();
+        if (kwEst.some(k => u.includes(k))) {
+          if (!['SECRETARIA', 'DOCUMENTO AUXILIAR', 'NFC-E', 'DANFE', 'CHAVE'].some(k => u.includes(k))) {
+            estabelecimento = this.obterNomeEstabelecimentoSimplificado(l);
+            break;
+          }
+        }
+      }
+    }
+
+    if (!estabelecimento || estabelecimento === 'SEFAZ' || estabelecimento === 'Estabelecimento Não Identificado') {
+      estabelecimento = 'Mercado / SEFAZ';
     }
 
     const matchChave = texto.match(/\b(\d{44})\b/) || texto.match(/chave=(\d{44})/i);
@@ -1466,8 +1518,12 @@ carregarEstabelecimentos(): void {
     let dados = res?.dadosNota || res;
     if (dados) {
       dados.jaCadastrada = isJaCadastrada;
-      if (dados.estabelecimento) {
+      if (dados.estabelecimento && dados.estabelecimento !== 'Estabelecimento Não Identificado') {
         dados.estabelecimento = this.obterNomeEstabelecimentoSimplificado(dados.estabelecimento);
+      } else if (this.dadosNotaPreview?.estabelecimento && this.dadosNotaPreview.estabelecimento !== 'Estabelecimento Não Identificado' && this.dadosNotaPreview.estabelecimento !== 'SEFAZ') {
+        dados.estabelecimento = this.dadosNotaPreview.estabelecimento;
+      } else if (!dados.estabelecimento || dados.estabelecimento === 'Estabelecimento Não Identificado') {
+        dados.estabelecimento = 'Mercado / SEFAZ';
       }
       if (dados.itens && Array.isArray(dados.itens)) {
         dados.itens = dados.itens.map((i: any) => ({

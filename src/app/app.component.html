@@ -7,7 +7,7 @@
       </svg>
       <div>
         <span class="brand-title">Controle Financeiro</span>
-        <span class="brand-subtitle">Gestão Inteligente - Versão 119</span>
+        <span class="brand-subtitle">Gestão Inteligente - Versão 120</span>
       </div>
     </div>
     <div class="header-right-mobile">
@@ -275,7 +275,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let t of ultimos10Transacoes">
-              <td>{{ t.data }}</td>
+              <td style="white-space: nowrap;">{{ formatarDataBr(t.data) }}</td>
               <td>
                 {{ t.estabelecimento || t.descricao }}
                 <span *ngIf="t.isNfce" class="badge-nfce">NFC-e</span>
@@ -554,8 +554,8 @@
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; background: #1e293b; padding: 16px; border-radius: 10px; border: 1px solid #334155;">
           <div>
-            <span style="font-size: 0.72rem; color: #94a3b8; display: block; font-weight: 700;">ESTABELECIMENTO</span>
-            <strong style="color: #f8fafc; font-size: 1rem;">{{ dadosNotaPreview.estabelecimento || 'SEFAZ' }}</strong>
+            <span style="font-size: 0.72rem; color: #94a3b8; display: block; font-weight: 700; margin-bottom: 4px;">ESTABELECIMENTO</span>
+            <input type="text" [(ngModel)]="dadosNotaPreview.estabelecimento" placeholder="Ex: Bem Barato, Muffato, Posto..." style="font-size: 0.95rem; font-weight: 700; color: #f8fafc; background: #0f172a; border: 1px solid #38bdf8; border-radius: 6px; padding: 4px 8px; width: 100%; max-width: 220px;" />
           </div>
           <div>
             <span style="font-size: 0.72rem; color: #94a3b8; display: block; font-weight: 700;">DATA DE EMISSÃO</span>
@@ -915,7 +915,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let t of entradasFiltradas">
-              <td>{{ t.data }}</td>
+              <td style="white-space: nowrap;">{{ formatarDataBr(t.data) }}</td>
               <td><span class="badge-tipo receita">{{ t.categoria }}</span></td>
               <td><strong>{{ t.descricao }}</strong></td>
               <td>{{ t.conta || 'Conta Corrente' }}</td>
@@ -1008,7 +1008,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let t of saidasFiltradas" class="product-row" (click)="abrirModalDetalhesNfce(t)">
-              <td>{{ t.data }}</td>
+              <td style="white-space: nowrap;">{{ formatarDataBr(t.data) }}</td>
               <td><strong>{{ t.estabelecimento || t.descricao || 'Cadastro Manual' }}</strong></td>
               <td>{{ t.descricao }}</td>
               <td><span class="badge-tipo despesa">{{ t.categoria }}</span></td>
@@ -1695,7 +1695,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let item of historicoPrecosProduto">
-              <td>{{ item.data_emissao || item.data_cadastro || item.data || '-' }}</td>
+              <td style="white-space: nowrap;">{{ formatarDataBr(item.data_emissao || item.data_cadastro || item.data) }}</td>
               <td><strong>{{ item.estabelecimento || 'Cadastro Manual' }}</strong></td>
               <td>{{ item.quantidade || 1 }} UN</td>
               <td class="col-valor"><span class="val-neutro">{{ formatarMoeda(item.valor_unitario || item.preco_medio) }}</span></td>
