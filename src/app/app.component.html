@@ -7,7 +7,7 @@
       </svg>
       <div>
         <span class="brand-title">Controle Financeiro</span>
-        <span class="brand-subtitle">Gestão Inteligente - Versão 120</span>
+        <span class="brand-subtitle">Gestão Inteligente - Versão 121</span>
       </div>
     </div>
     <div class="header-right-mobile">
@@ -462,7 +462,9 @@
         <div class="scanner-controls" style="margin-top: 12px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
           <button *ngIf="!scannerAtivo" class="btn-primary" (click)="iniciarScanner()">📷 Ligar Câmera</button>
           <button *ngIf="scannerAtivo" class="btn-danger" (click)="pararScanner()">⏹️ Desligar Câmera</button>
-          
+          <button *ngIf="scannerAtivo && temFlash" class="btn-primary" style="background: #eab308; color: #0f172a; font-weight: 800;" (click)="alternarFlash()">
+            {{ flashAtivo ? '🔦 Desligar Lanterna' : '🔦 Ligar Lanterna' }}
+          </button>
         </div>
       </div>
 

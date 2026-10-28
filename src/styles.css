@@ -1129,3 +1129,28 @@ body.light-theme .val-neutro {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+
+/* Visual styling for HD Camera Viewport */
+.qr-viewport {
+  position: relative;
+  width: 100%;
+  max-width: 380px;
+  min-height: 280px;
+  background: #0f172a;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 2px solid #38bdf8;
+  box-shadow: 0 4px 20px rgba(56, 189, 248, 0.25);
+}
+
+.qr-viewport video {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+#qr-reader__scan_region, #barcode-viewport__scan_region {
+  border-radius: 10px;
+}
