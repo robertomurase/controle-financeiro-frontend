@@ -1524,6 +1524,86 @@ carregarEstabelecimentos(): void {
     };
   }
 
+
+  extrairNfceTextoCopiado(): void {
+    if (!this.htmlNfceManual || !this.htmlNfceManual.trim()) {
+      alert('Cole o texto ou HTML copiado da página da SEFAZ!');
+      return;
+    }
+    this.carregandoNfce = true;
+    this.mensagemNfce = 'Processando texto do cupom fiscal...';
+    this.statusNfceSucesso = true;
+
+    // 1. EXTRAÇÃO LOCAL IMEDIATA NO NAVEGADOR: Garante que os itens apareçam instantaneamente na tela!
+    const dadosLocais = this.extrairDadosTextoLocalmente(this.htmlNfceManual);
+    if (dadosLocais && dadosLocais.itens && dadosLocais.itens.length > 0) {
+      this.tratarResultadoNfce({ dadosNota: dadosLocais });
+      setTimeout(() => {
+        const el = document.querySelector('.staging-preview-box');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+    }
+
+    // 2. Consulta no backend para validação cadastral e enriquecimento
+    this.financeService.extrairNfceHtml(this.htmlNfceManual, this.urlNfce || '').subscribe({
+      next: (res: any) => {
+        this.tratarResultadoNfce(res);
+        setTimeout(() => {
+          const el = document.querySelector('.staging-preview-box');
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 150);
+      },
+      error: (err: any) => {
+        this.carregandoNfce = false;
+        if (!this.dadosNotaPreview || !this.dadosNotaPreview.itens || this.dadosNotaPreview.itens.length === 0) {
+          this.mensagemNfce = '❌ ' + (err?.error?.error || 'Erro ao processar o texto da nota');
+          this.statusNfceSucesso = false;
+        }
+      }
+    });
+  }
+
+  tratarResultadoNfce(res: any): void {
+    this.carregandoNfce = false;
+    const isJaCadastrada = !!(res?.jaCadastrada || res?.dadosNota?.jaCadastrada);
+    let dados = res?.dadosNota || res;
+    if (dados) {
+      dados.jaCadastrada = isJaCadastrada;
+      if (dados.estabelecimento && dados.estabelecimento !== 'Estabelecimento Não Identificado') {
+        dados.estabelecimento = this.obterNomeEstabelecimentoSimplificado(dados.estabelecimento);
+      } else if (this.dadosNotaPreview?.estabelecimento && this.dadosNotaPreview.estabelecimento !== 'Estabelecimento Não Identificado' && this.dadosNotaPreview.estabelecimento !== 'SEFAZ') {
+        dados.estabelecimento = this.dadosNotaPreview.estabelecimento;
+      } else if (!dados.estabelecimento || dados.estabelecimento === 'Estabelecimento Não Identificado') {
+        dados.estabelecimento = 'Mercado / SEFAZ';
+      }
+      if (dados.itens && Array.isArray(dados.itens)) {
+        dados.itens = dados.itens.map((i: any) => ({
+          ...i,
+          nomeProduto: this.limparNomeProduto(i.nomeProduto || i.nome_produto || i.descricao || '')
+        }));
+      }
+
+      const somaItens = this.round2((dados.itens || []).reduce((acc: number, it: any) => acc + (Number(it.valorTotal) || 0), 0));
+      dados.subtotal = dados.subtotal ? this.round2(Number(dados.subtotal)) : (somaItens > 0 ? somaItens : this.round2(Number(dados.valorTotal) || 0));
+      dados.desconto = dados.desconto ? this.round2(Number(dados.desconto)) : 0;
+      dados.valorTotal = dados.valorTotal ? this.round2(Number(dados.valorTotal)) : this.round2(Math.max(0, dados.subtotal - dados.desconto));
+
+      if (dados.desconto === 0 && dados.subtotal > dados.valorTotal) {
+        dados.desconto = this.round2(dados.subtotal - dados.valorTotal);
+      }
+    }
+    this.dadosNotaPreview = dados || null;
+    const totalItens = dados?.itens?.length || 0;
+
+    if (isJaCadastrada) {
+      this.mensagemNfce = '⚠️ AVISO: Esta nota fiscal já foi salva anteriormente no sistema!';
+      this.statusNfceSucesso = false;
+    } else {
+      this.mensagemNfce = '✅ Dados da nota extraídos (' + totalItens + ' itens). Confira abaixo e confirme para salvar.';
+      this.statusNfceSucesso = true;
+    }
+  }
+
   aoAlterarValorTotalPreview(): void {
     if (this.dadosNotaPreview) {
       this.dadosNotaPreview.valorTotal = this.round2(this.dadosNotaPreview.valorTotal);
