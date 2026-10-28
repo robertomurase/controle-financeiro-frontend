@@ -1051,41 +1051,22 @@ carregarEstabelecimentos(): void {
     iniciarScanner(): void {
     this.pararScanner();
     this.scannerAtivo = true;
-    this.mensagemNfce = '📷 Ativando leitor de alta precisão HD... Aguarde.';
+    this.mensagemNfce = '📷 Ativando câmera... Aponte para o QR Code.';
     this.statusNfceSucesso = true;
-    this.temFlash = false;
-    this.flashAtivo = false;
 
     setTimeout(() => {
       if (typeof Html5Qrcode !== 'undefined') {
         try {
-          // Aceleração nativa via BarcodeDetector API quando suportada pelo dispositivo/navegador
-          this.html5QrCode = new Html5Qrcode('qr-reader', {
-            experimentalFeatures: {
-              useBarCodeDetectorIfSupported: true
-            }
-          });
-
-          // 25 FPS + Caixa de leitura responsiva (85% do campo de visão) + Resolução HD 1280x720
+          this.html5QrCode = new Html5Qrcode('qr-reader');
           const config = {
-            fps: 25,
-            qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-              const minDim = Math.min(viewfinderWidth, viewfinderHeight);
-              const boxSize = Math.max(220, Math.floor(minDim * 0.85));
-              return { width: boxSize, height: boxSize };
-            },
-            aspectRatio: 1.0,
-            videoConstraints: {
-              facingMode: { ideal: 'environment' },
-              width: { min: 640, ideal: 1280, max: 1920 },
-              height: { min: 480, ideal: 720, max: 1080 },
-              focusMode: 'continuous'
-            }
+            fps: 15,
+            qrbox: { width: 260, height: 260 },
+            aspectRatio: 1.0
           };
 
           const onScanSuccess = (decodedText: string) => {
             this.urlNfce = decodedText;
-            this.mensagemNfce = '✅ QR Code lido com sucesso! Extraindo produtos...';
+            this.mensagemNfce = '✅ QR Code lido com sucesso!';
             this.statusNfceSucesso = true;
             this.pararScanner();
             this.extrairNfce();
@@ -1097,38 +1078,21 @@ carregarEstabelecimentos(): void {
             onScanSuccess,
             () => {}
           ).then(() => {
-            this.mensagemNfce = '⚡ Leitor HD ativo! Aponte para o QR Code da nota fiscal.';
+            this.mensagemNfce = '📷 Câmera ativa! Aponte para o QR Code da nota fiscal.';
             this.statusNfceSucesso = true;
-            this.verificarCapacidadeFlash();
           }).catch(() => {
-            const fallbackConfig = {
-              fps: 20,
-              qrbox: { width: 250, height: 250 },
-              aspectRatio: 1.0
-            };
             this.html5QrCode.start(
-              { facingMode: 'environment' },
-              fallbackConfig,
+              { facingMode: 'user' },
+              config,
               onScanSuccess,
               () => {}
             ).then(() => {
-              this.mensagemNfce = '📷 Câmera ativa! Aponte para o QR Code da nota fiscal.';
+              this.mensagemNfce = '📷 Câmera ativa! Aponte para o QR Code da nota.';
               this.statusNfceSucesso = true;
-              this.verificarCapacidadeFlash();
             }).catch(() => {
-              this.html5QrCode.start(
-                { facingMode: 'user' },
-                fallbackConfig,
-                onScanSuccess,
-                () => {}
-              ).then(() => {
-                this.mensagemNfce = '📷 Câmera ativa! Aponte para o QR Code.';
-                this.statusNfceSucesso = true;
-              }).catch(() => {
-                this.mensagemNfce = '❌ Não foi possível acessar a câmera. Tente Enviar Foto ou Colar Link.';
-                this.statusNfceSucesso = false;
-                this.scannerAtivo = false;
-              });
+              this.mensagemNfce = '❌ Não foi possível acessar a câmera. Tente Enviar Foto ou Colar Link.';
+              this.statusNfceSucesso = false;
+              this.scannerAtivo = false;
             });
           });
         } catch (e) {
@@ -1136,7 +1100,7 @@ carregarEstabelecimentos(): void {
           this.statusNfceSucesso = false;
         }
       } else {
-        this.mensagemNfce = '⚠️ Leitor de QR Code carregando... Clique em Ligar Câmera se necessário.';
+        this.mensagemNfce = '⚠️ Leitor de QR Code carregando... Tente novamente.';
         this.statusNfceSucesso = false;
       }
     }, 200);
@@ -1271,17 +1235,17 @@ carregarEstabelecimentos(): void {
 
   extrairDadosTextoLocalmente(texto: string): any {
     if (!texto) return null;
-    const lines = texto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const lines = texto.split('
+').map(l => l.trim()).filter(l => l.length > 0);
 
     let estabelecimento = 'SEFAZ';
-    // 1. Procura por rótulo oficial no texto
-    const mLabel = texto.match(/(?:Nome\s*\/?\s*Raz[aã]o\s*Social|Raz[aã]o\s*Social|Nome\s*Fantasia|Emitente|Estabelecimento):\s*([^\n\r]+)/i);
+    const mLabel = texto.match(/(?:Nome\s*\/?\s*Raz[aã]o\s*Social|Raz[aã]o\s*Social|Nome\s*Fantasia|Emitente|Estabelecimento):\s*([^
+]+)/i);
     if (mLabel && mLabel[1] && mLabel[1].trim()) {
       estabelecimento = this.obterNomeEstabelecimentoSimplificado(mLabel[1].trim());
     }
 
     if (estabelecimento === 'SEFAZ') {
-      // 2. Procura pela linha anterior ou posterior ao CNPJ
       for (let idx = 0; idx < lines.length; idx++) {
         if (lines[idx].toUpperCase().includes('CNPJ')) {
           for (let pIdx = idx - 1; pIdx >= Math.max(0, idx - 4); pIdx--) {
@@ -1307,7 +1271,6 @@ carregarEstabelecimentos(): void {
     }
 
     if (estabelecimento === 'SEFAZ') {
-      // 3. Procura por palavras-chave empresariais
       const kwEst = [
         'LTDA', 'S.A.', 'S/A', 'EIRELI', ' ME', ' EPP', 'POSTO', 'AUTO POSTO', 'COMERCIO', 'COMÉRCIO',
         'SUPERMERCADO', 'SUPERMERCADOS', 'ATACADAO', 'ATACADÃO', 'HIPERMERCADO', 'MERCADO', 'BEM BARATO',
@@ -1328,8 +1291,8 @@ carregarEstabelecimentos(): void {
       estabelecimento = 'Mercado / SEFAZ';
     }
 
-    const matchChave = texto.match(/\b(\d{44})\b/) || texto.match(/chave=(\d{44})/i);
-    const chaveAcesso = matchChave ? matchChave[1] : `NFCe_${Date.now()}`;
+    const matchChave = texto.match(/(\d{44})/) || texto.match(/chave=(\d{44})/i);
+    const chaveAcesso = matchChave ? matchChave[1] : ;
 
     let dataEmissao = new Date().toISOString();
     const matchData = texto.match(/Emissão:?\s*([0-9]{2}\/[0-9]{2}\/[0-9]{4})/i) || texto.match(/([0-9]{2}\/[0-9]{2}\/[0-9]{4})/);
@@ -1337,16 +1300,61 @@ carregarEstabelecimentos(): void {
       const rawD = matchData[1] || matchData[0];
       const p = rawD.split('/');
       if (p.length === 3) {
-        dataEmissao = `${p[2]}-${p[1]}-${p[0]}T12:00:00.000Z`;
+        dataEmissao = ;
       }
     }
 
-    const matchTotal = texto.match(/(?:Valor a pagar|Valor Total|Total da Nota|Total R\$):?\s*R?\$?\s*([\d.,]+)/i);
-    let valorTotal = matchTotal ? this.round2(Number(matchTotal[1].replace(/\./g, '').replace(',', '.'))) : 0.0;
+    let subtotal = 0.0;
+    let desconto = 0.0;
+    let valorTotal = 0.0;
+
+    for (let idx = 0; idx < lines.length; idx++) {
+      const u = lines[idx].toUpperCase();
+      if (u.includes('SUBTOTAL') || u.includes('SUB TOTAL') || u.includes('TOTAL BRUTO')) {
+        let m = lines[idx].match(/([\d]+[.,][\d]{2})/);
+        if (!m && idx + 1 < lines.length) {
+          m = lines[idx + 1].match(/([\d]+[.,][\d]{2})/);
+        }
+        if (m) {
+          subtotal = this.round2(Number(m[1].replace(/\./g, '').replace(',', '.')));
+          break;
+        }
+      }
+    }
+
+    for (let idx = 0; idx < lines.length; idx++) {
+      const u = lines[idx].toUpperCase();
+      if ((u.includes('DESCONTO') || u.includes('ABATIMENTO')) && !u.includes('SEM DESCONTO')) {
+        let m = lines[idx].match(/([\d]+[.,][\d]{2})/);
+        if (!m && idx + 1 < lines.length) {
+          m = lines[idx + 1].match(/([\d]+[.,][\d]{2})/);
+        }
+        if (m) {
+          desconto = this.round2(Number(m[1].replace(/\./g, '').replace(',', '.')));
+          break;
+        }
+      }
+    }
+
+    for (let idx = 0; idx < lines.length; idx++) {
+      const u = lines[idx].toUpperCase();
+      if (u.includes('SUBTOTAL') || u.includes('SUB TOTAL') || u.includes('QTD') || u.includes('QUANTIDADE')) {
+        continue;
+      }
+      if (['VALOR A PAGAR', 'VALOR TOTAL', 'TOTAL DA NOTA', 'TOTAL GERAL', 'TOTAL R$', 'TOTAL:'].some(k => u.includes(k))) {
+        let m = lines[idx].match(/([\d]+[.,][\d]{2})/);
+        if (!m && idx + 1 < lines.length) {
+          m = lines[idx + 1].match(/([\d]+[.,][\d]{2})/);
+        }
+        if (m) {
+          valorTotal = this.round2(Number(m[1].replace(/\./g, '').replace(',', '.')));
+          break;
+        }
+      }
+    }
 
     const itens: any[] = [];
 
-    // Ignora linhas antes do cabeçalho da tabela se presente
     let startIdx = 0;
     for (let idx = 0; idx < lines.length; idx++) {
       const lu = lines[idx].toUpperCase();
@@ -1374,7 +1382,6 @@ carregarEstabelecimentos(): void {
         continue;
       }
 
-      // Pattern 1: SAT SP format -> 1 001001 ARROZ AGULHINHA 5KG 2,000 UN X 24,90 (0,00)* 49,80
       const m_sat = line.match(/^(?:\d+)?\s*(?:\d+)?\s*(.+?)\s+([\d.,]+)\s*([A-Z]{1,4})\s*[xX*]\s*([\d.,]+)(?:\s*\(.*?\)\*?)?\s+([\d.,]+)$/);
       if (m_sat) {
         const desc = m_sat[1];
@@ -1401,7 +1408,6 @@ carregarEstabelecimentos(): void {
         }
       }
 
-      // Pattern 2: Single-line NFC-e
       if (lineUpper.includes('QTDE') || lineUpper.includes('VL.') || lineUpper.includes('VL UNIT') || lineUpper.includes('VL TOTAL')) {
         const m_nfce = line.match(/(.+?)(?:\(Cód(?:igo)?:?\s*(\d+)\))?\s+Qtde\.?:?\s*([\d.,]+)\s*([A-Z]{1,4})?\s*(?:Vl\.?\s*Unit\.?:?\s*([\d.,]+))?\s*(?:Vl\.?\s*Total:?\s*([\d.,]+))/i);
         if (m_nfce) {
@@ -1431,7 +1437,6 @@ carregarEstabelecimentos(): void {
         }
       }
 
-      // Pattern 3: Multi-line / Mobile paste (o nome do item precede a Qtde dentro de 1 a 2 linhas)
       const window = lines.slice(i, Math.min(i + 10, lines.length));
       let qtdeRelIdx = -1;
       for (let widx = 0; widx < window.length; widx++) {
@@ -1442,26 +1447,30 @@ carregarEstabelecimentos(): void {
         }
       }
 
-      // Qtde deve estar a 1 ou 2 linhas abaixo da descrição do produto
       if (qtdeRelIdx >= 1 && qtdeRelIdx <= 2) {
         const descRaw = line;
         const descLimpo = descRaw.replace(/^(?:item\s*)?\d{1,4}\s+(?:\d{1,14}\s+)?/i, '').replace(/\(Cód(?:igo)?:?\s*\d+\)/gi, '').trim();
 
         if (!this.isAddressText(descLimpo) && !this.isEstablishmentText(descLimpo) && !['CNPJ', 'EMISSÃO', 'CONSUMIDOR', 'TOTAL', 'SUBTOTAL', 'CHAVE', 'VALOR'].some(k => descLimpo.toUpperCase().includes(k))) {
-          const windowText = window.join(' \n ');
+          const windowText = window.join(' 
+ ');
           const m_cod = windowText.match(/\(Cód(?:igo)?:?\s*(\d+)\)|Código:?\s*(\d+)/i);
           const cod = m_cod ? (m_cod[1] || m_cod[2]) : undefined;
 
-          const m_qtd = windowText.match(/Qtde?\.?:?\s*\n?\s*([\d.,]+)/i);
+          const m_qtd = windowText.match(/Qtde?\.?:?\s*
+?\s*([\d.,]+)/i);
           const q = m_qtd ? (Number(m_qtd[1].replace(/\./g, '').replace(',', '.')) || 1.0) : 1.0;
 
-          const m_un = windowText.match(/\bUN:?\s*\n?\s*([A-Z]{1,4})\b|\b(UN|KG|CX|PC|L|LT|DZ|FD|M|G|ML)\b/i);
+          const m_un = windowText.match(/UN:?\s*
+?\s*([A-Z]{1,4})|(UN|KG|CX|PC|L|LT|DZ|FD|M|G|ML)/i);
           const un = m_un ? (m_un[1] || m_un[2]).toUpperCase() : 'UN';
 
-          const m_vun = windowText.match(/Vl\.?\s*Unit\.?:?\s*\n?\s*([\d.,]+)/i);
+          const m_vun = windowText.match(/Vl\.?\s*Unit\.?:?\s*
+?\s*([\d.,]+)/i);
           let vu = m_vun ? this.round2(Number(m_vun[1].replace(/\./g, '').replace(',', '.'))) : 0.0;
 
-          const m_vtot = windowText.match(/(?:Vl\.?\s*Total|Valor\s*Total):?\s*\n?\s*([\d.,]+)/i);
+          const m_vtot = windowText.match(/(?:Vl\.?\s*Total|Valor\s*Total):?\s*
+?\s*([\d.,]+)/i);
           let vt = m_vtot ? this.round2(Number(m_vtot[1].replace(/\./g, '').replace(',', '.'))) : 0.0;
 
           if (vt === 0.0 && q > 0 && vu > 0) vt = this.round2(q * vu);
@@ -1494,34 +1503,6 @@ carregarEstabelecimentos(): void {
       i++;
     }
 
-    let desconto = 0.0;
-    let subtotal = 0.0;
-    for (let idx = 0; idx < lines.length; idx++) {
-      const lu = lines[idx].toUpperCase();
-      if (['DESCONTO', 'DESCONTOS', 'ABATIMENTO', 'TOTAL DOS DESCONTOS', 'DESC.'].some(d => lu.includes(d)) && !lu.includes('SEM DESCONTO')) {
-        const m = lines[idx].match(/(?:R\$\s*)?([\d]+[.,][\d]{2})/);
-        if (m) {
-          desconto = this.round2(Number(m[1].replace(/\./g, '').replace(',', '.')));
-        } else if (idx + 1 < lines.length) {
-          const mNext = lines[idx + 1].match(/(?:R\$\s*)?([\d]+[.,][\d]{2})/);
-          if (mNext) {
-            desconto = this.round2(Number(mNext[1].replace(/\./g, '').replace(',', '.')));
-          }
-        }
-      }
-      if (['SUBTOTAL', 'TOTAL BRUTO', 'TOTAL DOS ITENS', 'VALOR DOS ITENS', 'VALOR TOTAL BRUTO'].some(s => lu.includes(s))) {
-        const m = lines[idx].match(/(?:R\$\s*)?([\d]+[.,][\d]{2})/);
-        if (m) {
-          subtotal = this.round2(Number(m[1].replace(/\./g, '').replace(',', '.')));
-        } else if (idx + 1 < lines.length) {
-          const mNext = lines[idx + 1].match(/(?:R\$\s*)?([\d]+[.,][\d]{2})/);
-          if (mNext) {
-            subtotal = this.round2(Number(mNext[1].replace(/\./g, '').replace(',', '.')));
-          }
-        }
-      }
-    }
-
     const somaItens = this.round2(itens.reduce((acc, it) => acc + (it.valorTotal || 0), 0));
     if (subtotal === 0.0 && somaItens > 0) {
       subtotal = somaItens;
@@ -1546,7 +1527,6 @@ carregarEstabelecimentos(): void {
       itens
     };
   }
-
 
   extrairNfceTextoCopiado(): void {
     if (!this.htmlNfceManual || !this.htmlNfceManual.trim()) {
