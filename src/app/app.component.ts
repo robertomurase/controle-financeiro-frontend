@@ -1051,16 +1051,19 @@ carregarEstabelecimentos(): void {
     iniciarScanner(): void {
     this.pararScanner();
     this.scannerAtivo = true;
-    this.mensagemNfce = '📷 Ativando câmera... Aponte para o QR Code.';
+    this.mensagemNfce = '📷 Lendo QR Code com câmera HD... Aguarde.';
     this.statusNfceSucesso = true;
+    this.temFlash = false;
+    this.flashAtivo = false;
 
     setTimeout(() => {
       if (typeof Html5Qrcode !== 'undefined') {
         try {
+          // Fast QR_CODE scanner
           this.html5QrCode = new Html5Qrcode('qr-reader');
           const config = {
-            fps: 15,
-            qrbox: { width: 260, height: 260 },
+            fps: 20,
+            qrbox: 260,
             aspectRatio: 1.0
           };
 
@@ -1078,8 +1081,9 @@ carregarEstabelecimentos(): void {
             onScanSuccess,
             () => {}
           ).then(() => {
-            this.mensagemNfce = '📷 Câmera ativa! Aponte para o QR Code da nota fiscal.';
+            this.mensagemNfce = '📷 Aponte a câmera para o QR Code da nota fiscal.';
             this.statusNfceSucesso = true;
+            this.verificarCapacidadeFlash();
           }).catch(() => {
             this.html5QrCode.start(
               { facingMode: 'user' },
@@ -1087,7 +1091,7 @@ carregarEstabelecimentos(): void {
               onScanSuccess,
               () => {}
             ).then(() => {
-              this.mensagemNfce = '📷 Câmera ativa! Aponte para o QR Code da nota.';
+              this.mensagemNfce = '📷 Câmera ativa! Aponte para o QR Code.';
               this.statusNfceSucesso = true;
             }).catch(() => {
               this.mensagemNfce = '❌ Não foi possível acessar a câmera. Tente Enviar Foto ou Colar Link.';
@@ -1096,14 +1100,14 @@ carregarEstabelecimentos(): void {
             });
           });
         } catch (e) {
-          this.mensagemNfce = '❌ Erro ao inicializar o leitor de QR Code.';
+          this.mensagemNfce = '❌ Erro ao inicializar leitor.';
           this.statusNfceSucesso = false;
         }
       } else {
-        this.mensagemNfce = '⚠️ Leitor de QR Code carregando... Tente novamente.';
+        this.mensagemNfce = '⚠️ Carregando leitor...';
         this.statusNfceSucesso = false;
       }
-    }, 200);
+    }, 150);
   }
 
   pararScanner(): void {
@@ -1688,22 +1692,74 @@ carregarEstabelecimentos(): void {
     });
   }
 
+  extrairMetadadosFromUrl(url: string): any {
+    if (!url) return null;
+    let clean = this.sanitizarUrlQrCode(url);
+    const matchChave = clean.match(/\b(\d{44})\b/);
+    const chaveAcesso = matchChave ? matchChave[1] : '';
+    let cnpj = '';
+    let dataEmissao = new Date().toISOString();
+    let valorTotal = 0.0;
+
+    if (chaveAcesso && chaveAcesso.length === 44) {
+      cnpj = chaveAcesso.substring(6, 20).replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+      const aamm = chaveAcesso.substring(2, 6);
+      if (aamm.length === 4) {
+        dataEmissao = `20${aamm.substring(0,2)}-${aamm.substring(2,4)}-01T12:00:00.000Z`;
+      }
+    }
+
+    const matchVal = clean.match(/[?&]v=([\d.,]+)/i) || clean.match(/[?&]val=([\d.,]+)/i);
+    if (matchVal) {
+      valorTotal = this.round2(Number(matchVal[1].replace(/\./g, '').replace(',', '.'))) || 0.0;
+    }
+
+    const estNome = cnpj ? `Mercado / CNPJ ${cnpj}` : 'Mercado / SEFAZ';
+
+    return {
+      chaveAcesso: chaveAcesso || `NFCe_${Date.now()}`,
+      estabelecimento: this.obterNomeEstabelecimentoSimplificado(estNome),
+      cnpj,
+      dataEmissao,
+      subtotal: valorTotal,
+      desconto: 0.0,
+      valorTotal,
+      itens: [{
+        nomeProduto: 'Compras Mercado SEFAZ',
+        codigo: 'SEFAZ',
+        quantidade: 1.0,
+        unidade: 'UN',
+        valorUnitario: valorTotal,
+        valorTotal
+      }],
+      jaCadastrada: false,
+      isQrOnly: true
+    };
+  }
+
   extrairNfce(): void {
     if (this.scannerModo === 'html') {
       if (!this.htmlNfceManual || !this.htmlNfceManual.trim()) {
-        alert('Cole o conteúdo HTML do cupom fiscal!');
+        alert('Cole o conteúdo do cupom fiscal!');
         return;
       }
       this.carregandoNfce = true;
-      this.mensagemNfce = 'Processando HTML da nota fiscal...';
+      this.mensagemNfce = 'Processando texto do cupom fiscal...';
       this.statusNfceSucesso = true;
+
+      const dadosLocais = this.extrairDadosTextoLocalmente(this.htmlNfceManual);
+      if (dadosLocais && dadosLocais.itens && dadosLocais.itens.length > 0) {
+        this.tratarResultadoNfce({ dadosNota: dadosLocais });
+      }
 
       this.financeService.extrairNfceHtml(this.htmlNfceManual, this.urlNfce).subscribe({
         next: (res: any) => this.tratarResultadoNfce(res),
         error: (err: any) => {
           this.carregandoNfce = false;
-          this.mensagemNfce = `❌ ${err?.error?.error || 'Erro ao processar o HTML da nota'}`;
-          this.statusNfceSucesso = false;
+          if (!this.dadosNotaPreview || !this.dadosNotaPreview.itens || this.dadosNotaPreview.itens.length === 0) {
+            this.mensagemNfce = '❌ ' + (err?.error?.error || 'Erro ao processar o texto da nota');
+            this.statusNfceSucesso = false;
+          }
         }
       });
       return;
@@ -1715,21 +1771,26 @@ carregarEstabelecimentos(): void {
     }
 
     this.urlNfce = this.sanitizarUrlQrCode(this.urlNfce);
-
     this.carregandoNfce = true;
-    this.mensagemNfce = 'Consultando nota fiscal junto à SEFAZ...';
-    this.statusNfceSucesso = true;
 
+    // 1. Extrai metadados do QR Code instantaneamente no celular
+    const meta = this.extrairMetadadosFromUrl(this.urlNfce);
+    if (meta) {
+      this.dadosNotaPreview = meta;
+      this.mensagemNfce = '⚡ QR Code Lido! Carregando dados da SEFAZ...';
+      this.statusNfceSucesso = true;
+    }
+
+    // 2. Tenta buscar a lista de itens completos no backend
     this.financeService.extrairNfce(this.urlNfce).subscribe({
       next: (res: any) => this.tratarResultadoNfce(res),
       error: () => {
         this.financeService.consultarNfce(this.urlNfce).subscribe({
           next: (res: any) => this.tratarResultadoNfce(res),
-          error: (err2: any) => {
+          error: () => {
             this.carregandoNfce = false;
-            const msgErro = err2?.error?.error || 'Erro ao consultar a nota fiscal junto à SEFAZ. Verifique o link e tente novamente.';
-            this.mensagemNfce = `❌ ${msgErro}`;
-            this.statusNfceSucesso = false;
+            this.mensagemNfce = '⚡ QR Code lido com sucesso! Para carregar todos os itens individuais da SEFAZ SP, clique em "🌐 1. Abrir Nota na SEFAZ", copie o texto e cole abaixo.';
+            this.statusNfceSucesso = true;
           }
         });
       }
