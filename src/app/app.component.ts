@@ -1235,17 +1235,17 @@ carregarEstabelecimentos(): void {
 
   extrairDadosTextoLocalmente(texto: string): any {
     if (!texto) return null;
-    const lines = texto.split('
-').map(l => l.trim()).filter(l => l.length > 0);
+    const lines = texto.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
     let estabelecimento = 'SEFAZ';
-    const mLabel = texto.match(/(?:Nome\s*\/?\s*Raz[aã]o\s*Social|Raz[aã]o\s*Social|Nome\s*Fantasia|Emitente|Estabelecimento):\s*([^
-]+)/i);
+    // 1. Procura por rótulo oficial no texto
+    const mLabel = texto.match(/(?:Nome\s*\/?\s*Raz[aã]o\s*Social|Raz[aã]o\s*Social|Nome\s*Fantasia|Emitente|Estabelecimento):\s*([^\n\r]+)/i);
     if (mLabel && mLabel[1] && mLabel[1].trim()) {
       estabelecimento = this.obterNomeEstabelecimentoSimplificado(mLabel[1].trim());
     }
 
     if (estabelecimento === 'SEFAZ') {
+      // 2. Procura pela linha anterior ou posterior ao CNPJ
       for (let idx = 0; idx < lines.length; idx++) {
         if (lines[idx].toUpperCase().includes('CNPJ')) {
           for (let pIdx = idx - 1; pIdx >= Math.max(0, idx - 4); pIdx--) {
@@ -1271,6 +1271,7 @@ carregarEstabelecimentos(): void {
     }
 
     if (estabelecimento === 'SEFAZ') {
+      // 3. Procura por palavras-chave empresariais
       const kwEst = [
         'LTDA', 'S.A.', 'S/A', 'EIRELI', ' ME', ' EPP', 'POSTO', 'AUTO POSTO', 'COMERCIO', 'COMÉRCIO',
         'SUPERMERCADO', 'SUPERMERCADOS', 'ATACADAO', 'ATACADÃO', 'HIPERMERCADO', 'MERCADO', 'BEM BARATO',
@@ -1291,8 +1292,8 @@ carregarEstabelecimentos(): void {
       estabelecimento = 'Mercado / SEFAZ';
     }
 
-    const matchChave = texto.match(/(\d{44})/) || texto.match(/chave=(\d{44})/i);
-    const chaveAcesso = matchChave ? matchChave[1] : ;
+    const matchChave = texto.match(/\b(\d{44})\b/) || texto.match(/chave=(\d{44})/i);
+    const chaveAcesso = matchChave ? matchChave[1] : 'NFCe_' + Date.now();
 
     let dataEmissao = new Date().toISOString();
     const matchData = texto.match(/Emissão:?\s*([0-9]{2}\/[0-9]{2}\/[0-9]{4})/i) || texto.match(/([0-9]{2}\/[0-9]{2}\/[0-9]{4})/);
@@ -1300,7 +1301,7 @@ carregarEstabelecimentos(): void {
       const rawD = matchData[1] || matchData[0];
       const p = rawD.split('/');
       if (p.length === 3) {
-        dataEmissao = ;
+        dataEmissao = `${p[2]}-${p[1]}-${p[0]}T12:00:00.000Z`;
       }
     }
 
@@ -1452,25 +1453,20 @@ carregarEstabelecimentos(): void {
         const descLimpo = descRaw.replace(/^(?:item\s*)?\d{1,4}\s+(?:\d{1,14}\s+)?/i, '').replace(/\(Cód(?:igo)?:?\s*\d+\)/gi, '').trim();
 
         if (!this.isAddressText(descLimpo) && !this.isEstablishmentText(descLimpo) && !['CNPJ', 'EMISSÃO', 'CONSUMIDOR', 'TOTAL', 'SUBTOTAL', 'CHAVE', 'VALOR'].some(k => descLimpo.toUpperCase().includes(k))) {
-          const windowText = window.join(' 
- ');
+          const windowText = window.join(' \n ');
           const m_cod = windowText.match(/\(Cód(?:igo)?:?\s*(\d+)\)|Código:?\s*(\d+)/i);
           const cod = m_cod ? (m_cod[1] || m_cod[2]) : undefined;
 
-          const m_qtd = windowText.match(/Qtde?\.?:?\s*
-?\s*([\d.,]+)/i);
+          const m_qtd = windowText.match(/Qtde?\.?:?\s*\n?\s*([\d.,]+)/i);
           const q = m_qtd ? (Number(m_qtd[1].replace(/\./g, '').replace(',', '.')) || 1.0) : 1.0;
 
-          const m_un = windowText.match(/UN:?\s*
-?\s*([A-Z]{1,4})|(UN|KG|CX|PC|L|LT|DZ|FD|M|G|ML)/i);
+          const m_un = windowText.match(/\bUN:?\s*\n?\s*([A-Z]{1,4})\b|\b(UN|KG|CX|PC|L|LT|DZ|FD|M|G|ML)\b/i);
           const un = m_un ? (m_un[1] || m_un[2]).toUpperCase() : 'UN';
 
-          const m_vun = windowText.match(/Vl\.?\s*Unit\.?:?\s*
-?\s*([\d.,]+)/i);
+          const m_vun = windowText.match(/Vl\.?\s*Unit\.?:?\s*\n?\s*([\d.,]+)/i);
           let vu = m_vun ? this.round2(Number(m_vun[1].replace(/\./g, '').replace(',', '.'))) : 0.0;
 
-          const m_vtot = windowText.match(/(?:Vl\.?\s*Total|Valor\s*Total):?\s*
-?\s*([\d.,]+)/i);
+          const m_vtot = windowText.match(/(?:Vl\.?\s*Total|Valor\s*Total):?\s*\n?\s*([\d.,]+)/i);
           let vt = m_vtot ? this.round2(Number(m_vtot[1].replace(/\./g, '').replace(',', '.'))) : 0.0;
 
           if (vt === 0.0 && q > 0 && vu > 0) vt = this.round2(q * vu);
@@ -1526,85 +1522,6 @@ carregarEstabelecimentos(): void {
       valorTotal: this.round2(valorTotal),
       itens
     };
-  }
-
-  extrairNfceTextoCopiado(): void {
-    if (!this.htmlNfceManual || !this.htmlNfceManual.trim()) {
-      alert('Cole o texto ou HTML copiado da página da SEFAZ!');
-      return;
-    }
-    this.carregandoNfce = true;
-    this.mensagemNfce = 'Processando texto do cupom fiscal...';
-    this.statusNfceSucesso = true;
-
-    // 1. EXTRAÇÃO LOCAL IMEDIATA NO NAVEGADOR: Garante que os itens apareçam instantaneamente na tela!
-    const dadosLocais = this.extrairDadosTextoLocalmente(this.htmlNfceManual);
-    if (dadosLocais && dadosLocais.itens && dadosLocais.itens.length > 0) {
-      this.tratarResultadoNfce({ dadosNota: dadosLocais });
-      setTimeout(() => {
-        const el = document.querySelector('.staging-preview-box');
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 150);
-    }
-
-    // 2. Consulta no backend para validação cadastral e enriquecimento
-    this.financeService.extrairNfceHtml(this.htmlNfceManual, this.urlNfce || '').subscribe({
-      next: (res: any) => {
-        this.tratarResultadoNfce(res);
-        setTimeout(() => {
-          const el = document.querySelector('.staging-preview-box');
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 150);
-      },
-      error: (err: any) => {
-        this.carregandoNfce = false;
-        if (!this.dadosNotaPreview || !this.dadosNotaPreview.itens || this.dadosNotaPreview.itens.length === 0) {
-          this.mensagemNfce = '❌ ' + (err?.error?.error || 'Erro ao processar o texto da nota');
-          this.statusNfceSucesso = false;
-        }
-      }
-    });
-  }
-
-  tratarResultadoNfce(res: any): void {
-    this.carregandoNfce = false;
-    const isJaCadastrada = !!(res?.jaCadastrada || res?.dadosNota?.jaCadastrada);
-    let dados = res?.dadosNota || res;
-    if (dados) {
-      dados.jaCadastrada = isJaCadastrada;
-      if (dados.estabelecimento && dados.estabelecimento !== 'Estabelecimento Não Identificado') {
-        dados.estabelecimento = this.obterNomeEstabelecimentoSimplificado(dados.estabelecimento);
-      } else if (this.dadosNotaPreview?.estabelecimento && this.dadosNotaPreview.estabelecimento !== 'Estabelecimento Não Identificado' && this.dadosNotaPreview.estabelecimento !== 'SEFAZ') {
-        dados.estabelecimento = this.dadosNotaPreview.estabelecimento;
-      } else if (!dados.estabelecimento || dados.estabelecimento === 'Estabelecimento Não Identificado') {
-        dados.estabelecimento = 'Mercado / SEFAZ';
-      }
-      if (dados.itens && Array.isArray(dados.itens)) {
-        dados.itens = dados.itens.map((i: any) => ({
-          ...i,
-          nomeProduto: this.limparNomeProduto(i.nomeProduto || i.nome_produto || i.descricao || '')
-        }));
-      }
-
-      const somaItens = this.round2((dados.itens || []).reduce((acc: number, it: any) => acc + (Number(it.valorTotal) || 0), 0));
-      dados.subtotal = dados.subtotal ? this.round2(Number(dados.subtotal)) : (somaItens > 0 ? somaItens : this.round2(Number(dados.valorTotal) || 0));
-      dados.desconto = dados.desconto ? this.round2(Number(dados.desconto)) : 0;
-      dados.valorTotal = dados.valorTotal ? this.round2(Number(dados.valorTotal)) : this.round2(Math.max(0, dados.subtotal - dados.desconto));
-
-      if (dados.desconto === 0 && dados.subtotal > dados.valorTotal) {
-        dados.desconto = this.round2(dados.subtotal - dados.valorTotal);
-      }
-    }
-    this.dadosNotaPreview = dados || null;
-    const totalItens = dados?.itens?.length || 0;
-
-    if (isJaCadastrada) {
-      this.mensagemNfce = '⚠️ AVISO: Esta nota fiscal já foi salva anteriormente no sistema!';
-      this.statusNfceSucesso = false;
-    } else {
-      this.mensagemNfce = '✅ Dados da nota extraídos (' + totalItens + ' itens). Confira abaixo e confirme para salvar.';
-      this.statusNfceSucesso = true;
-    }
   }
 
   aoAlterarValorTotalPreview(): void {
