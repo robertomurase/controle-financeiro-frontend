@@ -153,6 +153,10 @@ activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'said
   pontosGrafico: any[] = [];
   svgLinePoints: string = '';
   svgAreaPoints: string = '';
+  svgWidth: number = 500;
+  paginaAtualHistoricoPrecos: number = 1;
+  itensPorPaginaHistoricoPrecos: number = 10;
+  Math = Math;
 
   // Form Transação Manual + Pré-visualização
   novaDescricao: string = '';
@@ -906,6 +910,7 @@ carregarEstabelecimentos(): void {
       this.variacaoPercentual = 0;
     }
 
+    this.paginaAtualHistoricoPrecos = 1;
     this.gerarPontosGraficoSVG(historico);
     this.modalPrecoAberto = true;
   }
@@ -915,20 +920,41 @@ carregarEstabelecimentos(): void {
     this.produtoSelecionado = null;
   }
 
+  get historicoPrecosPaginado(): any[] {
+    if (!this.historicoPrecosProduto) return [];
+    const inicio = (this.paginaAtualHistoricoPrecos - 1) * this.itensPorPaginaHistoricoPrecos;
+    return this.historicoPrecosProduto.slice(inicio, inicio + this.itensPorPaginaHistoricoPrecos);
+  }
+
+  get totalPaginasHistoricoPrecos(): number {
+    if (!this.historicoPrecosProduto || this.historicoPrecosProduto.length === 0) return 1;
+    return Math.ceil(this.historicoPrecosProduto.length / this.itensPorPaginaHistoricoPrecos);
+  }
+
+  mudarPaginaHistoricoPrecos(novaPagina: number): void {
+    if (novaPagina >= 1 && novaPagina <= this.totalPaginasHistoricoPrecos) {
+      this.paginaAtualHistoricoPrecos = novaPagina;
+    }
+  }
+
   gerarPontosGraficoSVG(historico: any[]): void {
     if (!historico || historico.length === 0) {
       this.pontosGrafico = [];
       this.svgLinePoints = '';
       this.svgAreaPoints = '';
+      this.svgWidth = 500;
       return;
     }
 
-    const svgWidth = 500;
+    const n = historico.length;
+    const pointSpacing = 75;
+    this.svgWidth = Math.max(500, (n - 1) * pointSpacing + 100);
+
     const svgHeight = 200;
     const marginX = 50;
     const marginYTop = 30;
     const marginYBottom = 150;
-    const availableWidth = svgWidth - 2 * marginX;
+    const availableWidth = this.svgWidth - 2 * marginX;
     const availableHeight = marginYBottom - marginYTop;
 
     const valores = historico.map(h => Number(h.valor_unitario || h.preco_medio || 0));
@@ -936,11 +962,9 @@ carregarEstabelecimentos(): void {
     const maxVal = Math.max(...valores);
     const valRange = maxVal - minVal === 0 ? 1 : maxVal - minVal;
 
-    const n = historico.length;
-
     this.pontosGrafico = historico.map((item, index) => {
       const val = Number(item.valor_unitario || item.preco_medio || 0);
-      const x = n === 1 ? svgWidth / 2 : marginX + (index / (n - 1)) * availableWidth;
+      const x = n === 1 ? this.svgWidth / 2 : marginX + (index / (n - 1)) * availableWidth;
 
       let y = marginYBottom - ((val - minVal) / valRange) * availableHeight;
       if (maxVal === minVal) {

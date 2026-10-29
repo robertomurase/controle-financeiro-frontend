@@ -1218,3 +1218,25 @@ body.light-theme .val-neutro {
 #qr-reader__scan_region, #barcode-viewport__scan_region {
   border-radius: 10px;
 }
+
+/* Scroll do Gráfico & Botões de Paginação */
+.chart-scroll-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+  padding-bottom: 6px;
+}
+
+.price-svg-chart {
+  height: 200px;
+  min-width: 100%;
+  overflow: visible;
+}
+
+.btn-page:disabled {
+  opacity: 0.35 !important;
+  cursor: not-allowed !important;
+  border-color: #1e293b !important;
+}
