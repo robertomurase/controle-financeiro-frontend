@@ -1507,14 +1507,16 @@ carregarEstabelecimentos(): void {
     if (subtotal === 0.0 && somaItens > 0) {
       subtotal = somaItens;
     }
-    if (valorTotal === 0.0) {
-      if (subtotal > 0 && desconto > 0) {
-        valorTotal = this.round2(Math.max(0, subtotal - desconto));
-      } else if (subtotal > 0) {
-        valorTotal = subtotal;
-      }
-    } else if (desconto === 0.0 && subtotal > valorTotal) {
+
+    if (desconto > 0) {
+      if (subtotal === 0 && valorTotal > 0) subtotal = this.round2(valorTotal + desconto);
+      else valorTotal = this.round2(Math.max(0, subtotal - desconto));
+    } else if (subtotal > 0 && valorTotal > 0 && subtotal > valorTotal) {
       desconto = this.round2(subtotal - valorTotal);
+    } else if (subtotal > 0 && valorTotal === 0) {
+      valorTotal = subtotal;
+    } else if (subtotal === 0 && valorTotal > 0) {
+      subtotal = valorTotal;
     }
 
     return {
@@ -1588,13 +1590,24 @@ carregarEstabelecimentos(): void {
       }
 
       const somaItens = this.round2((dados.itens || []).reduce((acc: number, it: any) => acc + (Number(it.valorTotal) || 0), 0));
-      dados.subtotal = dados.subtotal ? this.round2(Number(dados.subtotal)) : (somaItens > 0 ? somaItens : this.round2(Number(dados.valorTotal) || 0));
-      dados.desconto = dados.desconto ? this.round2(Number(dados.desconto)) : 0;
-      dados.valorTotal = dados.valorTotal ? this.round2(Number(dados.valorTotal)) : this.round2(Math.max(0, dados.subtotal - dados.desconto));
+      let sub = dados.subtotal ? this.round2(Number(dados.subtotal)) : (somaItens > 0 ? somaItens : this.round2(Number(dados.valorTotal) || 0));
+      let desc = dados.desconto ? this.round2(Number(dados.desconto)) : 0.0;
+      let tot = dados.valorTotal ? this.round2(Number(dados.valorTotal)) : 0.0;
 
-      if (dados.desconto === 0 && dados.subtotal > dados.valorTotal) {
-        dados.desconto = this.round2(dados.subtotal - dados.valorTotal);
+      if (desc > 0) {
+        if (sub === 0 && tot > 0) sub = this.round2(tot + desc);
+        else tot = this.round2(Math.max(0, sub - desc));
+      } else if (sub > 0 && tot > 0 && sub > tot) {
+        desc = this.round2(sub - tot);
+      } else if (sub > 0 && tot === 0) {
+        tot = sub;
+      } else if (sub === 0 && tot > 0) {
+        sub = tot;
       }
+
+      dados.subtotal = sub;
+      dados.desconto = desc;
+      dados.valorTotal = tot;
     }
     this.dadosNotaPreview = dados || null;
     const totalItens = dados?.itens?.length || 0;
