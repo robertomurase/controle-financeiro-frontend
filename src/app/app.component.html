@@ -7,7 +7,7 @@
       </svg>
       <div>
         <span class="brand-title">Controle Financeiro</span>
-        <span class="brand-subtitle">Gestão Inteligente - Versão 128</span>
+        <span class="brand-subtitle">Gestão Inteligente - Versão 129</span>
       </div>
     </div>
     <div class="header-right-mobile">
@@ -1452,12 +1452,7 @@
 
     </div>
 
-    <!-- Modal Footer -->
-    <div class="modal-footer">
-      <button class="btn-primary" (click)="fecharModalDetalhesNfce()">
-        Fechar
-      </button>
-    </div>
+
 
   </div>
 </div>
@@ -1516,11 +1511,7 @@
       </div>
     </div>
 
-    <div class="modal-footer" style="margin-top: 20px; padding-top: 16px; border-top: 1px solid #1e293b; display: flex; justify-content: flex-end;">
-      <button class="btn-primary" style="padding: 10px 24px; background: #2563eb; color: #f8fafc; border: none; border-radius: 8px; font-weight: 700; cursor: pointer;" (click)="fecharModalAjudaPwa()">
-        Entendi!
-      </button>
-    </div>
+
 
   </div>
 </div>
@@ -1672,11 +1663,11 @@
           <polyline *ngIf="svgLinePoints" [attr.points]="svgLinePoints" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
 
           <g *ngFor="let pt of pontosGrafico">
-            <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="5" fill="#0284c7" stroke="#ffffff" stroke-width="2" />
-            <text [attr.x]="pt.x" [attr.y]="pt.y - 12" fill="#38bdf8" font-size="10" font-weight="700" text-anchor="middle">
+            <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="6" fill="#0284c7" stroke="#ffffff" stroke-width="2" />
+            <text [attr.x]="pt.x" [attr.y]="pt.y - 14" fill="#38bdf8" font-size="13" font-weight="800" text-anchor="middle">
               {{ formatarMoeda(pt.valor) }}
             </text>
-            <text [attr.x]="pt.x" y="170" fill="#64748b" font-size="10" text-anchor="middle">
+            <text [attr.x]="pt.x" y="180" fill="#94a3b8" font-size="12" font-weight="700" text-anchor="middle">
               {{ pt.dataFormatted }}
             </text>
           </g>
@@ -1708,8 +1699,6 @@
       </div>
     </div>
 
-    <div class="modal-footer">
-      <button class="btn-primary" (click)="fecharModalPreco()">Fechar</button>
-    </div>
+
   </div>
 </div>
