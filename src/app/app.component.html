@@ -7,7 +7,7 @@
       </svg>
       <div>
         <span class="brand-title">Controle Financeiro</span>
-        <span class="brand-subtitle">Gestão Inteligente - Versão 132</span>
+        <span class="brand-subtitle">Gestão Inteligente - Versão 133</span>
       </div>
     </div>
     <div class="header-right-mobile">
@@ -442,6 +442,9 @@
   <!-- VISÃO: LEITOR NFC-e -->
   <div *ngIf="activeTab === 'nfce'">
     <div class="form-box">
+      <!-- Hidden file inputs permanently present in DOM -->
+      <input type="file" accept="image/*" (change)="processarFotoQrCode($event)" id="qr-file-input" class="file-input" style="display: none;" />
+      <input type="file" accept="image/*" capture="environment" (change)="processarFotoQrCode($event)" id="native-camera-input" class="file-input" style="display: none;" />
       <div class="scanner-header">
         <h2 style="font-size: 1.2rem; font-weight: 700;">Leitor de NFC-e via QR Code (SEFAZ)</h2>
         <p style="color: #64748b; font-size: 0.85rem; margin-top: 6px;">
@@ -457,7 +460,7 @@
       </div>
 
       <!-- Modo Câmera -->
-      <div *ngIf="scannerModo === 'camera'" class="camera-scanner-container">
+      <div [style.display]="scannerModo === 'camera' ? 'flex' : 'none'" class="camera-scanner-container">
         <div id="qr-reader" class="qr-viewport"></div>
         <div class="scanner-controls" style="margin-top: 12px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 480px;">
           <button *ngIf="!scannerAtivo" class="btn-primary" style="padding: 12px 20px; font-size: 1rem; font-weight: 700;" (click)="iniciarScanner()">📷 Ligar Câmera ao Vivo</button>
@@ -483,8 +486,6 @@
             <strong>Selecione ou tire uma foto contendo o QR Code da NFC-e</strong>
           </p>
 
-          <input type="file" accept="image/*" (change)="processarFotoQrCode($event)" id="qr-file-input" class="file-input" style="display: none;" />
-          <input type="file" accept="image/*" capture="environment" (change)="processarFotoQrCode($event)" id="native-camera-input" class="file-input" style="display: none;" />
           <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
             <button class="btn-primary" (click)="triggerFileInput()">🖼️ Escolher Foto da Galeria</button>
             <button class="btn-primary" style="background: #0284c7;" (click)="triggerNativeCameraInput()">📸 Tirar Foto com Câmera Nativa</button>
