@@ -191,6 +191,10 @@ activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'said
     }
   }
 
+  verificarCapacidadeCamera(): void {
+    this.verificarCapacidadeFlash();
+  }
+
   verificarCapacidadeFlash(): void {
     if (!this.html5QrCode) return;
     try {
