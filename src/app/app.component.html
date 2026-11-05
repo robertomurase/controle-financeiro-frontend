@@ -7,7 +7,7 @@
       </svg>
       <div>
         <span class="brand-title">Controle Financeiro</span>
-        <span class="brand-subtitle">Gestão Inteligente - Versão 131</span>
+        <span class="brand-subtitle">Gestão Inteligente - Versão 132</span>
       </div>
     </div>
     <div class="header-right-mobile">
@@ -459,11 +459,14 @@
       <!-- Modo Câmera -->
       <div *ngIf="scannerModo === 'camera'" class="camera-scanner-container">
         <div id="qr-reader" class="qr-viewport"></div>
-        <div class="scanner-controls" style="margin-top: 12px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-          <button *ngIf="!scannerAtivo" class="btn-primary" (click)="iniciarScanner()">📷 Ligar Câmera</button>
-          <button *ngIf="scannerAtivo" class="btn-danger" (click)="pararScanner()">⏹️ Desligar Câmera</button>
-          <button *ngIf="scannerAtivo && temFlash" class="btn-primary" style="background: #eab308; color: #0f172a; font-weight: 800;" (click)="alternarFlash()">
+        <div class="scanner-controls" style="margin-top: 12px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 480px;">
+          <button *ngIf="!scannerAtivo" class="btn-primary" style="padding: 12px 20px; font-size: 1rem; font-weight: 700;" (click)="iniciarScanner()">📷 Ligar Câmera ao Vivo</button>
+          <button *ngIf="scannerAtivo" class="btn-danger" style="padding: 10px 18px;" (click)="pararScanner()">⏹️ Desligar Câmera</button>
+          <button *ngIf="scannerAtivo && temFlash" class="btn-primary" style="background: #eab308; color: #0f172a; font-weight: 800; padding: 10px 18px;" (click)="alternarFlash()">
             {{ flashAtivo ? '🔦 Desligar Lanterna' : '🔦 Ligar Lanterna' }}
+          </button>
+          <button class="btn-primary" style="background: #0284c7; padding: 12px 20px; font-size: 0.95rem; font-weight: 700; width: 100%; text-align: center;" (click)="triggerNativeCameraInput()">
+            📸 Tirar Foto com Câmera Nativa do Celular
           </button>
         </div>
       </div>

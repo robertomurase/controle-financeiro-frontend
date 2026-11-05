@@ -1078,7 +1078,7 @@ carregarEstabelecimentos(): void {
       iniciarScanner(): void {
     this.pararScanner();
     this.scannerAtivo = true;
-    this.mensagemNfce = '📷 Ativando leitor de alta precisão HD... Aguarde.';
+    this.mensagemNfce = '📷 Ativando câmera de alta precisão... Aguarde.';
     this.statusNfceSucesso = true;
     this.temFlash = false;
     this.flashAtivo = false;
@@ -1087,31 +1087,31 @@ carregarEstabelecimentos(): void {
     setTimeout(() => {
       if (typeof Html5Qrcode !== 'undefined') {
         try {
-          // Motor de escaneamento focado estritamente em QR_CODE
+          const qrElement = document.getElementById('qr-reader');
+          if (!qrElement) return;
+
           this.html5QrCode = new Html5Qrcode('qr-reader', {
             formatsToSupport: [(window as any).Html5QrcodeSupportedFormats?.QR_CODE || 0],
             experimentalFeatures: { useBarCodeDetectorIfSupported: true }
           });
 
           const config = {
-            fps: 25,
+            fps: 20,
             qrbox: (w: number, h: number) => {
               const minDim = Math.min(w, h);
-              const size = Math.max(220, Math.floor(minDim * 0.82));
-              return { width: size, height: size };
+              const boxSize = Math.max(200, Math.floor(minDim * 0.82));
+              return { width: boxSize, height: boxSize };
             },
-            aspectRatio: 1.0,
-            videoConstraints: {
-              facingMode: { ideal: 'environment' },
-              width: { min: 640, ideal: 1280, max: 1920 },
-              height: { min: 480, ideal: 720, max: 1080 }
-            }
+            aspectRatio: 1.0
           };
 
           const onScanSuccess = (decodedText: string) => {
             this.urlNfce = decodedText;
             this.mensagemNfce = '✅ QR Code lido com sucesso! Extraindo produtos...';
             this.statusNfceSucesso = true;
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+              try { navigator.vibrate([100, 50, 100]); } catch (e) {}
+            }
             this.pararScanner();
             this.extrairNfce();
           };
@@ -1122,38 +1122,26 @@ carregarEstabelecimentos(): void {
             onScanSuccess,
             () => {}
           ).then(() => {
-            this.mensagemNfce = '⚡ Leitor HD ativo! Aponte para o QR Code da nota fiscal.';
+            this.mensagemNfce = '⚡ Câmera ativa! Aponte para o QR Code da nota fiscal.';
             this.statusNfceSucesso = true;
             this.verificarCapacidadeCamera();
-          }).catch(() => {
-            const fallbackConfig = {
-              fps: 15,
-              qrbox: { width: 240, height: 240 },
-              aspectRatio: 1.0
-            };
+          }).catch((err: any) => {
+            console.warn('Erro ao abrir câmera traseira:', err);
+            try { if (this.html5QrCode) this.html5QrCode.clear(); } catch (e) {}
+            this.html5QrCode = new Html5Qrcode('qr-reader');
             this.html5QrCode.start(
-              { facingMode: 'environment' },
-              fallbackConfig,
+              { facingMode: 'user' },
+              config,
               onScanSuccess,
               () => {}
             ).then(() => {
               this.mensagemNfce = '📷 Câmera ativa! Aponte para o QR Code.';
               this.statusNfceSucesso = true;
-              this.verificarCapacidadeCamera();
-            }).catch(() => {
-              this.html5QrCode.start(
-                { facingMode: 'user' },
-                fallbackConfig,
-                onScanSuccess,
-                () => {}
-              ).then(() => {
-                this.mensagemNfce = '📷 Câmera ativa! Aponte para o QR Code.';
-                this.statusNfceSucesso = true;
-              }).catch(() => {
-                this.mensagemNfce = '❌ Não foi possível acessar a câmera. Tente Enviar Foto ou Colar Link.';
-                this.statusNfceSucesso = false;
-                this.scannerAtivo = false;
-              });
+            }).catch((err2: any) => {
+              console.error('Erro geral de câmera:', err2);
+              this.mensagemNfce = '❌ Não foi possível abrir a câmera em tempo real. Use o botão "📸 Tirar Foto com Câmera Nativa" abaixo.';
+              this.statusNfceSucesso = false;
+              this.scannerAtivo = false;
             });
           });
         } catch (e) {
@@ -1161,7 +1149,7 @@ carregarEstabelecimentos(): void {
           this.statusNfceSucesso = false;
         }
       } else {
-        this.mensagemNfce = '⚠️ Leitor de QR Code carregando... Clique em Ligar Câmera se necessário.';
+        this.mensagemNfce = '⚠️ Biblioteca do leitor de QR Code não carregada.';
         this.statusNfceSucesso = false;
       }
     }, 200);
