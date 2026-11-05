@@ -7,7 +7,7 @@
       </svg>
       <div>
         <span class="brand-title">Controle Financeiro</span>
-        <span class="brand-subtitle">Gestão Inteligente - Versão 130</span>
+        <span class="brand-subtitle">Gestão Inteligente - Versão 131</span>
       </div>
     </div>
     <div class="header-right-mobile">
@@ -481,8 +481,10 @@
           </p>
 
           <input type="file" accept="image/*" (change)="processarFotoQrCode($event)" id="qr-file-input" class="file-input" style="display: none;" />
+          <input type="file" accept="image/*" capture="environment" (change)="processarFotoQrCode($event)" id="native-camera-input" class="file-input" style="display: none;" />
           <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-            <button class="btn-primary" (click)="triggerFileInput()">📷 Escolher Foto do QR Code</button>
+            <button class="btn-primary" (click)="triggerFileInput()">🖼️ Escolher Foto da Galeria</button>
+            <button class="btn-primary" style="background: #0284c7;" (click)="triggerNativeCameraInput()">📸 Tirar Foto com Câmera Nativa</button>
             
           </div>
         </div>

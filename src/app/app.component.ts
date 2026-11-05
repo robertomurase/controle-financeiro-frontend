@@ -172,6 +172,9 @@ activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'said
 
   // Torch / Flashlight for Mobile Camera
   temFlash: boolean = false;
+  zoomNivel: number = 1.0;
+  cameraSuportaZoom: boolean = false;
+  mediaStreamTrack: any = null;
   flashAtivo: boolean = false;
 
   alternarFlash(): void {
@@ -1072,28 +1075,42 @@ carregarEstabelecimentos(): void {
     }
   }
 
-    iniciarScanner(): void {
+      iniciarScanner(): void {
     this.pararScanner();
     this.scannerAtivo = true;
-    this.mensagemNfce = '📷 Lendo QR Code com câmera HD... Aguarde.';
+    this.mensagemNfce = '📷 Ativando leitor de alta precisão HD... Aguarde.';
     this.statusNfceSucesso = true;
     this.temFlash = false;
     this.flashAtivo = false;
+    this.zoomNivel = 1.0;
 
     setTimeout(() => {
       if (typeof Html5Qrcode !== 'undefined') {
         try {
-          // Fast QR_CODE scanner
-          this.html5QrCode = new Html5Qrcode('qr-reader');
+          // Motor de escaneamento focado estritamente em QR_CODE
+          this.html5QrCode = new Html5Qrcode('qr-reader', {
+            formatsToSupport: [(window as any).Html5QrcodeSupportedFormats?.QR_CODE || 0],
+            experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+          });
+
           const config = {
-            fps: 20,
-            qrbox: 260,
-            aspectRatio: 1.0
+            fps: 25,
+            qrbox: (w: number, h: number) => {
+              const minDim = Math.min(w, h);
+              const size = Math.max(220, Math.floor(minDim * 0.82));
+              return { width: size, height: size };
+            },
+            aspectRatio: 1.0,
+            videoConstraints: {
+              facingMode: { ideal: 'environment' },
+              width: { min: 640, ideal: 1280, max: 1920 },
+              height: { min: 480, ideal: 720, max: 1080 }
+            }
           };
 
           const onScanSuccess = (decodedText: string) => {
             this.urlNfce = decodedText;
-            this.mensagemNfce = '✅ QR Code lido com sucesso!';
+            this.mensagemNfce = '✅ QR Code lido com sucesso! Extraindo produtos...';
             this.statusNfceSucesso = true;
             this.pararScanner();
             this.extrairNfce();
@@ -1105,33 +1122,49 @@ carregarEstabelecimentos(): void {
             onScanSuccess,
             () => {}
           ).then(() => {
-            this.mensagemNfce = '📷 Aponte a câmera para o QR Code da nota fiscal.';
+            this.mensagemNfce = '⚡ Leitor HD ativo! Aponte para o QR Code da nota fiscal.';
             this.statusNfceSucesso = true;
-            this.verificarCapacidadeFlash();
+            this.verificarCapacidadeCamera();
           }).catch(() => {
+            const fallbackConfig = {
+              fps: 15,
+              qrbox: { width: 240, height: 240 },
+              aspectRatio: 1.0
+            };
             this.html5QrCode.start(
-              { facingMode: 'user' },
-              config,
+              { facingMode: 'environment' },
+              fallbackConfig,
               onScanSuccess,
               () => {}
             ).then(() => {
               this.mensagemNfce = '📷 Câmera ativa! Aponte para o QR Code.';
               this.statusNfceSucesso = true;
+              this.verificarCapacidadeCamera();
             }).catch(() => {
-              this.mensagemNfce = '❌ Não foi possível acessar a câmera. Tente Enviar Foto ou Colar Link.';
-              this.statusNfceSucesso = false;
-              this.scannerAtivo = false;
+              this.html5QrCode.start(
+                { facingMode: 'user' },
+                fallbackConfig,
+                onScanSuccess,
+                () => {}
+              ).then(() => {
+                this.mensagemNfce = '📷 Câmera ativa! Aponte para o QR Code.';
+                this.statusNfceSucesso = true;
+              }).catch(() => {
+                this.mensagemNfce = '❌ Não foi possível acessar a câmera. Tente Enviar Foto ou Colar Link.';
+                this.statusNfceSucesso = false;
+                this.scannerAtivo = false;
+              });
             });
           });
         } catch (e) {
-          this.mensagemNfce = '❌ Erro ao inicializar leitor.';
+          this.mensagemNfce = '❌ Erro ao inicializar o leitor de QR Code.';
           this.statusNfceSucesso = false;
         }
       } else {
-        this.mensagemNfce = '⚠️ Carregando leitor...';
+        this.mensagemNfce = '⚠️ Leitor de QR Code carregando... Clique em Ligar Câmera se necessário.';
         this.statusNfceSucesso = false;
       }
-    }, 150);
+    }, 200);
   }
 
   pararScanner(): void {
@@ -1153,34 +1186,134 @@ carregarEstabelecimentos(): void {
     this.scannerAtivo = false;
   }
 
-    processarFotoQrCode(event: any): void {
-    const file = event?.target?.files?.[0];
-    if (!file) return;
+    
+  alternarZoom(): void {
+    if (this.zoomNivel === 1.0) this.zoomNivel = 1.5;
+    else if (this.zoomNivel === 1.5) this.zoomNivel = 2.0;
+    else this.zoomNivel = 1.0;
 
-    this.mensagemNfce = '📸 Processando foto em alta resolução...';
+    if (this.mediaStreamTrack && typeof this.mediaStreamTrack.applyConstraints === 'function') {
+      try {
+        this.mediaStreamTrack.applyConstraints({
+          advanced: [{ zoom: this.zoomNivel } as any]
+        }).catch(() => {});
+      } catch (e) {}
+    }
+  }
+
+  verificarCapacidadeCamera(): void {
+    try {
+      if (this.html5QrCode && this.html5QrCode.getRunningTrack) {
+        const track = this.html5QrCode.getRunningTrack();
+        if (track) {
+          this.mediaStreamTrack = track;
+          const capabilities = typeof track.getCapabilities === 'function' ? track.getCapabilities() : {};
+          this.temFlash = !!(capabilities as any).torch;
+          this.cameraSuportaZoom = !!(capabilities as any).zoom;
+        }
+      }
+    } catch (e) {}
+  }
+
+  triggerNativeCameraInput(): void {
+    const el = document.getElementById('native-camera-input');
+    if (el) el.click();
+  }
+
+  decodificarImagemComEstrategias(file: File): void {
+    if (!file) return;
+    this.mensagemNfce = '📸 Processando foto do QR Code...';
     this.statusNfceSucesso = true;
 
-    if (typeof Html5Qrcode !== 'undefined') {
-      const html5QrCodeTemp = new Html5Qrcode('qr-reader', {
-        experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true
-        }
-      });
-      html5QrCodeTemp.scanFile(file, true)
-        .then((decodedText: string) => {
-          this.urlNfce = decodedText;
-          this.mensagemNfce = '✅ QR Code lido com sucesso da foto! Extraindo produtos...';
-          this.statusNfceSucesso = true;
-          this.extrairNfce();
-        })
-        .catch(() => {
-          this.mensagemNfce = '❌ Não foi possível encontrar um QR Code nítido na imagem. Dica: Tire uma foto aproximada do QR Code ou abra a nota na SEFAZ e copie o texto.';
-          this.statusNfceSucesso = false;
-        });
-    } else {
-      this.mensagemNfce = '⚠️ Biblioteca do leitor indisponível no momento.';
+    if (typeof Html5Qrcode === 'undefined') {
+      this.mensagemNfce = '⚠️ Leitor indisponível no momento.';
       this.statusNfceSucesso = false;
+      return;
     }
+
+    const html5QrCodeTemp = new Html5Qrcode('qr-reader');
+
+    // Estágio 1: Decodificação direta via GPU
+    html5QrCodeTemp.scanFile(file, true)
+      .then((decodedText: string) => {
+        this.urlNfce = decodedText;
+        this.mensagemNfce = '✅ QR Code lido com sucesso!';
+        this.statusNfceSucesso = true;
+        this.extrairNfce();
+      })
+      .catch(() => {
+        // Estágio 2: Processamento via Canvas com ajuste de dimensão e contraste
+        const img = new Image();
+        const reader = new FileReader();
+        reader.onload = (e: any) => {
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              this.mensagemNfce = '❌ Não foi possível ler o QR Code na imagem. Tente uma foto mais aproximada e focada.';
+              this.statusNfceSucesso = false;
+              return;
+            }
+
+            let width = img.width;
+            let height = img.height;
+            const maxDim = 1200;
+            if (width > maxDim || height > maxDim) {
+              if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // Binarização leve para destacar o QR Code no papel térmico
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+            for (let i = 0; i < data.length; i += 4) {
+              const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+              const v = avg < 128 ? 0 : 255;
+              data[i] = v;
+              data[i + 1] = v;
+              data[i + 2] = v;
+            }
+            ctx.putImageData(imgData, 0, 0);
+
+            canvas.toBlob((blob) => {
+              if (!blob) {
+                this.mensagemNfce = '❌ Não foi possível identificar um QR Code na imagem.';
+                this.statusNfceSucesso = false;
+                return;
+              }
+              const processedFile = new File([blob], 'processed_qr.png', { type: 'image/png' });
+              html5QrCodeTemp.scanFile(processedFile, true)
+                .then((decodedText: string) => {
+                  this.urlNfce = decodedText;
+                  this.mensagemNfce = '✅ QR Code identificado!';
+                  this.statusNfceSucesso = true;
+                  this.extrairNfce();
+                })
+                .catch(() => {
+                  this.mensagemNfce = '❌ Não foi possível identificar o QR Code na foto. Tente aproximação com zoom ou cole o link/texto.';
+                  this.statusNfceSucesso = false;
+                });
+            }, 'image/png');
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+  }
+
+  processarFotoQrCode(event: any): void {
+    const file = event?.target?.files?.[0];
+    if (!file) return;
+    this.decodificarImagemComEstrategias(file);
   }
 
   

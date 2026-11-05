@@ -1240,3 +1240,26 @@ body.light-theme .val-neutro {
   cursor: not-allowed !important;
   border-color: #1e293b !important;
 }
+
+.qr-viewport {
+  position: relative;
+}
+
+.scan-laser-line {
+  position: absolute;
+  top: 15%;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background: #38bdf8;
+  box-shadow: 0 0 10px #38bdf8, 0 0 20px #0284c7;
+  animation: laserScan 2.2s infinite ease-in-out;
+  z-index: 10;
+  pointer-events: none;
+}
+
+@keyframes laserScan {
+  0% { top: 15%; opacity: 0.3; }
+  50% { top: 85%; opacity: 1; }
+  100% { top: 15%; opacity: 0.3; }
+}
