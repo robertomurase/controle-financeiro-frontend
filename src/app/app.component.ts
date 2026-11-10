@@ -1060,6 +1060,91 @@ carregarEstabelecimentos(): void {
   iniciarScanner(): void {
     this.pararScanner();
     this.scannerAtivo = true;
+    this.mensagemNfce = '📷 Ativando câmera... Aguarde.';
+    this.statusNfceSucesso = true;
+    this.temFlash = false;
+    this.flashAtivo = false;
+    this.zoomNivel = 1.0;
+
+    if (this.isCapacitorNativo()) {
+      this.escanearComCapacitorNativo();
+      return;
+    }
+    this.iniciarScannerWeb();
+  }
+
+  
+  // --- CAPACITOR NATIVE CAMERA & ML KIT HANDLERS ---
+  isCapacitorNativo(): boolean {
+    if (typeof window === 'undefined') return false;
+    const cap = (window as any).Capacitor;
+    return !!(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform());
+  }
+
+  async escanearComCapacitorNativo(): Promise<void> {
+    this.mensagemNfce = '⚡ Ativando leitor nativo via GPU do celular...';
+    this.statusNfceSucesso = true;
+
+    try {
+      const barcodeScanner = (window as any).Capacitor?.Plugins?.BarcodeScanner || (window as any).BarcodeScanner;
+      if (barcodeScanner && typeof barcodeScanner.scan === 'function') {
+        if (typeof barcodeScanner.requestPermissions === 'function') {
+          await barcodeScanner.requestPermissions();
+        }
+        const result = await barcodeScanner.scan();
+        if (result && (result.barcodes?.length > 0 || result.rawValue || result.content)) {
+          const qrVal = result.rawValue || result.content || result.barcodes[0]?.rawValue || '';
+          if (qrVal) {
+            this.urlNfce = qrVal;
+            this.mensagemNfce = '✅ QR Code lido com sucesso!';
+            this.statusNfceSucesso = true;
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+              try { navigator.vibrate(100); } catch (e) {}
+            }
+            this.extrairNfce();
+            return;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao chamar scanner nativo do Capacitor:', err);
+    }
+    this.iniciarScannerWeb();
+  }
+
+  async escanearBarcodeCapacitorNativo(): Promise<void> {
+    this.statusBarcodeMsg = '⚡ Ativando leitor nativo de código de barras...';
+    this.statusBarcodeOk = true;
+
+    try {
+      const barcodeScanner = (window as any).Capacitor?.Plugins?.BarcodeScanner || (window as any).BarcodeScanner;
+      if (barcodeScanner && typeof barcodeScanner.scan === 'function') {
+        if (typeof barcodeScanner.requestPermissions === 'function') {
+          await barcodeScanner.requestPermissions();
+        }
+        const result = await barcodeScanner.scan();
+        if (result && (result.barcodes?.length > 0 || result.rawValue || result.content)) {
+          const codeVal = result.rawValue || result.content || result.barcodes[0]?.rawValue || '';
+          if (codeVal) {
+            this.consultarProdutoPorCodigo(codeVal);
+            if (typeof navigator !== 'undefined' && navigator.vibrate) {
+              try { navigator.vibrate(100); } catch (e) {}
+            }
+            return;
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Erro ao chamar scanner nativo de código de barras:', err);
+    }
+    this.iniciarScannerBarcodeWeb();
+  }
+
+  iniciarScannerWeb(): void {
+    // Web implementation
+
+    this.pararScanner();
+    this.scannerAtivo = true;
     this.mensagemNfce = '📷 Ativando câmera de alta precisão... Aguarde.';
     this.statusNfceSucesso = true;
     this.temFlash = false;
@@ -2148,6 +2233,25 @@ carregarEstabelecimentos(): void {
   }
 
     iniciarScannerBarcode(): void {
+    if (typeof window === 'undefined') return;
+
+    if (this.scannerBarcodeAtivo) {
+      this.pararScannerBarcode();
+    }
+
+    this.statusBarcodeMsg = '📷 Ativando leitor de código de barras...';
+    this.statusBarcodeOk = true;
+
+    if (this.isCapacitorNativo()) {
+      this.escanearBarcodeCapacitorNativo();
+      return;
+    }
+    this.iniciarScannerBarcodeWeb();
+  }
+
+  iniciarScannerBarcodeWeb(): void {
+    // Web implementation
+
     if (typeof window === 'undefined') return;
 
     if (this.scannerBarcodeAtivo) {
