@@ -1159,7 +1159,7 @@ carregarEstabelecimentos(): void {
 
           this.html5QrCode = new Html5Qrcode('qr-reader', {
             formatsToSupport: [(window as any).Html5QrcodeSupportedFormats?.QR_CODE || 0],
-            experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+            experimentalFeatures: { useBarCodeDetectorIfSupported: false }
           });
 
           const config = {
@@ -2267,7 +2267,7 @@ carregarEstabelecimentos(): void {
         try {
           this.html5BarcodeScanner = new (window as any).Html5Qrcode('barcode-viewport', {
             experimentalFeatures: {
-              useBarCodeDetectorIfSupported: true
+              useBarCodeDetectorIfSupported: false
             }
           });
           this.scannerBarcodeAtivo = true;
@@ -2282,8 +2282,8 @@ carregarEstabelecimentos(): void {
             },
             videoConstraints: {
               facingMode: { ideal: 'environment' },
-              width: { min: 640, ideal: 1280, max: 1920 },
-              height: { min: 480, ideal: 720, max: 1080 }
+              width: { min: 1280, ideal: 1920 },
+              height: { min: 720, ideal: 1080 }
             }
           };
 

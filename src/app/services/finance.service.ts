@@ -43,8 +43,12 @@ export class FinanceService {
         return customUrl.trim().replace(/\/+$/, '');
       }
 
+      const cap = (window as any).Capacitor;
+      const isCapacitor = !!(cap && typeof cap.isNativePlatform === 'function' && cap.isNativePlatform());
+
       const host = window.location.hostname;
-      if (host !== 'localhost' && host !== '127.0.0.1') {
+      // Se estiver rodando como App no celular (Capacitor) ou em domínio Web de produção, usa a API Render
+      if (isCapacitor || (host !== 'localhost' && host !== '127.0.0.1')) {
         return this.PROD_API_URL;
       }
     }
