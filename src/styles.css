@@ -964,7 +964,10 @@ input:focus, select:focus {
   }
 
   .top-navbar {
-    padding: 12px 16px;
+    padding-top: calc(18px + env(safe-area-inset-top, 14px)) !important;
+    padding-bottom: 14px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
   }
   .brand-section {
     width: 100%;
@@ -973,16 +976,27 @@ input:focus, select:focus {
     margin-left: auto;
   }
   .hamburger-btn {
-    display: block;
-    margin-left: auto;
-    padding: 6px;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-left: auto !important;
+    padding: 10px 14px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    font-size: 1.6rem !important;
+    border-radius: 8px !important;
+    background: transparent !important;
+    border: none !important;
+    color: #f8fafc !important;
+    cursor: pointer !important;
+    touch-action: manipulation !important;
   }
   .nav-links {
     display: none;
     flex-direction: column;
     align-items: flex-start;
     position: absolute;
-    top: 60px;
+    top: 100% !important;
     left: 0;
     right: 0;
     background: #111827;
@@ -1262,4 +1276,37 @@ body.light-theme .val-neutro {
   0% { top: 15%; opacity: 0.3; }
   50% { top: 85%; opacity: 1; }
   100% { top: 15%; opacity: 0.3; }
+}
+
+
+/* OTIMIZACAO MOBILE (VERSAO 143): ESPACAMENTO TOP NAVBAR & REMOCAO DE BORDAS DOS BOXES */
+@media (max-width: 768px) {
+  .main-container {
+    padding: 10px 4px !important;
+  }
+
+  .table-card,
+  .form-box,
+  .kpi-card,
+  .chart-card,
+  .staging-preview-box,
+  .chart-box-modal,
+  .sefaz-helper-card,
+  div[style*="border: 1px solid"],
+  div[style*="border:1px solid"] {
+    border: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    box-shadow: none !important;
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+    border-radius: 8px !important;
+  }
+
+  .table-responsive {
+    border: none !important;
+    padding: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
 }
