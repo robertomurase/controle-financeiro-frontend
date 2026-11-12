@@ -89,7 +89,8 @@ export class AppComponent implements OnInit, OnDestroy {
   modalDetalhesNfceAberto: boolean = false;
   carregandoDetalhesNfce: boolean = false;
   detalhesNfceSelecionada: any = null;
-activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'saidas' | 'produtos' | 'estabelecimentos' = 'dashboard';
+  ultimoTextoClipboardProcessado: string = '';
+  activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'saidas' | 'produtos' | 'estabelecimentos' = 'dashboard';
   menuAberto: boolean = false;
   settingsMenuAberto: boolean = false;
   modoClaro: boolean = false;
@@ -232,6 +233,13 @@ activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'said
         this.deferredPrompt = e;
         this.exibirBannerPwa = true;
       });
+
+      window.addEventListener('focus', () => this.verificarEAutoProcessarClipboard());
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          this.verificarEAutoProcessarClipboard();
+        }
+      });
     }
 
     this.carregarEstabelecimentos();
@@ -296,9 +304,23 @@ activeTab: 'dashboard' | 'transacoes' | 'nfce' | 'carrinho' | 'entradas' | 'said
     if (!orig) return 'Cadastro Manual';
     if (orig === 'estabelecimento não identificado') return 'Mercado / SEFAZ';
 
-    const exact = (this.estabelecimentosMapeados || []).find(e =>
-      e.razao_social && e.razao_social.trim().toLowerCase() === orig
-    );
+    const digitsOnly = orig.replace(/[^0-9]/g, '');
+
+    if (digitsOnly.includes('45543915') || orig.includes('carrefour')) return 'Carrefour';
+    if (digitsOnly.includes('5086034') || orig.includes('pao de acucar') || orig.includes('pão de açúcar') || orig.includes('cbd')) return 'Pão de Açúcar';
+    if (orig.includes('assai') || orig.includes('assaí')) return 'Assaí Atacadista';
+    if (orig.includes('atacadao') || orig.includes('atacadão')) return 'Atacadão';
+    if (orig.includes('bem barato')) return 'Bem Barato';
+    if (orig.includes('muffato')) return 'Super Muffato';
+    if (orig.includes('swift')) return 'Swift';
+    if (orig.includes('dia brasil') || orig.includes('supermercado dia')) return 'Dia Supermercado';
+
+    const exact = (this.estabelecimentosMapeados || []).find(e => {
+      if (!e.razao_social) return false;
+      const r = e.razao_social.trim().toLowerCase();
+      const rDigits = r.replace(/[^0-9]/g, '');
+      return r === orig || (digitsOnly.length >= 8 && rDigits.length >= 8 && digitsOnly.includes(rDigits));
+    });
     if (exact && exact.nome_simplificado) return exact.nome_simplificado;
 
     const partial = (this.estabelecimentosMapeados || []).find(e =>
@@ -1512,6 +1534,9 @@ carregarEstabelecimentos(): void {
 
     url = url.replace(/\|/g, '%7C');
 
+    this.mensagemNfce = '🌐 Abrindo SEFAZ... Na página, selecione todo o texto ("Selecionar Tudo") e COPIE. Ao retornar ao app, a nota será processada AUTOMATICAMENTE!';
+    this.statusNfceSucesso = true;
+
     try {
       const a = document.createElement('a');
       a.href = url;
@@ -2034,23 +2059,35 @@ carregarEstabelecimentos(): void {
     const matchChave = clean.match(/\b(\d{44})\b/);
     const chaveAcesso = matchChave ? matchChave[1] : '';
     let cnpj = '';
+    let cnpjNum = '';
     let dataEmissao = new Date().toISOString();
     let valorTotal = 0.0;
 
     if (chaveAcesso && chaveAcesso.length === 44) {
-      cnpj = chaveAcesso.substring(6, 20).replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+      cnpjNum = chaveAcesso.substring(6, 20);
+      cnpj = cnpjNum.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
       const aamm = chaveAcesso.substring(2, 6);
       if (aamm.length === 4) {
         dataEmissao = `20${aamm.substring(0,2)}-${aamm.substring(2,4)}-01T12:00:00.000Z`;
       }
     }
 
+    // Tenta extrair valor por query param (v= ou val=) ou por delimitador de pipe | (Padrão NFC-e v2.0)
     const matchVal = clean.match(/[?&]v=([\d.,]+)/i) || clean.match(/[?&]val=([\d.,]+)/i);
     if (matchVal) {
       valorTotal = this.round2(Number(matchVal[1].replace(/\./g, '').replace(',', '.'))) || 0.0;
+    } else if (clean.includes('|')) {
+      const parts = clean.split('|');
+      if (parts.length >= 6) {
+        const vCandidate = parts[5].trim().replace(/\./g, '').replace(',', '.');
+        const numVal = parseFloat(vCandidate);
+        if (!isNaN(numVal) && numVal > 0) {
+          valorTotal = this.round2(numVal);
+        }
+      }
     }
 
-    const estNome = cnpj ? `Mercado / CNPJ ${cnpj}` : 'Mercado / SEFAZ';
+    const estNome = cnpj ? `CNPJ ${cnpj}` : 'Mercado / SEFAZ';
 
     return {
       chaveAcesso: chaveAcesso || `NFCe_${Date.now()}`,
@@ -2071,6 +2108,60 @@ carregarEstabelecimentos(): void {
       jaCadastrada: false,
       isQrOnly: true
     };
+  }
+
+    async verificarEAutoProcessarClipboard(): Promise<void> {
+    if (typeof navigator === 'undefined' || !navigator.clipboard || !navigator.clipboard.readText) return;
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text || !text.trim()) return;
+
+      const cleanText = text.trim();
+      if (this.ultimoTextoClipboardProcessado === cleanText) return;
+
+      const upperText = cleanText.toUpperCase();
+      const temMarcadoresSefaz = ['NFC-E', 'DANFE', 'QTDE', 'VALOR TOTAL', 'SUBTOTAL', 'CHAVE DE ACESSO', 'ITEM CÓDIGO', 'CONSULTA PELA CHAVE', 'RECEITA FEDERAL', 'SECRETARIA DA FAZENDA', 'EMISSÃO']
+        .some(k => upperText.includes(k));
+
+      if (temMarcadoresSefaz) {
+        this.ultimoTextoClipboardProcessado = cleanText;
+        this.htmlNfceManual = cleanText;
+        this.scannerModo = 'html';
+        this.mensagemNfce = '✨ Cupom fiscal detectado automaticamente da memória do celular! Processando...';
+        this.statusNfceSucesso = true;
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+          try { navigator.vibrate([100, 50, 100]); } catch (e) {}
+        }
+        this.extrairNfce();
+      }
+    } catch (err) {
+      // Permissão do clipboard não concedida em background sem interação
+    }
+  }
+
+  async colarEProcessarClipboard(): Promise<void> {
+    if (typeof navigator === 'undefined' || !navigator.clipboard || !navigator.clipboard.readText) {
+      alert('Recurso de área de transferência não suportado neste navegador.');
+      return;
+    }
+    try {
+      const text = await navigator.clipboard.readText();
+      if (!text || !text.trim()) {
+        alert('Nenhum texto encontrado na área de transferência (Clipboard).');
+        return;
+      }
+      this.ultimoTextoClipboardProcessado = text.trim();
+      this.htmlNfceManual = text.trim();
+      this.scannerModo = 'html';
+      this.mensagemNfce = '📋 Texto colado da memória! Processando cupom fiscal...';
+      this.statusNfceSucesso = true;
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        try { navigator.vibrate([100, 50, 100]); } catch (e) {}
+      }
+      this.extrairNfce();
+    } catch (err) {
+      alert('Por favor, autorize a leitura da área de transferência no celular/navegador.');
+    }
   }
 
   extrairNfce(): void {
@@ -2117,6 +2208,56 @@ carregarEstabelecimentos(): void {
       this.statusNfceSucesso = true;
     }
 
+    // 1.5 Tenta captura direta nativa no dispositivo via CapacitorHttp ou fetch local
+    if (typeof window !== 'undefined' && (this.urlNfce.startsWith('http://') || this.urlNfce.startsWith('https://'))) {
+      const tentarCapacitorHttp = async () => {
+        try {
+          const cap = (window as any).Capacitor;
+          if (cap && typeof cap.nativeFetch === 'function') {
+            const res = await cap.nativeFetch(this.urlNfce, { method: 'GET' });
+            const html = await res.text();
+            if (html && html.length > 50) {
+              const dadosLocais = this.extrairDadosTextoLocalmente(html);
+              if (dadosLocais && dadosLocais.itens && dadosLocais.itens.length > 0) {
+                this.tratarResultadoNfce({ dadosNota: dadosLocais });
+                this.carregandoNfce = false;
+                this.mensagemNfce = '⚡ Todos os itens foram carregados automaticamente em segundo plano via celular!';
+                this.statusNfceSucesso = true;
+                if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                  try { navigator.vibrate([100, 50, 100]); } catch (e) {}
+                }
+                return true;
+              }
+            }
+          }
+        } catch (e) {}
+
+        try {
+          const res = await fetch(this.urlNfce, {
+            method: 'GET',
+            headers: { 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' }
+          });
+          const html = await res.text();
+          if (html && html.length > 50) {
+            const dadosLocais = this.extrairDadosTextoLocalmente(html);
+            if (dadosLocais && dadosLocais.itens && dadosLocais.itens.length > 0) {
+              this.tratarResultadoNfce({ dadosNota: dadosLocais });
+              this.carregandoNfce = false;
+              this.mensagemNfce = '⚡ Todos os itens foram carregados automaticamente em segundo plano!';
+              this.statusNfceSucesso = true;
+              if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                try { navigator.vibrate([100, 50, 100]); } catch (e) {}
+              }
+              return true;
+            }
+          }
+        } catch (e) {}
+        return false;
+      };
+
+      tentarCapacitorHttp();
+    }
+
     // 2. Tenta buscar a lista de itens completos no backend
     this.financeService.extrairNfce(this.urlNfce).subscribe({
       next: (res: any) => this.tratarResultadoNfce(res),
@@ -2125,8 +2266,13 @@ carregarEstabelecimentos(): void {
           next: (res: any) => this.tratarResultadoNfce(res),
           error: () => {
             this.carregandoNfce = false;
-            this.mensagemNfce = '⚡ QR Code lido com sucesso! Para carregar todos os itens individuais da SEFAZ SP, clique em "🌐 1. Abrir Nota na SEFAZ", copie o texto e cole abaixo.';
-            this.statusNfceSucesso = true;
+            if (this.dadosNotaPreview && this.dadosNotaPreview.itens && this.dadosNotaPreview.itens.length > 1) {
+              this.mensagemNfce = '✅ Cupom fiscal e itens carregados com sucesso!';
+              this.statusNfceSucesso = true;
+            } else {
+              this.mensagemNfce = '⚡ QR Code Lido! Clique em "🌐 1. Abrir Link do Cupom", selecione e copie tudo no site. Ao voltar ao app, a nota será lida AUTOMATICAMENTE!';
+              this.statusNfceSucesso = true;
+            }
           }
         });
       }
