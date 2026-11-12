@@ -842,23 +842,41 @@ input:focus, select:focus {
   color: #64748b;
 }
 
-.modal-close-btn, .btn-close {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  color: #f8fafc;
-  font-size: 1.8rem;
-  font-weight: 700;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-  padding: 0;
+.modal-close-btn, .btn-close,
+.modal-close-btn {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  color: #f8fafc !important;
+  font-size: 1.6rem !important;
+  font-weight: 700 !important;
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  transition: all 0.2s ease !important;
+  flex-shrink: 0 !important;
+  padding: 0 !important;
+  margin-left: 12px !important;
+  position: relative !important;
+  z-index: 105 !important;
+  touch-action: manipulation !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+}
+
+.btn-close:hover,
+.modal-close-btn:hover,
+.btn-close:active,
+.modal-close-btn:active {
+  background: rgba(239, 68, 68, 0.3) !important;
+  border-color: #ef4444 !important;
+  color: #ffffff !important;
+  transform: scale(1.05) !important;
 }
 
 .modal-close-btn:hover, .btn-close:hover,
@@ -957,7 +975,12 @@ input:focus, select:focus {
     margin: 0 !important;
   }
   .modal-header {
-    padding: 14px 16px;
+    padding-top: max(28px, calc(20px + env(safe-area-inset-top, 0px))) !important;
+    padding-bottom: 16px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    background: #111827 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
   }
   .modal-body {
     padding: 16px;
@@ -1095,7 +1118,12 @@ input:focus, select:focus {
     margin: 0 !important;
   }
   .modal-header {
-    padding: 14px 16px;
+    padding-top: max(28px, calc(20px + env(safe-area-inset-top, 0px))) !important;
+    padding-bottom: 16px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    background: #111827 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
   }
   .modal-body {
     padding: 16px;
