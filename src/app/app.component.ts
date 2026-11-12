@@ -1082,10 +1082,51 @@ carregarEstabelecimentos(): void {
   }
 
   async escanearComCapacitorNativo(): Promise<void> {
-    this.mensagemNfce = '⚡ Ativando leitor nativo via GPU do celular...';
+    this.mensagemNfce = '⚡ Ativando leitor nativo Google ML Kit...';
     this.statusNfceSucesso = true;
 
     try {
+      // 1. Tenta carregar o plugin oficial Google ML Kit Barcode Scanner
+      let mlkitModule: any = null;
+      try {
+        mlkitModule = await import('@capacitor-mlkit/barcode-scanning');
+      } catch (e) {
+        mlkitModule = null;
+      }
+
+      if (mlkitModule && mlkitModule.BarcodeScanner) {
+        const { BarcodeScanner, BarcodeFormat } = mlkitModule;
+        const isSupported = await BarcodeScanner.isSupported();
+        if (isSupported?.supported) {
+          const permStatus = await BarcodeScanner.checkPermissions();
+          if (permStatus?.camera !== 'granted') {
+            const reqStatus = await BarcodeScanner.requestPermissions();
+            if (reqStatus?.camera !== 'granted') {
+              throw new Error('Permissão de câmera negada');
+            }
+          }
+
+          const scanResult = await BarcodeScanner.scan({
+            formats: [BarcodeFormat.QrCode]
+          });
+
+          if (scanResult && scanResult.barcodes && scanResult.barcodes.length > 0) {
+            const qrVal = scanResult.barcodes[0].rawValue || scanResult.barcodes[0].displayValue || '';
+            if (qrVal) {
+              this.urlNfce = qrVal;
+              this.mensagemNfce = '✅ QR Code lido com sucesso via ML Kit!';
+              this.statusNfceSucesso = true;
+              if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                try { navigator.vibrate([100, 50, 100]); } catch (e) {}
+              }
+              this.extrairNfce();
+              return;
+            }
+          }
+        }
+      }
+
+      // 2. Fallback para Plugin genérico do Capacitor
       const barcodeScanner = (window as any).Capacitor?.Plugins?.BarcodeScanner || (window as any).BarcodeScanner;
       if (barcodeScanner && typeof barcodeScanner.scan === 'function') {
         if (typeof barcodeScanner.requestPermissions === 'function') {
@@ -1093,30 +1134,79 @@ carregarEstabelecimentos(): void {
         }
         const result = await barcodeScanner.scan();
         if (result && (result.barcodes?.length > 0 || result.rawValue || result.content)) {
-          const qrVal = result.rawValue || result.content || result.barcodes[0]?.rawValue || '';
+          const qrVal = result.rawValue || result.content || result.barcodes?.[0]?.rawValue || '';
           if (qrVal) {
             this.urlNfce = qrVal;
             this.mensagemNfce = '✅ QR Code lido com sucesso!';
             this.statusNfceSucesso = true;
             if (typeof navigator !== 'undefined' && navigator.vibrate) {
-              try { navigator.vibrate(100); } catch (e) {}
+              try { navigator.vibrate([100, 50, 100]); } catch (e) {}
             }
             this.extrairNfce();
             return;
           }
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Erro ao chamar scanner nativo do Capacitor:', err);
     }
+
     this.iniciarScannerWeb();
   }
 
   async escanearBarcodeCapacitorNativo(): Promise<void> {
-    this.statusBarcodeMsg = '⚡ Ativando leitor nativo de código de barras...';
+    this.statusBarcodeMsg = '⚡ Ativando leitor nativo Google ML Kit...';
     this.statusBarcodeOk = true;
 
     try {
+      // 1. Tenta carregar o plugin oficial Google ML Kit Barcode Scanner
+      let mlkitModule: any = null;
+      try {
+        mlkitModule = await import('@capacitor-mlkit/barcode-scanning');
+      } catch (e) {
+        mlkitModule = null;
+      }
+
+      if (mlkitModule && mlkitModule.BarcodeScanner) {
+        const { BarcodeScanner, BarcodeFormat } = mlkitModule;
+        const isSupported = await BarcodeScanner.isSupported();
+        if (isSupported?.supported) {
+          const permStatus = await BarcodeScanner.checkPermissions();
+          if (permStatus?.camera !== 'granted') {
+            const reqStatus = await BarcodeScanner.requestPermissions();
+            if (reqStatus?.camera !== 'granted') {
+              throw new Error('Permissão de câmera negada');
+            }
+          }
+
+          const scanResult = await BarcodeScanner.scan({
+            formats: [
+              BarcodeFormat.Ean13,
+              BarcodeFormat.Ean8,
+              BarcodeFormat.Code128,
+              BarcodeFormat.Code39,
+              BarcodeFormat.UpcA,
+              BarcodeFormat.UpcE,
+              BarcodeFormat.QrCode
+            ]
+          });
+
+          if (scanResult && scanResult.barcodes && scanResult.barcodes.length > 0) {
+            const codeVal = scanResult.barcodes[0].rawValue || scanResult.barcodes[0].displayValue || '';
+            if (codeVal) {
+              this.statusBarcodeMsg = '✅ Código ' + codeVal + ' lido com sucesso!';
+              this.statusBarcodeOk = true;
+              if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                try { navigator.vibrate([100, 50, 100]); } catch (e) {}
+              }
+              this.consultarProdutoPorCodigo(codeVal);
+              return;
+            }
+          }
+        }
+      }
+
+      // 2. Fallback para Plugin genérico
       const barcodeScanner = (window as any).Capacitor?.Plugins?.BarcodeScanner || (window as any).BarcodeScanner;
       if (barcodeScanner && typeof barcodeScanner.scan === 'function') {
         if (typeof barcodeScanner.requestPermissions === 'function') {
@@ -1124,19 +1214,22 @@ carregarEstabelecimentos(): void {
         }
         const result = await barcodeScanner.scan();
         if (result && (result.barcodes?.length > 0 || result.rawValue || result.content)) {
-          const codeVal = result.rawValue || result.content || result.barcodes[0]?.rawValue || '';
+          const codeVal = result.rawValue || result.content || result.barcodes?.[0]?.rawValue || '';
           if (codeVal) {
-            this.consultarProdutoPorCodigo(codeVal);
+            this.statusBarcodeMsg = '✅ Código ' + codeVal + ' lido com sucesso!';
+            this.statusBarcodeOk = true;
             if (typeof navigator !== 'undefined' && navigator.vibrate) {
-              try { navigator.vibrate(100); } catch (e) {}
+              try { navigator.vibrate([100, 50, 100]); } catch (e) {}
             }
+            this.consultarProdutoPorCodigo(codeVal);
             return;
           }
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Erro ao chamar scanner nativo de código de barras:', err);
     }
+
     this.iniciarScannerBarcodeWeb();
   }
 
